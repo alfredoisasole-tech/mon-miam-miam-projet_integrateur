@@ -2,6 +2,10 @@
 
 Modèle conçu à partir du cahier des charges et des règles de la plateforme.
 
+Vue synthétique des 34 relations, réparties en six vues. Les détails des clés et des cardinalités suivent. Cliquez sur l'image pour l'ouvrir en pleine taille.
+
+[![Modèle de données — 34 relations en six vues](modele-de-donnees.png)](modele-de-donnees.png)
+
 ## 1. Entités et attributs
 
 ### Conventions
@@ -405,7 +409,7 @@ erDiagram
   restaurants ||--o{ points_ledger : restaurant_id
   restaurants ||--o{ promotions : restaurant_id
   restaurants ||--o{ referrals : restaurant_id
-  restaurants ||--|| restaurant_settings : restaurant_id
+  restaurants ||--o| restaurant_settings : restaurant_id
   restaurants ||--o{ users : restaurant_id
   referrals |o--o{ points_ledger : referral_id
   users |o--o{ claims : proposed_by
@@ -417,14 +421,10 @@ erDiagram
   users ||--o{ password_resets : user_id
   users |o--o{ points_ledger : created_by
   users ||--o{ points_ledger : user_id
-  users ||--o{ referrals : referee_id
+  users ||--o| referrals : referee_id
   users ||--o{ referrals : referrer_id
   users |o--o{ users : referred_by
 ```
-
-Le PNG répartit ces relations en six vues pour faciliter la lecture. Certaines tables apparaissent dans plusieurs vues.
-
-![Modèle de données](modele-de-donnees.png)
 
 ### Liste des 34 relations
 
@@ -449,7 +449,7 @@ Le PNG répartit ces relations en six vues pour faciliter la lecture. Certaines 
 | 17 | `restaurants` | `points_ledger` | `points_ledger.restaurant_id` | 1 – 0..N |
 | 18 | `restaurants` | `promotions` | `promotions.restaurant_id` | 1 – 0..N |
 | 19 | `restaurants` | `referrals` | `referrals.restaurant_id` | 1 – 0..N |
-| 20 | `restaurants` | `restaurant_settings` | `restaurant_settings.restaurant_id` | 1 – 1 |
+| 20 | `restaurants` | `restaurant_settings` | `restaurant_settings.restaurant_id` | 1 – 0..1 |
 | 21 | `restaurants` | `users` | `users.restaurant_id` | 1 – 0..N |
 | 22 | `referrals` | `points_ledger` | `points_ledger.referral_id` | 0..1 – 0..N |
 | 23 | `users` | `claims` | `claims.proposed_by` | 0..1 – 0..N |
@@ -461,17 +461,104 @@ Le PNG répartit ces relations en six vues pour faciliter la lecture. Certaines 
 | 29 | `users` | `password_resets` | `password_resets.user_id` | 1 – 0..N |
 | 30 | `users` | `points_ledger` | `points_ledger.created_by` | 0..1 – 0..N |
 | 31 | `users` | `points_ledger` | `points_ledger.user_id` | 1 – 0..N |
-| 32 | `users` | `referrals` | `referrals.referee_id` | 1 – 0..N |
+| 32 | `users` | `referrals` | `referrals.referee_id` | 1 – 0..1 |
 | 33 | `users` | `referrals` | `referrals.referrer_id` | 1 – 0..N |
 | 34 | `users` | `users` | `users.referred_by` | 0..1 – 0..N |
 
 ### Cas particuliers
 
 - **`memberships`** : association plusieurs-à-plusieurs entre `users` et `restaurants`. Sa clé primaire est composée de `user_id` et `restaurant_id`; elle porte le reliquat de fidélité propre à l'adhésion.
-- **`restaurant_settings`** : relation 1–1 avec `restaurants`; sa clé primaire est aussi sa clé étrangère.
+- **`restaurant_settings`** : chaque ligne appartient à un restaurant et un restaurant peut avoir zéro ou une ligne de paramètres ; sa clé primaire est aussi sa clé étrangère.
 - **Images** : `restaurants.logo_asset_id`, `menu_items.image_asset_id` et `promotions.image_asset_id` référencent `assets.id`.
 - **Parrainage** : `points_ledger.referral_id` référence `referrals.id`; `users.referred_by` est une relation réflexive et `referrals` relie deux utilisateurs distincts par `referrer_id` et `referee_id`.
 - **Réclamations** : `claims.user_id` est obligatoire ; `order_id`, `proposed_by` et `resolved_by` sont facultatifs.
 - **Liens facultatifs** : `claims.order_id`, `claims.proposed_by`, `claims.resolved_by`, `order_events.user_id`, `points_ledger.order_id`, `points_ledger.referral_id`, `points_ledger.created_by`, `referrals.rewarded_order_id`, `users.referred_by`, ainsi que les trois références d'image vers `assets`.
 - **Cohérence entre restaurants** : toute commande, tout paiement, toute réclamation et toute ligne du journal de points doit appartenir au même restaurant que son parent. Cette règle est garantie par des tests automatisés couvrant les clés parentales et l'adhésion de l'étudiant au restaurant ; le seul `users.restaurant_id` ne suffit pas puisqu'il désigne le restaurant d'origine et que `memberships` autorise plusieurs restaurants.
 - **Administrateurs de plateforme** : `platform_admins` n'est rattachée à aucun restaurant.
+
+## 3. Validation des clés, des contraintes et de la cohérence
+
+Le modèle a été vérifié entre ses trois sections : les entités, les relations et les contraintes ci-dessous décrivent le même ensemble de 16 tables.
+
+### Contrôles réussis
+
+- [x] Les 16 entités et leurs attributs sont décrits.
+- [x] Les **34 clés étrangères** figurent dans le tableau et le diagramme ; les quatre relations ajoutées couvrent les trois références d'image et le lien de parrainage du journal de points.
+- [x] Chaque entité possède la clé primaire indiquée ci-dessous.
+- [x] Les montants sont exprimés en entiers FC ; les dates sont des textes ISO 8601 en UTC ; les booléens sont des entiers 0 ou 1.
+- [x] Le reliquat de fidélité est porté uniquement par `memberships`. `users.restaurant_id` désigne le restaurant d'origine de l'étudiant ou le restaurant de travail du personnel.
+- [x] L'e-mail et le téléphone des utilisateurs sont uniques sur toute la plateforme ; l'e-mail ne distingue pas les majuscules des minuscules.
+- [x] La réduction de fidélité par défaut est de 3 000 FC, conformément à la règle de 15 points pour 3 000 FC.
+- [x] La règle d'appartenance commune entre commande, paiement, réclamation, journal de points et leur restaurant parent est définie et sera couverte par des tests automatisés.
+
+### Clés primaires
+
+- `id` est la clé primaire de chaque table, sauf :
+  - `memberships` : clé composée `(user_id, restaurant_id)` ;
+  - `restaurant_settings` : `restaurant_id`.
+
+### Contraintes d'unicité
+
+- `restaurants.slug`.
+- `users.email` sans distinction de casse, unique sur toute la plateforme.
+- `users.phone`, unique sur toute la plateforme.
+- `users.referral_code`.
+- `orders(restaurant_id, order_number)`.
+- `orders(user_id, idempotency_key)`.
+- `password_resets.token_hash`.
+- `referrals.referee_id` : un filleul n'a qu'un seul parrain.
+- `platform_admins.email`.
+
+### Valeurs permises
+
+- `users.role` : `student`, `employee`, `manager`, `admin`.
+- `users.status` : `active`, `inactive`, `deleted`.
+- `orders.type` : `dine_in`, `delivery`.
+- `orders.status` : `pending`, `confirmed`, `preparing`, `ready`, `out_for_delivery`, `completed`, `cancelled`.
+- `orders.payment_method` : `cash`, `mobile_money`.
+- `orders.payment_status` : `unpaid`, `pending`, `paid`, `failed`, `refund_due`.
+- `payments.operator` : `mpesa`, `orange_money`, `airtel_money`, `africell_money`.
+- `payments.status` : `pending`, `paid`, `failed`.
+- `menu_items.category` : `plat`, `boisson`, `dessert`, `snack`.
+- `promotions.kind` : `promotion`, `event`, `game`.
+- `points_ledger.kind` : `earn`, `referral`, `redeem`, `expire`, `adjust`, `refund`.
+- `referrals.status` : `pending`, `rewarded`.
+- `claims.kind` : `order`, `points`, `other`.
+- `claims.status` : `open`, `pending_validation`, `resolved`.
+- `claims.proposed_decision` et `claims.decision` : `accept`, `refuse` lorsque ces colonnes ne sont pas vides.
+- `restaurants.status` et `platform_admins.status` : `active`, `inactive`.
+- `restaurants.default_mode` : `light`, `dark`, `system`.
+- `assets.kind` : `logo`, `poster`, `menu`.
+- Les booléens `restaurant_settings.delivery_enabled`, `users.must_change_password`, `menu_items.is_available`, `menu_items.is_daily` et `promotions.is_active` valent `0` ou `1`.
+
+### Contraintes numériques
+
+- Tous les montants en FC sont supérieurs ou égaux à zéro ; `payments.amount_fc` est strictement supérieur à zéro.
+- `order_items.quantity` est strictement supérieur à zéro.
+- `orders.points_redeemed` et `orders.points_earned` sont supérieurs ou égaux à zéro.
+- `orders.rating` est vide ou compris entre 1 et 5.
+- `points_ledger.points` est différent de zéro ; `points_ledger.remaining` est vide ou supérieur ou égal à zéro.
+- `referrals.reward_points` est supérieur ou égal à zéro.
+- `claims.requested_points` est vide ou strictement supérieur à zéro.
+- `restaurant_settings.spend_per_point_fc`, `points_per_meal` et `points_validity_months` sont strictement supérieurs à zéro.
+- `memberships.loyalty_remainder_fc` est supérieur ou égal à zéro.
+
+### Règles de calcul (tests)
+
+- `order_items.line_total_fc = order_items.unit_price_fc × order_items.quantity`.
+- `orders.total_fc = orders.subtotal_fc − orders.discount_fc + orders.delivery_fee_fc`.
+
+Ces calculs sont des règles métier à vérifier par des tests automatisés ; ils ne sont pas présentés comme des contraintes de base de données.
+
+### Points à corriger
+
+Aucun correctif structurel ne reste ouvert dans ce modèle. Les décisions des cinq constats sont intégrées : les références d'image et de parrainage sont déclarées ; le reliquat réside uniquement dans `memberships` ; le rattachement d'origine des utilisateurs est précisé ; la cohérence entre restaurants est confiée à des tests automatisés. La liste définitive des clés, valeurs et règles numériques résout la vérification des contraintes.
+
+### Questions pour l'équipe
+
+1. **Jeux et événements** : le cahier des charges prévoit des prix ou des points supplémentaires. Faut-il ajouter à `promotions` une colonne facultative `reward_points` (entier supérieur ou égal à zéro) et une table `participations` avec `promotion_id`, `user_id`, la date de participation, les points accordés et une clé unique `(promotion_id, user_id)` ?
+2. **Paiement** : le cahier des charges prévoit la carte bancaire et le paiement mobile, tandis que `payments.operator` est limité à quatre opérateurs mobiles. Faut-il ajouter `payments.method` (`card`, `mobile_money`) et rendre `operator` facultatif ?
+
+### Conclusion
+
+Le modèle documentaire couvre 16 entités et 34 relations, intègre les décisions sur les rattachements, la fidélité, les comptes uniques et les clés étrangères d'image et de parrainage. Les règles de calcul et de cohérence entre restaurants ont une méthode de validation définie. Les deux questions sur les récompenses de jeux et les moyens de paiement restent à trancher par l'équipe.
