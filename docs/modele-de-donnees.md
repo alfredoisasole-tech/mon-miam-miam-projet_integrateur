@@ -326,3 +326,152 @@ Demandes de réinitialisation de mot de passe (jeton haché, expiration, utilisa
 | `expires_at` | TEXT | oui |  |  |
 | `used_at` | TEXT | non |  |  |
 | `created_at` | TEXT | oui |  |  |
+
+## 2. Relations et cardinalités
+
+Le modèle relie les **16 entités par 34 clés étrangères** : les 30 relations principales et quatre relations d’image ou de parrainage ajoutées ci-dessous. Les liens facultatifs sont indiqués par une cardinalité « 0..1 ».
+
+### Diagramme
+
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#f8fafc","primaryTextColor":"#172033","primaryBorderColor":"#475569","lineColor":"#52627a","fontFamily":"Arial"}}}%%
+erDiagram
+  restaurants {
+    TEXT id PK
+  }
+  restaurant_settings {
+    TEXT restaurant_id PK
+  }
+  users {
+    TEXT id PK
+  }
+  memberships {
+    TEXT user_id PK, FK
+    TEXT restaurant_id PK, FK
+  }
+  platform_admins {
+    TEXT id PK
+  }
+  menu_items {
+    TEXT id PK
+  }
+  assets {
+    TEXT id PK
+  }
+  promotions {
+    TEXT id PK
+  }
+  orders {
+    TEXT id PK
+  }
+  order_items {
+    TEXT id PK
+  }
+  order_events {
+    TEXT id PK
+  }
+  payments {
+    TEXT id PK
+  }
+  points_ledger {
+    TEXT id PK
+  }
+  referrals {
+    TEXT id PK
+  }
+  claims {
+    TEXT id PK
+  }
+  password_resets {
+    TEXT id PK
+  }
+
+  menu_items ||--o{ order_items : menu_item_id
+  orders |o--o{ claims : order_id
+  orders ||--o{ order_events : order_id
+  orders ||--o{ order_items : order_id
+  orders ||--o{ payments : order_id
+  orders |o--o{ points_ledger : order_id
+  orders |o--o{ referrals : rewarded_order_id
+  assets |o--o{ restaurants : logo_asset_id
+  assets |o--o{ menu_items : image_asset_id
+  assets |o--o{ promotions : image_asset_id
+  restaurants ||--o{ assets : restaurant_id
+  restaurants ||--o{ claims : restaurant_id
+  restaurants ||--o{ memberships : restaurant_id
+  restaurants ||--o{ menu_items : restaurant_id
+  restaurants ||--o{ orders : restaurant_id
+  restaurants ||--o{ payments : restaurant_id
+  restaurants ||--o{ points_ledger : restaurant_id
+  restaurants ||--o{ promotions : restaurant_id
+  restaurants ||--o{ referrals : restaurant_id
+  restaurants ||--|| restaurant_settings : restaurant_id
+  restaurants ||--o{ users : restaurant_id
+  referrals |o--o{ points_ledger : referral_id
+  users |o--o{ claims : proposed_by
+  users |o--o{ claims : resolved_by
+  users ||--o{ claims : user_id
+  users ||--o{ memberships : user_id
+  users |o--o{ order_events : user_id
+  users ||--o{ orders : user_id
+  users ||--o{ password_resets : user_id
+  users |o--o{ points_ledger : created_by
+  users ||--o{ points_ledger : user_id
+  users ||--o{ referrals : referee_id
+  users ||--o{ referrals : referrer_id
+  users |o--o{ users : referred_by
+```
+
+Le PNG répartit ces relations en six vues pour faciliter la lecture. Certaines tables apparaissent dans plusieurs vues.
+
+![Modèle de données](modele-de-donnees.png)
+
+### Liste des 34 relations
+
+| # | Parent | Enfant | Clé étrangère | Cardinalité (parent – enfant) |
+|---|---|---|---|---|
+| 1 | `menu_items` | `order_items` | `order_items.menu_item_id` | 1 – 0..N |
+| 2 | `orders` | `claims` | `claims.order_id` | 0..1 – 0..N |
+| 3 | `orders` | `order_events` | `order_events.order_id` | 1 – 0..N |
+| 4 | `orders` | `order_items` | `order_items.order_id` | 1 – 0..N |
+| 5 | `orders` | `payments` | `payments.order_id` | 1 – 0..N |
+| 6 | `orders` | `points_ledger` | `points_ledger.order_id` | 0..1 – 0..N |
+| 7 | `orders` | `referrals` | `referrals.rewarded_order_id` | 0..1 – 0..N |
+| 8 | `assets` | `restaurants` | `restaurants.logo_asset_id` | 0..1 – 0..N |
+| 9 | `assets` | `menu_items` | `menu_items.image_asset_id` | 0..1 – 0..N |
+| 10 | `assets` | `promotions` | `promotions.image_asset_id` | 0..1 – 0..N |
+| 11 | `restaurants` | `assets` | `assets.restaurant_id` | 1 – 0..N |
+| 12 | `restaurants` | `claims` | `claims.restaurant_id` | 1 – 0..N |
+| 13 | `restaurants` | `memberships` | `memberships.restaurant_id` | 1 – 0..N |
+| 14 | `restaurants` | `menu_items` | `menu_items.restaurant_id` | 1 – 0..N |
+| 15 | `restaurants` | `orders` | `orders.restaurant_id` | 1 – 0..N |
+| 16 | `restaurants` | `payments` | `payments.restaurant_id` | 1 – 0..N |
+| 17 | `restaurants` | `points_ledger` | `points_ledger.restaurant_id` | 1 – 0..N |
+| 18 | `restaurants` | `promotions` | `promotions.restaurant_id` | 1 – 0..N |
+| 19 | `restaurants` | `referrals` | `referrals.restaurant_id` | 1 – 0..N |
+| 20 | `restaurants` | `restaurant_settings` | `restaurant_settings.restaurant_id` | 1 – 1 |
+| 21 | `restaurants` | `users` | `users.restaurant_id` | 1 – 0..N |
+| 22 | `referrals` | `points_ledger` | `points_ledger.referral_id` | 0..1 – 0..N |
+| 23 | `users` | `claims` | `claims.proposed_by` | 0..1 – 0..N |
+| 24 | `users` | `claims` | `claims.resolved_by` | 0..1 – 0..N |
+| 25 | `users` | `claims` | `claims.user_id` | 1 – 0..N |
+| 26 | `users` | `memberships` | `memberships.user_id` | 1 – 0..N |
+| 27 | `users` | `order_events` | `order_events.user_id` | 0..1 – 0..N |
+| 28 | `users` | `orders` | `orders.user_id` | 1 – 0..N |
+| 29 | `users` | `password_resets` | `password_resets.user_id` | 1 – 0..N |
+| 30 | `users` | `points_ledger` | `points_ledger.created_by` | 0..1 – 0..N |
+| 31 | `users` | `points_ledger` | `points_ledger.user_id` | 1 – 0..N |
+| 32 | `users` | `referrals` | `referrals.referee_id` | 1 – 0..N |
+| 33 | `users` | `referrals` | `referrals.referrer_id` | 1 – 0..N |
+| 34 | `users` | `users` | `users.referred_by` | 0..1 – 0..N |
+
+### Cas particuliers
+
+- **`memberships`** : association plusieurs-à-plusieurs entre `users` et `restaurants`. Sa clé primaire est composée de `user_id` et `restaurant_id`; elle porte le reliquat de fidélité propre à l'adhésion.
+- **`restaurant_settings`** : relation 1–1 avec `restaurants`; sa clé primaire est aussi sa clé étrangère.
+- **Images** : `restaurants.logo_asset_id`, `menu_items.image_asset_id` et `promotions.image_asset_id` référencent `assets.id`.
+- **Parrainage** : `points_ledger.referral_id` référence `referrals.id`; `users.referred_by` est une relation réflexive et `referrals` relie deux utilisateurs distincts par `referrer_id` et `referee_id`.
+- **Réclamations** : `claims.user_id` est obligatoire ; `order_id`, `proposed_by` et `resolved_by` sont facultatifs.
+- **Liens facultatifs** : `claims.order_id`, `claims.proposed_by`, `claims.resolved_by`, `order_events.user_id`, `points_ledger.order_id`, `points_ledger.referral_id`, `points_ledger.created_by`, `referrals.rewarded_order_id`, `users.referred_by`, ainsi que les trois références d'image vers `assets`.
+- **Cohérence entre restaurants** : toute commande, tout paiement, toute réclamation et toute ligne du journal de points doit appartenir au même restaurant que son parent. Cette règle est garantie par des tests automatisés couvrant les clés parentales et l'adhésion de l'étudiant au restaurant ; le seul `users.restaurant_id` ne suffit pas puisqu'il désigne le restaurant d'origine et que `memberships` autorise plusieurs restaurants.
+- **Administrateurs de plateforme** : `platform_admins` n'est rattachée à aucun restaurant.
