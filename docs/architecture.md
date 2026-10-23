@@ -47,3 +47,51 @@ Chaque couche ne parlera qu'à celle d'en dessous. Une règle métier ne sera do
 - Le personnel appartiendra à **un seul** restaurant. L'administration de la plateforme créera et désactivera les restaurants.
 - Rôles : étudiant, employé, gérant, administrateur de restaurant, administrateur de la plateforme.
 - Personnaliser un restaurant (couleurs, logo, horaires, règles de points) voudra dire **modifier des données** dans la base, jamais modifier le code.
+
+## 2. Organisation prévue des dossiers (structure proposée, à confirmer)
+
+Au départ, le dépôt ne contient que le `README.md`. Voici les dossiers à créer, et ce qu'ils contiendront :
+
+```
+mon-miam-miam-projet_integrateur/
+├── backend/                  l'API
+│   ├── src/
+│   │   ├── controllers/      les routes HTTP, une par sujet (commandes, menu, fidélité...)
+│   │   ├── services/         les règles métier
+│   │   ├── repositories/     l'accès à la base de données
+│   │   ├── domain/           les calculs et règles simples, sans base ni réseau
+│   │   ├── http/             configuration d'Express, validation, erreurs, sécurité
+│   │   ├── db/               ouverture de la base et migrations
+│   │   └── main.ts           démarrage du serveur
+│   ├── tests/                tests de l'API, rangés par sujet
+│   └── .env.example          modèle des variables d'environnement (sans secret)
+├── frontend/                 le site
+│   └── src/
+│       ├── models/           types, client HTTP, calculs
+│       ├── controllers/      état et appels à l'API
+│       ├── views/            pages (pages/) et composants (components/)
+│       └── test/             tests du site
+├── database/                 la structure de la base
+│   ├── schema.sql            création des tables et contraintes
+│   └── donnees-test.sql      données de test
+├── docs/                     la documentation (ce fichier, règles, modèle de données...)
+└── .github/workflows/        la vérification automatique à chaque envoi de code
+```
+
+### Qui écrira où
+
+| Dossier | Responsabilité |
+|---|---|
+| `database/` | Binôme chargé de la base de données (modèle, tables, contraintes, données de test). |
+| `backend/src/` | Binômes chargés de l'API. Un sujet = un contrôleur, un service, un dépôt. |
+| `frontend/src/` | Binômes chargés du site. Un écran = une vue, qui s'appuiera sur un contrôleur. |
+| `docs/` | Tout le monde, pour ce qu'il a conçu. |
+
+### Règles de nommage et de rangement
+
+- Les **dossiers et fichiers** porteront des noms en minuscules, séparés par des tirets : `staff-accounts.service.ts`.
+- Le **code** (noms de variables et de fonctions) sera en anglais ; les **textes affichés** et la **documentation** en français.
+- Un fichier de service se terminera par `.service.ts`, un dépôt par `.repo.ts`, un contrôleur par `.controller.ts`.
+- Un test sera rangé à côté du sujet qu'il vérifie et portera le numéro de l'histoire Jira dans son titre.
+- Aucun secret (mot de passe, clé d'API) dans le dépôt : ils iront dans des variables d'environnement. Le fichier `.env` ne sera jamais publié, seul `.env.example` le sera.
+- Les couleurs de l'interface ne seront jamais écrites dans les composants : elles viendront du thème du restaurant.
