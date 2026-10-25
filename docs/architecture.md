@@ -95,3 +95,54 @@ mon-miam-miam-projet_integrateur/
 - Un test sera rangé à côté du sujet qu'il vérifie et portera le numéro de l'histoire Jira dans son titre.
 - Aucun secret (mot de passe, clé d'API) dans le dépôt : ils iront dans des variables d'environnement. Le fichier `.env` ne sera jamais publié, seul `.env.example` le sera.
 - Les couleurs de l'interface ne seront jamais écrites dans les composants : elles viendront du thème du restaurant.
+
+## 3. Choix techniques
+
+### Technologies prévues
+
+| Sujet | Choix | Pourquoi |
+|---|---|---|
+| Site | React, TypeScript, Vite | Demandé par le cahier des charges, vérification des types, démarrage rapide. |
+| API | Node.js 22 ou plus, TypeScript | Même langage que le site, un seul outil à apprendre pour l'équipe. |
+| Framework HTTP | **Express** (confirmé par l'équipe) | Très répandu et bien documenté (il est cité dans les ressources du cahier des charges). Il gère les routes, les erreurs et les protections courantes, pour que l'équipe n'écrive pas à la main ce qu'elle n'a pas besoin de maîtriser. |
+| Base de données | SQLite | Simple à installer et à tester. Une migration vers PostgreSQL restera possible grâce à la couche « dépôts ». |
+| Connexion | Jeton signé ; mots de passe hachés | Aucun mot de passe stocké en clair, connexion sans session côté serveur. |
+| Tests | Test runner de Node pour l'API, Vitest pour le site | Les tests seront écrits avant le code (TDD). |
+| Vérification automatique | GitHub Actions | Types et tests lancés à chaque envoi de code et chaque Pull Request. |
+
+> **Décision prise :** Express est le framework du serveur (confirmé par l'équipe). Tout le reste de l'API (couches, validation, erreurs) s'appuie dessus.
+
+### Laissé volontairement pour plus tard
+
+Ces sujets dépendent de comptes ou de décisions qui ne sont pas encore pris. Le reste de l'architecture n'en dépend pas :
+
+- le **service de paiement** mobile money ;
+- le fournisseur de **notifications** (SMS ou e-mail) ;
+- l'**hébergement** du site et de l'API.
+
+### Conventions de configuration
+
+- Toute la configuration passera par des **variables d'environnement** : port, chemin de la base, secrets, adresse du site autorisée.
+- En production, le serveur **refusera de démarrer** si un secret est faible, absent ou égal à la valeur d'exemple.
+- Un fichier `.env.example` listera toutes les variables, sans valeur secrète.
+
+### Conventions de données
+
+- Les **montants** seront des entiers en francs congolais (FC), jamais de décimales.
+- Les **dates** seront au format ISO 8601 en UTC. Les périodes « jour, semaine, mois » seront calculées en heure de Kinshasa.
+- Les **numéros de téléphone** seront enregistrés au format `+243XXXXXXXXX`, même si l'utilisateur les saisit autrement.
+
+### Gestion des erreurs
+
+- Toute erreur de l'API aura la même forme : `{ "error": { "code": "...", "message": "...", "details": [...] } }`. Le `code` ne changera pas, c'est lui que le site utilisera ; le `message` sera en français et lisible par l'utilisateur.
+- Statuts HTTP prévus : 400 (données invalides), 401 (non connecté), 403 (interdit), 404 (introuvable), 409 (conflit d'état), 422 (règle métier refusée), 429 (trop de tentatives).
+- Une erreur inattendue renverra un simple 500 : le détail technique restera dans les journaux du serveur et ne sera jamais montré à l'utilisateur.
+- Une panne d'un service extérieur ne fera jamais échouer l'opération principale.
+- Côté site, un message d'erreur de l'API sera affiché tel quel ; une panne de réseau affichera un message dédié.
+
+### Sécurité de base
+
+- Toutes les données reçues seront **validées** avant d'être utilisées.
+- Le **rôle** sera vérifié à chaque route protégée.
+- Les essais de connexion seront **limités** (par adresse et par compte).
+- Un restaurant ne pourra jamais lire ni modifier les données d'un autre.
