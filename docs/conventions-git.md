@@ -16,23 +16,21 @@ Une branche porte un sujet cohérent. Si plusieurs commits appartiennent à la m
 
 ## Messages de commit
 
-Écrivez les messages sous la forme `type(zone): verbe et changement`, avec un verbe à l’impératif. Faites un commit par idée ; évitez les messages vagues comme `mise à jour` ou `corrections`.
+Écrivez les messages sous la forme `type(zone): message`, avec un verbe à l’infinitif ou un groupe nominal court. Faites un commit par idée ; évitez les messages vagues comme `mise à jour` ou `corrections`. Ajoutez les fichiers un par un avec `git add chemin/du/fichier`, jamais avec `git add -A`. Écrivez les tests avant le code (TDD) lorsque la tâche comporte du code.
 
-Exemples tirés du plan de travail :
+Exemples :
 
-- `feat(db): ajouter la connexion SQLite et l’exécuteur de migrations`
-- `docs(donnees): valider le modèle de données`
-- `feat(db): créer les tables et leurs relations`
-- `feat(db): ajouter les contraintes d’intégrité et leurs tests`
-- `feat(menu): exposer la liste des restaurants et leur menu`
+- `test(fidelite): tests de la reduction fixe de 3 000 FC`
+- `feat(fidelite): 15 points = 3 000 FC de reduction fixe`
+- `docs(api): contrat v2 (compte unique, restaurants, paiement)`
 
 Les préfixes courants sont `feat` (fonctionnalité), `fix` (correction), `test` (tests), `docs` (documentation) et `chore` (maintenance).
 
 ## Créer une pull request
 
-Ouvrez une pull request de votre branche vers `dev`. Dans sa description, indiquez le problème traité, les changements réalisés et les vérifications effectuées, avec leur résultat. N’annoncez comme réussis que les contrôles réellement exécutés.
+Ouvrez une pull request de votre branche vers `dev`. Dans sa description, indiquez le problème traité, les changements réalisés et les vérifications effectuées, avec leur résultat. N’annoncez comme réussis que les contrôles réellement exécutés. Un collègue d’un autre binôme relit la pull request.
 
-Avant la fusion, la CI doit être verte et au moins un autre membre doit avoir relu les changements. Respectez également les règles de propriété des fichiers partagés définies par l’équipe.
+Avant la fusion, la CI doit être verte lorsqu’elle est en place et au moins un autre membre doit avoir relu les changements. Respectez également les règles de propriété des fichiers partagés définies par l’équipe : demandez aussi une relecture à leur propriétaire lorsqu’une pull request les modifie. Lorsqu’une évolution de la base passe par des migrations, ne modifiez jamais une migration déjà fusionnée ; ajoutez-en une nouvelle.
 
 ## Relire une pull request
 
@@ -41,14 +39,14 @@ Vérifiez que :
 1. les changements répondent à la tâche et restent dans son périmètre ;
 2. le code est lisible et n’introduit pas de secret ou de donnée sensible ;
 3. les cas d’erreur et les accès par rôle ou restaurant sont traités lorsqu’ils sont concernés ;
-4. les tests et la CI couvrent les changements, et leurs résultats sont verts ;
+4. les tests couvrent les changements et sont réussis ; la CI est verte lorsqu’elle est en place ;
 5. la documentation est mise à jour si le comportement ou les consignes changent.
 
 Si tout est correct, approuvez la pull request avec **Approve** et laissez un commentaire bref. Si une correction est nécessaire, choisissez **Request changes** et indiquez le fichier, le problème observé et le changement attendu. Posez une question dans un commentaire lorsqu’un point doit être clarifié.
 
 ## Fusionner
 
-Après l’approbation et une CI verte, fusionnez avec **Create a merge commit**. Conservez ainsi les commits individuels de la branche dans l’historique de `dev`.
+Après l’approbation et une CI verte lorsqu’elle est en place, fusionnez avec **Create a merge commit**. Conservez ainsi les commits individuels de la branche dans l’historique de `dev`. L’équipe vise deux points de fusion par jour, à 12 h 30 et à 17 h 30.
 
 ## Résoudre un conflit
 
