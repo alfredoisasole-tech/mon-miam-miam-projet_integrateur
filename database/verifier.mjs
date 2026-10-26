@@ -4,9 +4,21 @@ import { DatabaseSync } from 'node:sqlite';
 
 const racine = new URL('.', import.meta.url);
 const schema = await readFile(new URL('schema.sql', racine), 'utf8');
+const donnees = await readFile(new URL('donnees-test.sql', racine), 'utf8');
 const db = new DatabaseSync(':memory:');
 db.exec('PRAGMA foreign_keys = ON');
 db.exec(schema);
+const tables = db.prepare(`SELECT COUNT(*) AS total FROM sqlite_master
+  WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`).get().total;
+const nomsTables = db.prepare(`SELECT name FROM sqlite_master
+  WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`).all().map(({ name }) => name);
+const clesEtrangeres = nomsTables.reduce(
+  (total, nom) => total + db.prepare(`PRAGMA foreign_key_list("${nom}")`).all().length,
+  0,
+);
+assert.equal(tables, 16, 'le schéma doit contenir exactement 16 tables métier');
+assert.equal(clesEtrangeres, 34, 'le schéma doit contenir exactement 34 clés étrangères');
+assert.equal(db.prepare('PRAGMA foreign_keys').get().foreign_keys, 1, 'les clés étrangères doivent être activées');
 
 const maintenant = '2026-10-26T10:00:00.000Z';
 const rejets = [];
@@ -65,5 +77,19 @@ doitRefuser('filleul parrainé deux fois', () => db.prepare(`INSERT INTO referra
 doitRefuser('valeur booléenne égale à 2', () => db.prepare("UPDATE users SET must_change_password = 2 WHERE id = 'u1'").run());
 
 assert.deepEqual(rejets, [], `Contraintes manquantes : ${rejets.join(', ')}`);
-console.log('Vérification des contraintes réussie.');
+
+db.exec(donnees);
+const commandesAvecLignes = db.prepare(`SELECT o.id, COUNT(oi.id) AS nombre_lignes
+  FROM orders AS o JOIN order_items AS oi ON oi.order_id = o.id
+  GROUP BY o.id`).all();
+assert.equal(commandesAvecLignes.length, 5, 'les cinq commandes de démonstration doivent avoir des lignes');
+assert.ok(commandesAvecLignes.every((commande) => commande.nombre_lignes > 0));
+const pointsCampus = db.prepare(`SELECT COUNT(*) AS total FROM points_ledger
+  WHERE user_id = 'student-2' AND restaurant_id = 'resto-campus'`).get();
+const pointsEtu = db.prepare(`SELECT COUNT(*) AS total FROM points_ledger
+  WHERE user_id = 'student-2' AND restaurant_id = 'resto-etu'`).get();
+assert.ok(pointsCampus.total > 0, 'l’étudiante doit avoir des points au restaurant Campus');
+assert.equal(pointsEtu.total, 0, 'l’étudiante doit avoir zéro point au restaurant Étu dans ce jeu de données');
+
+console.log('Vérification des contraintes et des données de test réussie.');
 
