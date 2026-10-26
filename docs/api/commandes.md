@@ -1,6 +1,6 @@
 # Contrat d’API — commandes (APP-21)
 
-Ce document définit les échanges du site avec l’API pour créer une commande et en consulter le suivi. Cette story produit le contrat ; elle ne met pas encore en œuvre le code.
+Ce document définit les échanges du site avec l’API pour créer une commande et en consulter le suivi. Cette pull request ne produit que le contrat. Les sous-tâches Jira 13.1, 13.2 et 13.3 restent ouvertes jusqu'à l'écriture du code. Cette story produit le contrat ; elle ne met pas encore en œuvre le code.
 
 ## Conventions communes
 
@@ -57,7 +57,7 @@ Les valeurs de paiement sont `cash` ou `mobile_money` ; l’état de paiement es
 - `Authorization: Bearer <jeton>`
 - `Idempotency-Key` : chaîne de 8 à 64 caractères (`A-Z`, `a-z`, chiffres, `.`, `_`, `:`, `-`), propre à l’étudiant et réutilisée pour rejouer la même tentative après une coupure réseau.
 
-La clé identifie la première tentative de cet étudiant. Toute réutilisation de cette clé renvoie la commande d’origine, même si le corps diffère ; une nouvelle commande doit utiliser une nouvelle clé.
+La clé identifie la première tentative de cet étudiant. Si le même étudiant réutilise cette clé avec le même contenu, le serveur renvoie la commande d’origine. Si le contenu diffère, il répond `409 Conflict` avec le code `IDEMPOTENCY_KEY_REUSED` et un message lisible en français. Le serveur compare aux données de la commande enregistrée : restaurant, type, moyen de paiement, plats et quantités après regroupement des doublons, heure d’arrivée ou informations de livraison, note et `redeemMeal`. Une nouvelle commande doit utiliser une nouvelle clé.
 
 **Entrée JSON :**
 
@@ -114,7 +114,8 @@ Le restaurant doit être ouvert au moment de la commande. Toutes les lignes doiv
 **Réponses :**
 
 - `201 Created` : nouvelle commande enregistrée.
-- `200 OK` : même clé `Idempotency-Key` rejouée pour le même étudiant ; le serveur renvoie la commande d’origine sans créer une seconde commande et ajoute `Idempotent-Replayed: true`.
+- `200 OK` : même clé `Idempotency-Key` rejouée par le même étudiant avec le même contenu ; le serveur renvoie la commande d’origine sans créer une seconde commande et ajoute `Idempotent-Replayed: true`.
+- `409 Conflict` : même clé `Idempotency-Key` réutilisée par le même étudiant avec un contenu différent.
 
 Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 
@@ -166,6 +167,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 | 403 | `FORBIDDEN` | Rôle autre que `student`. |
 | 404 | `NOT_FOUND` | Slug de restaurant inconnu. |
 | 404 | `RESTAURANT_INACTIVE` | Restaurant désactivé. |
+| 409 | `IDEMPOTENCY_KEY_REUSED` | Clé déjà utilisée pour une commande au contenu différent. |
 | 422 | `ITEM_NOT_FOUND` | Plat inconnu ou ne faisant pas partie du restaurant choisi. |
 | 422 | `ITEM_UNAVAILABLE` | Plat connu mais indisponible. |
 | 422 | `RESTAURANT_CLOSED` | Restaurant fermé au moment de la commande. |
@@ -177,7 +179,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 | 422 | `INSUFFICIENT_POINTS` | `redeemMeal` vaut `true`, mais le solde de ce restaurant est insuffisant. |
 | 500 | `INTERNAL_ERROR` | Erreur inattendue ; aucun détail technique n’est renvoyé. |
 
-**Tests à écrire avant le code :** création sur place avec heure d’arrivée, création en livraison, prix recalculés côté serveur, valeurs et limites du panier, plats inconnus/d’un autre restaurant/indisponibles, restaurant fermé ou désactivé, validation des horaires, rejeu idempotent, paiement et fidélité.
+**Tests à écrire avant le code :** création sur place avec heure d’arrivée, création en livraison, prix recalculés côté serveur, valeurs et limites du panier, plats inconnus/d’un autre restaurant/indisponibles, restaurant fermé ou désactivé, validation des horaires, rejeu idempotent avec le même contenu (`200`) et avec un contenu différent (`409`, sans nouvelle commande), paiement et fidélité.
 
 ## 2. Consulter ses commandes
 
@@ -384,14 +386,15 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 7. Refuser un plat indisponible avec `422 ITEM_UNAVAILABLE`.
 8. Refuser un restaurant fermé avec `422 RESTAURANT_CLOSED` et un restaurant désactivé avec `404 RESTAURANT_INACTIVE`.
 9. Refuser une commune non desservie, une livraison désactivée et un moyen de paiement indisponible avec leurs codes métier.
-10. Rejouer la même clé `Idempotency-Key` pour le même étudiant et renvoyer la commande originale en `200`, sans doublon.
-11. Refuser une clé absente ou mal formée en `400` ; isoler les clés de deux étudiants.
-12. Créer une commande dans plusieurs restaurants et paginer/filtrer la liste de l’étudiant sans exposer les commandes d’un autre étudiant.
-13. Autoriser le propriétaire à lire le détail et répondre `404` pour un identifiant inconnu ou appartenant à un autre étudiant.
-14. Renvoyer les événements du détail avec les statuts et dates UTC dans l’ordre chronologique ; ne pas inclure l’historique dans la liste.
-15. Autoriser l’annulation uniquement en statut `pending` avec paiement `unpaid` ou `failed` ; restituer les points utilisés.
-16. Refuser `redeemMeal` avec `422 INSUFFICIENT_POINTS` si le solde est insuffisant dans le restaurant de la commande.
-17. Initialiser `paymentStatus` à `unpaid` pour cash et mobile money ; seul le serveur peut confirmer le paiement.
+10. Rejouer la même clé `Idempotency-Key` pour le même étudiant avec le même contenu et renvoyer la commande d’origine en `200` avec `Idempotent-Replayed: true`, sans doublon.
+11. Rejouer la même clé `Idempotency-Key` pour le même étudiant avec un contenu différent : répondre `409 IDEMPOTENCY_KEY_REUSED`, sans créer de nouvelle commande.
+12. Refuser une clé absente ou mal formée en `400` ; isoler les clés de deux étudiants.
+13. Créer une commande dans plusieurs restaurants et paginer/filtrer la liste de l’étudiant sans exposer les commandes d’un autre étudiant.
+14. Autoriser le propriétaire à lire le détail et répondre `404` pour un identifiant inconnu ou appartenant à un autre étudiant.
+15. Renvoyer les événements du détail avec les statuts et dates UTC dans l’ordre chronologique ; ne pas inclure l’historique dans la liste.
+16. Autoriser l’annulation uniquement en statut `pending` avec paiement `unpaid` ou `failed` ; restituer les points utilisés.
+17. Refuser `redeemMeal` avec `422 INSUFFICIENT_POINTS` si le solde est insuffisant dans le restaurant de la commande.
+18. Initialiser `paymentStatus` à `unpaid` pour cash et mobile money ; seul le serveur peut confirmer le paiement.
 
 ## Périmètre séparé
 
