@@ -92,7 +92,7 @@ CREATE TABLE assets (
   kind TEXT NOT NULL CHECK (kind IN ('logo', 'poster', 'menu')),
   mime TEXT NOT NULL,
   data BLOB NOT NULL,
-  size INTEGER NOT NULL CHECK (size >= 0),
+  size INTEGER NOT NULL,
   created_at TEXT NOT NULL
 );
 
