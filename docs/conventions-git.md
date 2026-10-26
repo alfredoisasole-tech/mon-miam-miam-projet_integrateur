@@ -14,6 +14,8 @@ Créez une branche courte, en minuscules, avec un préfixe qui indique le type d
 
 Une branche porte un sujet cohérent. Si plusieurs commits appartiennent à la même tâche, gardez-les ensemble sur cette branche.
 
+Le numéro du ticket Jira n’est pas obligatoire dans le nom de la branche. Vous pouvez l’ajouter si cela vous aide, par exemple `feature/APP-79-points-fidelite`.
+
 ## Messages de commit
 
 Écrivez les messages sous la forme `type(zone): message`, avec un verbe à l’infinitif ou un groupe nominal court. Faites un commit par idée ; évitez les messages vagues comme `mise à jour` ou `corrections`. Ajoutez les fichiers un par un avec `git add chemin/du/fichier`, jamais avec `git add -A`. Écrivez les tests avant le code (TDD) lorsque la tâche comporte du code.
@@ -28,7 +30,7 @@ Les préfixes courants sont `feat` (fonctionnalité), `fix` (correction), `test`
 
 ## Créer une pull request
 
-Ouvrez une pull request de votre branche vers `dev`. Dans sa description, indiquez le problème traité, les changements réalisés et les vérifications effectuées, avec leur résultat. N’annoncez comme réussis que les contrôles réellement exécutés. Un collègue d’un autre binôme relit la pull request.
+Ouvrez une pull request de votre branche vers `dev`. Commencez son titre par le numéro du ticket Jira le plus précis de la tâche (la sous-tâche plutôt que la user story), par exemple `APP-38 docs(git): définir les conventions de branches, de commits et de revue`. Jira reste la référence pour les tâches ; si aucun ticket n’existe, demandez qu’il soit créé avant d’ouvrir la pull request. Dans sa description, indiquez le problème traité, les changements réalisés et les vérifications effectuées, avec leur résultat. N’annoncez comme réussis que les contrôles réellement exécutés. Un collègue d’un autre binôme relit la pull request.
 
 Avant la fusion, la CI doit être verte lorsqu’elle est en place et au moins un autre membre doit avoir relu les changements. Respectez également les règles de propriété des fichiers partagés définies par l’équipe : demandez aussi une relecture à leur propriétaire lorsqu’une pull request les modifie. Lorsqu’une évolution de la base passe par des migrations, ne modifiez jamais une migration déjà fusionnée ; ajoutez-en une nouvelle.
 
