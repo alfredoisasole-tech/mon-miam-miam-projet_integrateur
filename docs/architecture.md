@@ -29,7 +29,7 @@ Le service de paiement et les notifications sont dessinés en pointillés : leur
 ### À l'intérieur du site (architecture MVC)
 
 - **Vues** : les pages et composants. Elles afficheront, mais ne contiendront pas de règles et n'appelleront jamais l'API directement.
-- **Contrôleurs** : l'état de l'écran, le rafraîchissement automatique et les appels à l'API. Les vues passeront toujours par eux.
+- **Contrôleurs** : l'état de l'écran, le rafraîchissement automatique et les appels à l'API. Les vues passeront toujours par eux. Dans React, un contrôleur sera un **hook personnalisé** (par exemple `useCart` pour le panier ou `useOrders` pour le suivi des commandes), rangé dans `controllers/`. Il utilisera le client HTTP des modèles ; la vue appellera le hook et ne contactera jamais l'API elle-même. Le mot « contrôleur » n'a donc pas le même sens des deux côtés : dans l'API, c'est la route HTTP (voir ci-dessous) ; dans le site, c'est un hook.
 - **Modèles** : les types de données, le client HTTP et les calculs sans écran (formats de montants, panier).
 
 ### À l'intérieur de l'API (trois couches)
@@ -138,6 +138,7 @@ Ces sujets dépendent de comptes ou de décisions qui ne sont pas encore pris. L
 - Statuts HTTP prévus : 400 (données invalides), 401 (non connecté), 403 (interdit), 404 (introuvable), 409 (conflit d'état), 422 (règle métier refusée), 429 (trop de tentatives).
 - Une erreur inattendue renverra un simple 500 : le détail technique restera dans les journaux du serveur et ne sera jamais montré à l'utilisateur.
 - Une panne d'un service extérieur ne fera jamais échouer l'opération principale.
+- Si le **prestataire de paiement est indisponible**, la commande reste enregistrée, **non payée** (en attente de paiement). Le site l'indique à l'étudiant, qui peut réessayer plus tard ou choisir le paiement en espèces. Une commande n'est jamais marquée « payée » sans la confirmation du prestataire.
 - Côté site, un message d'erreur de l'API sera affiché tel quel ; une panne de réseau affichera un message dédié.
 
 ### Sécurité de base
