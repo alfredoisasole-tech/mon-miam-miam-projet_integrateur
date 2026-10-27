@@ -1,6 +1,6 @@
 # Architecture technique de Mon Miam Miam
 
-> **État du projet : le dépôt est vide.** Ce document décrit l'architecture **visée** : ce qui sera construit et comment. Tout est écrit au futur. Rien n'existe encore, sauf ce document.
+> **État du projet : le dépôt ne contient pour l'instant que de la documentation** (règles, modèle de données, conventions Git) ; le code du serveur et du site reste à écrire. Ce document décrit l'architecture **visée** : ce qui sera construit et comment. Il est écrit au futur.
 
 Il décrit les grandes pièces et leurs échanges (partie 1), l'organisation prévue des dossiers (partie 2) et les choix techniques (partie 3). Il sert de référence à toute l'équipe.
 
@@ -50,7 +50,7 @@ Chaque couche ne parlera qu'à celle d'en dessous. Une règle métier ne sera do
 
 ## 2. Organisation prévue des dossiers (structure proposée, à confirmer)
 
-Au départ, le dépôt ne contient que le `README.md`. Voici les dossiers à créer, et ce qu'ils contiendront :
+Le dépôt contient pour l'instant le `README.md` et le dossier `docs/`. Voici les dossiers de code à créer, et ce qu'ils contiendront :
 
 ```
 mon-miam-miam-projet_integrateur/
