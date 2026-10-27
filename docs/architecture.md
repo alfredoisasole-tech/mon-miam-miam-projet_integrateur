@@ -24,7 +24,7 @@ Le service de paiement et les notifications sont dessinés en pointillés : leur
 
 1. Le **site** enverra une requête à l'**API** (adresses commençant par `/api`) avec, quand l'utilisateur sera connecté, son **jeton** de connexion. L'API répondra en JSON.
 2. L'**API** sera la seule à parler à la **base de données**. Le site n'y accédera jamais directement.
-3. L'API parlera aux services extérieurs (paiement, notifications) quand ils seront choisis. Une panne d'un de ces services ne devra jamais faire échouer l'opération en cours.
+3. L'API parlera aux services extérieurs (paiement, notifications) quand ils seront choisis. Une panne d'un de ces services ne devra jamais empêcher l'enregistrement d'une commande ni faire perdre des données : seule l'étape concernée (paiement, notification) sera différée ou signalée à l'utilisateur.
 
 ### À l'intérieur du site (architecture MVC)
 
@@ -137,7 +137,7 @@ Ces sujets dépendent de comptes ou de décisions qui ne sont pas encore pris. L
 - Toute erreur de l'API aura la même forme : `{ "error": { "code": "...", "message": "...", "details": [...] } }`. Le `code` ne changera pas, c'est lui que le site utilisera ; le `message` sera en français et lisible par l'utilisateur.
 - Statuts HTTP prévus : 400 (données invalides), 401 (non connecté), 403 (interdit), 404 (introuvable), 409 (conflit d'état), 422 (règle métier refusée), 429 (trop de tentatives).
 - Une erreur inattendue renverra un simple 500 : le détail technique restera dans les journaux du serveur et ne sera jamais montré à l'utilisateur.
-- Une panne d'un service extérieur ne fera jamais échouer l'opération principale.
+- Une panne d'un service extérieur n'empêchera jamais d'enregistrer une commande ni de perdre des données : seule l'étape concernée est différée ou signalée (voir le paiement ci-dessous).
 - Si le **prestataire de paiement est indisponible**, la commande reste enregistrée, **non payée** (en attente de paiement). Le site l'indique à l'étudiant, qui peut réessayer plus tard ou choisir le paiement en espèces. Une commande n'est jamais marquée « payée » sans la confirmation du prestataire.
 - Côté site, un message d'erreur de l'API sera affiché tel quel ; une panne de réseau affichera un message dédié.
 
