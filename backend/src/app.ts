@@ -20,7 +20,7 @@ const gestionnaireDErreurs: ErrorRequestHandler = (erreur: unknown, _req, res, _
   }
   const type = (erreur as ErreurDeLecture | null)?.type;
   if (type === 'entity.parse.failed') {
-    res.status(400).json({ error: { code: 'INVALID_JSON', message: "Le corps de la requête n'est pas un JSON valide.", details: [] } });
+    res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: "Le corps de la requête n'est pas un JSON valide.", details: [] } });
     return;
   }
   if (type === 'entity.too.large') {
