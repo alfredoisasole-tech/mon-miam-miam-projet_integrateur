@@ -1,6 +1,8 @@
 # Contrat d’API — promotions (APP-18)
 
-Ce document définit le contrat de consultation des promotions. Il formalise les sous-tâches APP-58 (afficher les promotions actives), APP-59 (gérer leur période de validité) et APP-60 (filtrer par restaurant). Il s’agit du contrat ; il ne met pas en œuvre la route.
+Ce document définit le contrat de consultation des promotions et formalise les sous-tâches APP-58 (afficher les promotions actives), APP-59 (gérer leur période de validité) et APP-60 (filtrer par restaurant). L’implémentation du contrôleur, du service et des tests se trouve dans `backend/src/` et `backend/tests/promotions.test.ts`.
+
+Le contrôleur reçoit un service injecté et la route est publique. Le dépôt mémoire sert aux tests ; le branchement à un dépôt persistant sera nécessaire lorsque la base de données sera raccordée à l’API.
 
 ## 1. Consulter les promotions d’un restaurant
 

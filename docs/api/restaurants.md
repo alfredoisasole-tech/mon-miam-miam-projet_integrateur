@@ -183,35 +183,7 @@
 
 **Rôles autorisés** : public.
 
-**Sortie (200)** :
-
-```json
-{
-  "restaurant": "zeduc-space",
-  "items": [
-    {
-      "id": "promo_001",
-      "type": "promotion",
-      "title": "Happy Hour",
-      "description": "-20% sur les boissons de 14h à 17h",
-      "imageUrl": "https://.../happy-hour.png",
-      "startDate": "2026-10-27T00:00:00Z",
-      "endDate": "2026-11-03T23:59:59Z"
-    }
-  ]
-}
-```
-
-**Règles** :
-
-- Seules les affiches **actives** (`status = 'active'`) et **dans leurs dates** (`startDate ≤ now ≤ endDate`) sont renvoyées.
-- Types possibles : `promotion`, `event`, `game`.
-
-**Erreurs** :
-
-| Statut | Code | Message |
-|---|---|---|
-| 404 | `RESTAURANT_NOT_FOUND` | « Restaurant introuvable ou désactivé » |
+Le contrat détaillé, le format de réponse, les règles de période et les erreurs sont définis dans [Contrat d’API — promotions (APP-18)](./promotions.md).
 
 ---
 
