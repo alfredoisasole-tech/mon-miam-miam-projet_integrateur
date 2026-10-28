@@ -1,7 +1,7 @@
 export type OrderType = 'dine_in' | 'delivery';
 export type PaymentMethod = 'cash' | 'mobile_money';
-export type OrderStatus = 'pending';
-export type PaymentStatus = 'unpaid' | 'paid';
+export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'completed' | 'cancelled';
+export type PaymentStatus = 'unpaid' | 'pending' | 'paid' | 'failed' | 'refund_due';
 
 export interface OpeningInterval {
   open: string;
@@ -121,8 +121,8 @@ export interface Order {
   events: OrderEvent[];
   createdAt: string;
   updatedAt: string;
-  completedAt: null;
-  cancelledAt: null;
+  completedAt: string | null;
+  cancelledAt: string | null;
 }
 
 export interface OrdersRepository {
@@ -133,6 +133,13 @@ export interface OrdersRepository {
   getAvailablePoints(userId: string, restaurantId: string, at: string): Promise<number>;
   getLoyaltyRemainderFc(userId: string, restaurantId: string): Promise<number>;
   findOrderByIdempotencyKey(userId: string, key: string): Promise<Order | null>;
+  listOrders(userId: string, query: { status?: OrderStatus; offset: number; limit: number }): Promise<{ orders: Order[]; total: number }>;
+  findOrderForUser(orderId: string, userId: string): Promise<Order | null>;
+  cancelOrder(userId: string, orderId: string, at: string): Promise<
+    | { kind: 'not_found' }
+    | { kind: 'cannot_cancel' }
+    | { kind: 'cancelled'; order: Order }
+  >;
   nextOrderSequence(restaurantId: string, dayKey: string): Promise<number>;
   createOrder(order: Order): Promise<{ created: boolean; order: Order }>;
 }

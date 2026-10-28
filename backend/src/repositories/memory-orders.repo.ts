@@ -1,6 +1,7 @@
 import type {
   MenuItem,
   Order,
+  OrderStatus,
   OrdersRepository,
   Restaurant,
   StudentProfile,
@@ -63,6 +64,37 @@ export class MemoryOrdersRepository implements OrdersRepository {
 
   async findOrderByIdempotencyKey(userId: string, key: string): Promise<Order | null> {
     return this.orders.find((order) => order.userId === userId && order.idempotencyKey === key) ?? null;
+  }
+
+  async listOrders(userId: string, query: { status?: OrderStatus; offset: number; limit: number }): Promise<{ orders: Order[]; total: number }> {
+    const matching = this.orders
+      .filter((order) => order.userId === userId && (!query.status || order.status === query.status))
+      .sort((first, second) => second.createdAt.localeCompare(first.createdAt));
+    return { orders: matching.slice(query.offset, query.offset + query.limit), total: matching.length };
+  }
+
+  async findOrderForUser(orderId: string, userId: string): Promise<Order | null> {
+    return this.orders.find((order) => order.id === orderId && order.userId === userId) ?? null;
+  }
+
+  async cancelOrder(userId: string, orderId: string, at: string): Promise<
+    | { kind: 'not_found' }
+    | { kind: 'cannot_cancel' }
+    | { kind: 'cancelled'; order: Order }
+  > {
+    const order = await this.findOrderForUser(orderId, userId);
+    if (!order) return { kind: 'not_found' };
+    if (order.status !== 'pending' || !['unpaid', 'failed'].includes(order.paymentStatus)) return { kind: 'cannot_cancel' };
+
+    order.status = 'cancelled';
+    order.cancelledAt = at;
+    order.updatedAt = at;
+    order.events = [...order.events, { status: 'cancelled', at }];
+    if (order.pointsRedeemed > 0) {
+      const balanceKey = `${order.userId}:${order.restaurantId}`;
+      this.balances.set(balanceKey, (this.balances.get(balanceKey) ?? 0) + order.pointsRedeemed);
+    }
+    return { kind: 'cancelled', order };
   }
 
   async nextOrderSequence(restaurantId: string, dayKey: string): Promise<number> {
