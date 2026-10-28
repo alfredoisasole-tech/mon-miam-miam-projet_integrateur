@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { AppError } from '../http/errors.ts';
-import type { CreateOrderInput, DeliveryDetails, DeliveryInput, Order, OrderItem, OrdersRepository, Restaurant } from '../domain/orders.ts';
+import type { CreateOrderInput, DeliveryDetails, DeliveryInput, Order, OrderItem, OrderStatus, OrdersRepository, Restaurant } from '../domain/orders.ts';
 
 const TIME_ZONE = 'Africa/Kinshasa';
 const KINSHASA_COMMUNES = ['Bandalungwa', 'Barumbu', 'Bumbu', 'Gombe', 'Kalamu', 'Kasa-Vubu', 'Kimbanseke', 'Kinshasa', 'Kintambo', 'Kisenso', 'Lemba', 'Limete', 'Lingwala', 'Makala', 'Maluku', 'Masina', 'Matete', 'Mont-Ngafula', "N'djili", "N'sele", 'Ngaba', 'Ngaliema', 'Ngiri-Ngiri', 'Selembao'];
@@ -121,6 +121,7 @@ function canonicalizeRequest(input: ParsedOrderInput, restaurantId: string, deli
 type PublicOrder = Omit<Order, 'userId' | 'restaurantId' | 'idempotencyKey' | 'items'> & {
   items: Array<Omit<OrderItem, 'category'>>;
 };
+type PublicOrderSummary = Omit<PublicOrder, 'events'>;
 
 function serializeOrder(order: Order): PublicOrder {
   const { userId: _userId, restaurantId: _restaurantId, idempotencyKey: _key, items, ...response } = order;
@@ -193,5 +194,39 @@ export class OrdersService {
       throw new AppError(409, 'IDEMPOTENCY_KEY_REUSED', 'Cette clé a déjà servi pour une commande au contenu différent.');
     }
     return { order: serializeOrder(result.order), replayed: false };
+  }
+
+  async list(userId: string, query: { page: number; pageSize: number; status?: OrderStatus }): Promise<{
+    items: PublicOrderSummary[];
+    total: number;
+    page: number;
+    pageSize: number;
+  }> {
+    const result = await this.repository.listOrders(userId, {
+      status: query.status,
+      offset: (query.page - 1) * query.pageSize,
+      limit: query.pageSize,
+    });
+    const items = result.orders.map((order) => {
+      const { events: _events, ...summary } = serializeOrder(order);
+      return summary;
+    });
+    return { items, total: result.total, page: query.page, pageSize: query.pageSize };
+  }
+
+  async getById(userId: string, orderId: string): Promise<PublicOrder | null> {
+    const order = await this.repository.findOrderForUser(orderId, userId);
+    if (!order) return null;
+    const events = [...order.events].sort((first, second) => first.at.localeCompare(second.at));
+    return serializeOrder({ ...order, events });
+  }
+
+  async cancel(userId: string, orderId: string): Promise<PublicOrder> {
+    const now = (this.options.now?.() ?? new Date()).toISOString();
+    const result = await this.repository.cancelOrder(userId, orderId, now);
+    if (result.kind === 'not_found') throw new AppError(404, 'NOT_FOUND', 'Commande introuvable.');
+    if (result.kind === 'cannot_cancel') throw new AppError(409, 'CANNOT_CANCEL', 'Cette commande ne peut plus être annulée.');
+    const events = [...result.order.events].sort((first, second) => first.at.localeCompare(second.at));
+    return serializeOrder({ ...result.order, events });
   }
 }
