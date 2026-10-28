@@ -56,7 +56,7 @@ describe("Format des erreurs de l'API", () => {
     assert.equal(body.error.message, 'Une erreur interne est survenue.');
   });
 
-  it('renvoie 400 INVALID_JSON quand le corps de la requête est du JSON invalide', async () => {
+  it('renvoie 400 VALIDATION_ERROR quand le corps de la requête est du JSON invalide', async () => {
     const res = await fetch(`${serveur.base}/api/test/echo`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -64,7 +64,7 @@ describe("Format des erreurs de l'API", () => {
     });
     assert.equal(res.status, 400);
     const body = (await res.json()) as ReponseErreur;
-    assert.equal(body.error.code, 'INVALID_JSON');
+    assert.equal(body.error.code, 'VALIDATION_ERROR');
   });
 
   it('accepte et relit un corps JSON valide', async () => {
