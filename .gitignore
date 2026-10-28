@@ -1,19 +1,10 @@
-# Dépendances
 node_modules/
-
-# Build / Compilation
 dist/
-build/
-
-# Variables d'environnement
+coverage/
 .env
-.env.local
-.env.*.local
-
-# Fichiers système
-.DS_Store
-Thumbs.db
-
-# Logs
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 *.log
-npm-debug.log*
+.vercel
+.DS_Store

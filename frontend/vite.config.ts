@@ -1,20 +1,10 @@
-import { defineConfig } from 'vitest/config';
+/// <reference types="vitest/config" />
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// En développement, les appels à /api sont envoyés au serveur local : pas de problème de CORS.
 export default defineConfig({
   plugins: [react()],
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
-    },
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './src/test/setup.ts',
-  },
+  server: { port: 5173, proxy: { '/api': 'http://localhost:3000' } },
+  test: { environment: 'jsdom' },
 });

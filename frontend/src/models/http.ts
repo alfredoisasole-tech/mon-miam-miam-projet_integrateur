@@ -1,4 +1,4 @@
-import { ApiError } from './types';
+import { ApiError } from './types.ts';
 
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 

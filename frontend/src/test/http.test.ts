@@ -1,6 +1,6 @@
-/// <reference types="vitest/globals" />
-import { http } from '../models/http';
-import { ApiError } from '../models/types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { http } from '../models/http.ts';
+import { ApiError } from '../models/types.ts';
 
 describe('client HTTP', () => {
   beforeEach(() => {
