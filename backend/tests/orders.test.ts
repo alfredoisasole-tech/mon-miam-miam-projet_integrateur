@@ -7,17 +7,17 @@ import { registerOrderRoutes } from '../src/controllers/orders.controller.ts';
 import { OrdersService } from '../src/services/orders.service.ts';
 import { MemoryOrdersRepository } from '../src/repositories/memory-orders.repo.ts';
 import type { AuthenticatedUser, OpeningHours } from '../src/domain/orders.ts';
-import { demarrer, type Serveur } from './helpers.ts';
+import { demarrer as startServer, type Serveur as Server } from './helpers.ts';
 
 const NOW = new Date('2026-10-26T08:00:00.000Z');
 const ARRIVAL = '2026-10-26T10:00:00.000Z';
-const WEEK = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
-function horairesOuverts(): OpeningHours {
-  return Object.fromEntries(WEEK.map((day) => [day, [{ open: '00:00', close: '23:59' }]]));
+function allDayOpeningHours(): OpeningHours {
+  return Object.fromEntries(WEEKDAYS.map((day) => [day, [{ open: '00:00', close: '23:59' }]]));
 }
 
-function creerDepot(): MemoryOrdersRepository {
+function createMemoryRepository(): MemoryOrdersRepository {
   const restaurants = [
     {
       id: 'restaurant-1',
@@ -32,7 +32,7 @@ function creerDepot(): MemoryOrdersRepository {
         spendPerPointFc: 3000,
         pointsPerMeal: 15,
         freeMealCapFc: 3000,
-        openingHours: horairesOuverts(),
+        openingHours: allDayOpeningHours(),
       },
     },
     {
@@ -48,7 +48,7 @@ function creerDepot(): MemoryOrdersRepository {
         spendPerPointFc: 3000,
         pointsPerMeal: 15,
         freeMealCapFc: 3000,
-        openingHours: horairesOuverts(),
+        openingHours: allDayOpeningHours(),
       },
     },
     {
@@ -64,7 +64,7 @@ function creerDepot(): MemoryOrdersRepository {
         spendPerPointFc: 3000,
         pointsPerMeal: 15,
         freeMealCapFc: 3000,
-        openingHours: horairesOuverts(),
+        openingHours: allDayOpeningHours(),
       },
     },
   ];
@@ -101,7 +101,7 @@ function creerDepot(): MemoryOrdersRepository {
   });
 }
 
-function authentificationTest(): ReturnType<typeof createAuthMiddleware> {
+function createTestAuthMiddleware(): ReturnType<typeof createAuthMiddleware> {
   const users = new Map<string, AuthenticatedUser>([
     ['student-token', { id: 'student-1', role: 'student' }],
     ['second-student-token', { id: 'student-2', role: 'student' }],
@@ -110,22 +110,22 @@ function authentificationTest(): ReturnType<typeof createAuthMiddleware> {
   return createAuthMiddleware((token) => users.get(token) ?? null);
 }
 
-let serveur: Serveur;
-let depot: MemoryOrdersRepository;
+let server: Server;
+let repository: MemoryOrdersRepository;
 
 beforeEach(async () => {
-  depot = creerDepot();
-  const service = new OrdersService(depot, { now: () => new Date(NOW) });
-  const authenticate = authentificationTest();
+  repository = createMemoryRepository();
+  const service = new OrdersService(repository, { now: () => new Date(NOW) });
+  const authenticate = createTestAuthMiddleware();
   const app = createApp(loadConfig({ NODE_ENV: 'test' }), {
     routes: (application) => registerOrderRoutes(application, { service, authenticate }),
   });
-  serveur = await demarrer(app);
+  server = await startServer(app);
 });
 
-afterEach(async () => serveur.fermer());
+afterEach(async () => server.fermer());
 
-const commandeSurPlace = {
+const dineInOrder = {
   restaurant: 'restaurant-central',
   type: 'dine_in',
   paymentMethod: 'cash',
@@ -135,21 +135,21 @@ const commandeSurPlace = {
   redeemMeal: false,
 };
 
-async function posterCommande(
-  body: unknown = commandeSurPlace,
+async function postOrder(
+  body: unknown = dineInOrder,
   options: { token?: string | null; key?: string | null; rawBody?: string } = {},
 ): Promise<Response> {
   const headers = new Headers({ 'content-type': 'application/json' });
   if (options.token !== null) headers.set('authorization', `Bearer ${options.token ?? 'student-token'}`);
   if (options.key !== null) headers.set('Idempotency-Key', options.key ?? 'attempt-key-0001');
-  return fetch(`${serveur.base}/api/orders`, {
+  return fetch(`${server.base}/api/orders`, {
     method: 'POST',
     headers,
     body: options.rawBody ?? JSON.stringify(body),
   });
 }
 
-async function verifierErreur(response: Response, status: number, code: string): Promise<void> {
+async function expectError(response: Response, status: number, code: string): Promise<void> {
   assert.equal(response.status, status);
   const body = (await response.json()) as { error: { code: string; message: string; details: unknown[] } };
   assert.equal(body.error.code, code);
@@ -159,7 +159,7 @@ async function verifierErreur(response: Response, status: number, code: string):
 
 describe('POST /api/orders — APP-68', () => {
   it('crée une commande sur place avec heure d’arrivée et événement initial pending', async () => {
-    const response = await posterCommande();
+    const response = await postOrder();
     assert.equal(response.status, 201);
     const body = (await response.json()) as Record<string, unknown>;
     assert.equal(body['type'], 'dine_in');
@@ -171,7 +171,7 @@ describe('POST /api/orders — APP-68', () => {
   });
 
   it('crée une commande en livraison et utilise les frais et le téléphone du compte', async () => {
-    const response = await posterCommande({
+    const response = await postOrder({
       restaurant: 'restaurant-central',
       type: 'delivery',
       paymentMethod: 'cash',
@@ -193,7 +193,7 @@ describe('POST /api/orders — APP-68', () => {
   });
 
   it('recalcule le prix depuis les plats du dépôt', async () => {
-    const response = await posterCommande({ ...commandeSurPlace, items: [{ menuItemId: 'dish-1', quantity: 2 }] });
+    const response = await postOrder({ ...dineInOrder, items: [{ menuItemId: 'dish-1', quantity: 2 }] });
     assert.equal(response.status, 201);
     const body = (await response.json()) as { items: Array<Record<string, unknown>>; subtotalFc: number; totalFc: number };
     assert.equal(body.items[0]?.['unitPriceFc'], 3000);
@@ -203,8 +203,8 @@ describe('POST /api/orders — APP-68', () => {
   });
 
   it('accepte les quantités limites, regroupe les doublons et accepte 30 lignes', async () => {
-    const grouped = await posterCommande({
-      ...commandeSurPlace,
+    const grouped = await postOrder({
+      ...dineInOrder,
       items: [{ menuItemId: 'dish-1', quantity: 10 }, { menuItemId: 'dish-1', quantity: 10 }],
     });
     assert.equal(grouped.status, 201);
@@ -212,8 +212,8 @@ describe('POST /api/orders — APP-68', () => {
     assert.equal(groupedBody.items.length, 1);
     assert.equal(groupedBody.items[0]?.quantity, 20);
 
-    const thirtyLines = await posterCommande({
-      ...commandeSurPlace,
+    const thirtyLines = await postOrder({
+      ...dineInOrder,
       items: Array.from({ length: 30 }, (_unused, index) => ({ menuItemId: `dish-${index + 1}`, quantity: 1 })),
     }, { key: 'thirty-lines-0001' });
     assert.equal(thirtyLines.status, 201);
@@ -231,42 +231,42 @@ describe('POST /api/orders — APP-68', () => {
       { items: [{ menuItemId: 'dish-1', quantity: 11 }, { menuItemId: 'dish-1', quantity: 10 }] },
     ];
     for (const [index, input] of cases.entries()) {
-      const response = await posterCommande({ ...commandeSurPlace, ...input }, { key: `invalid-items-${index}-01` });
-      await verifierErreur(response, 400, 'VALIDATION_ERROR');
+      const response = await postOrder({ ...dineInOrder, ...input }, { key: `invalid-items-${index}-01` });
+      await expectError(response, 400, 'VALIDATION_ERROR');
     }
-    assert.equal(depot.orders.length, 0);
+    assert.equal(repository.orders.length, 0);
   });
 
   it('refuse un plat inconnu ou rattaché à un autre restaurant', async () => {
-    await verifierErreur(await posterCommande({ ...commandeSurPlace, items: [{ menuItemId: 'unknown', quantity: 1 }] }), 422, 'ITEM_NOT_FOUND');
-    await verifierErreur(await posterCommande({ ...commandeSurPlace, items: [{ menuItemId: 'dish-etu-1', quantity: 1 }] }, { key: 'other-restaurant-01' }), 422, 'ITEM_NOT_FOUND');
+    await expectError(await postOrder({ ...dineInOrder, items: [{ menuItemId: 'unknown', quantity: 1 }] }), 422, 'ITEM_NOT_FOUND');
+    await expectError(await postOrder({ ...dineInOrder, items: [{ menuItemId: 'dish-etu-1', quantity: 1 }] }, { key: 'other-restaurant-01' }), 422, 'ITEM_NOT_FOUND');
   });
 
   it('refuse un plat connu mais indisponible', async () => {
-    depot.menuItems.get('dish-1')!.isAvailable = false;
-    await verifierErreur(await posterCommande(), 422, 'ITEM_UNAVAILABLE');
+    repository.menuItems.get('dish-1')!.isAvailable = false;
+    await expectError(await postOrder(), 422, 'ITEM_UNAVAILABLE');
   });
 
   it('refuse un restaurant inconnu ou désactivé', async () => {
-    await verifierErreur(await posterCommande({ ...commandeSurPlace, restaurant: 'restaurant-inconnu' }), 404, 'NOT_FOUND');
-    await verifierErreur(await posterCommande({ ...commandeSurPlace, restaurant: 'restaurant-ferme' }, { key: 'inactive-restaurant-01' }), 404, 'RESTAURANT_INACTIVE');
+    await expectError(await postOrder({ ...dineInOrder, restaurant: 'restaurant-inconnu' }), 404, 'NOT_FOUND');
+    await expectError(await postOrder({ ...dineInOrder, restaurant: 'restaurant-ferme' }, { key: 'inactive-restaurant-01' }), 404, 'RESTAURANT_INACTIVE');
   });
 
   it('refuse un restaurant fermé au moment de la commande', async () => {
-    depot.restaurants.get('restaurant-1')!.settings.openingHours = {};
-    await verifierErreur(await posterCommande(), 422, 'RESTAURANT_CLOSED');
+    repository.restaurants.get('restaurant-1')!.settings.openingHours = {};
+    await expectError(await postOrder(), 422, 'RESTAURANT_CLOSED');
   });
 
   it('refuse une heure d’arrivée passée ou à plus de 12 heures', async () => {
-    await verifierErreur(await posterCommande({ ...commandeSurPlace, arrivalTime: '2026-10-26T07:59:00.000Z' }), 422, 'INVALID_ARRIVAL_TIME');
-    await verifierErreur(await posterCommande({ ...commandeSurPlace, arrivalTime: '2026-10-26T21:00:00.000Z' }, { key: 'arrival-too-late-01' }), 422, 'INVALID_ARRIVAL_TIME');
+    await expectError(await postOrder({ ...dineInOrder, arrivalTime: '2026-10-26T07:59:00.000Z' }), 422, 'INVALID_ARRIVAL_TIME');
+    await expectError(await postOrder({ ...dineInOrder, arrivalTime: '2026-10-26T21:00:00.000Z' }, { key: 'arrival-too-late-01' }), 422, 'INVALID_ARRIVAL_TIME');
   });
 
   it('refuse une heure d’arrivée hors des horaires d’ouverture', async () => {
-    depot.restaurants.get('restaurant-1')!.settings.openingHours = {
+    repository.restaurants.get('restaurant-1')!.settings.openingHours = {
       mon: [{ open: '07:00', close: '10:00' }],
     };
-    await verifierErreur(await posterCommande(), 422, 'OUTSIDE_OPENING_HOURS');
+    await expectError(await postOrder(), 422, 'OUTSIDE_OPENING_HOURS');
   });
 
   it('refuse une livraison désactivée ou une commune non desservie', async () => {
@@ -276,13 +276,13 @@ describe('POST /api/orders — APP-68', () => {
       items: [{ menuItemId: 'dish-1', quantity: 1 }],
       delivery: { commune: 'Gombe', landmark: 'Boulevard' },
     };
-    await verifierErreur(await posterCommande(delivery), 422, 'COMMUNE_NOT_SERVED');
-    depot.restaurants.get('restaurant-1')!.settings.deliveryEnabled = false;
-    await verifierErreur(await posterCommande({ ...delivery, delivery: { commune: 'Limete', landmark: 'Boulevard' } }, { key: 'delivery-disabled-01' }), 422, 'DELIVERY_DISABLED');
+    await expectError(await postOrder(delivery), 422, 'COMMUNE_NOT_SERVED');
+    repository.restaurants.get('restaurant-1')!.settings.deliveryEnabled = false;
+    await expectError(await postOrder({ ...delivery, delivery: { commune: 'Limete', landmark: 'Boulevard' } }, { key: 'delivery-disabled-01' }), 422, 'DELIVERY_DISABLED');
   });
 
   it('refuse une livraison sans repère ni adresse', async () => {
-    await verifierErreur(await posterCommande({
+    await expectError(await postOrder({
       restaurant: 'restaurant-central',
       type: 'delivery',
       items: [{ menuItemId: 'dish-1', quantity: 1 }],
@@ -291,17 +291,17 @@ describe('POST /api/orders — APP-68', () => {
   });
 
   it('refuse le paiement mobile money lorsqu’il est désactivé', async () => {
-    depot.restaurants.get('restaurant-1')!.settings.mobileMoneyEnabled = false;
-    await verifierErreur(await posterCommande({ ...commandeSurPlace, paymentMethod: 'mobile_money' }), 422, 'PAYMENT_METHOD_UNAVAILABLE');
+    repository.restaurants.get('restaurant-1')!.settings.mobileMoneyEnabled = false;
+    await expectError(await postOrder({ ...dineInOrder, paymentMethod: 'mobile_money' }), 422, 'PAYMENT_METHOD_UNAVAILABLE');
   });
 
   it('refuse l’utilisation des points si le solde du restaurant est insuffisant', async () => {
-    depot.balances.set('student-1:restaurant-1', 14);
-    await verifierErreur(await posterCommande({ ...commandeSurPlace, redeemMeal: true }), 422, 'INSUFFICIENT_POINTS');
+    repository.balances.set('student-1:restaurant-1', 14);
+    await expectError(await postOrder({ ...dineInOrder, redeemMeal: true }), 422, 'INSUFFICIENT_POINTS');
   });
 
   it('applique la réduction aux plats sans réduire les frais de livraison', async () => {
-    const response = await posterCommande({
+    const response = await postOrder({
       restaurant: 'restaurant-central',
       type: 'delivery',
       paymentMethod: 'cash',
@@ -319,51 +319,51 @@ describe('POST /api/orders — APP-68', () => {
   });
 
   it('exige une clé Idempotency-Key présente et bien formée', async () => {
-    await verifierErreur(await posterCommande(commandeSurPlace, { key: null }), 400, 'VALIDATION_ERROR');
-    await verifierErreur(await posterCommande(commandeSurPlace, { key: 'bad key!!' }), 400, 'VALIDATION_ERROR');
+    await expectError(await postOrder(dineInOrder, { key: null }), 400, 'VALIDATION_ERROR');
+    await expectError(await postOrder(dineInOrder, { key: 'bad key!!' }), 400, 'VALIDATION_ERROR');
   });
 
   it('renvoie la commande d’origine en 200 pour la même clé et le même contenu regroupé', async () => {
-    const first = await posterCommande({ ...commandeSurPlace, items: [{ menuItemId: 'dish-1', quantity: 1 }, { menuItemId: 'dish-1', quantity: 1 }] }, { key: 'same-content-0001' });
+    const first = await postOrder({ ...dineInOrder, items: [{ menuItemId: 'dish-1', quantity: 1 }, { menuItemId: 'dish-1', quantity: 1 }] }, { key: 'same-content-0001' });
     assert.equal(first.status, 201);
     const order = await first.json();
-    const replay = await posterCommande({ ...commandeSurPlace, items: [{ menuItemId: 'dish-1', quantity: 2 }] }, { key: 'same-content-0001' });
+    const replay = await postOrder({ ...dineInOrder, items: [{ menuItemId: 'dish-1', quantity: 2 }] }, { key: 'same-content-0001' });
     assert.equal(replay.status, 200);
     assert.equal(replay.headers.get('Idempotent-Replayed'), 'true');
     assert.deepEqual(await replay.json(), order);
-    assert.equal(depot.orders.length, 1);
+    assert.equal(repository.orders.length, 1);
   });
 
   it('répond 409 si la même clé est réutilisée avec un contenu différent sans créer de commande', async () => {
-    const first = await posterCommande(commandeSurPlace, { key: 'different-body-01' });
+    const first = await postOrder(dineInOrder, { key: 'different-body-01' });
     assert.equal(first.status, 201);
-    await verifierErreur(await posterCommande({ ...commandeSurPlace, note: 'Avec piment.' }, { key: 'different-body-01' }), 409, 'IDEMPOTENCY_KEY_REUSED');
-    assert.equal(depot.orders.length, 1);
+    await expectError(await postOrder({ ...dineInOrder, note: 'Avec piment.' }, { key: 'different-body-01' }), 409, 'IDEMPOTENCY_KEY_REUSED');
+    assert.equal(repository.orders.length, 1);
   });
 
   it('isole les mêmes clés entre deux étudiants', async () => {
-    const first = await posterCommande(commandeSurPlace, { key: 'shared-key-0001' });
+    const first = await postOrder(dineInOrder, { key: 'shared-key-0001' });
     assert.equal(first.status, 201);
-    const second = await posterCommande(commandeSurPlace, { token: 'second-student-token', key: 'shared-key-0001' });
+    const second = await postOrder(dineInOrder, { token: 'second-student-token', key: 'shared-key-0001' });
     assert.equal(second.status, 201);
-    assert.equal(depot.orders.length, 2);
+    assert.equal(repository.orders.length, 2);
   });
 
   it('renvoie 401 si le jeton est absent ou invalide', async () => {
-    await verifierErreur(await posterCommande(commandeSurPlace, { token: null }), 401, 'UNAUTHORIZED');
-    await verifierErreur(await posterCommande(commandeSurPlace, { token: 'invalid-token' }), 401, 'UNAUTHORIZED');
+    await expectError(await postOrder(dineInOrder, { token: null }), 401, 'UNAUTHORIZED');
+    await expectError(await postOrder(dineInOrder, { token: 'invalid-token' }), 401, 'UNAUTHORIZED');
   });
 
   it('renvoie 403 pour un rôle autre que student', async () => {
-    await verifierErreur(await posterCommande(commandeSurPlace, { token: 'employee-token' }), 403, 'FORBIDDEN');
+    await expectError(await postOrder(dineInOrder, { token: 'employee-token' }), 403, 'FORBIDDEN');
   });
 
   it('renvoie VALIDATION_ERROR pour un JSON invalide', async () => {
-    await verifierErreur(await posterCommande(undefined, { rawBody: '{' }), 400, 'VALIDATION_ERROR');
+    await expectError(await postOrder(undefined, { rawBody: '{' }), 400, 'VALIDATION_ERROR');
   });
 
   it('utilise le restaurant d’origine et cash par défaut', async () => {
-    const response = await posterCommande({ type: 'dine_in', items: [{ menuItemId: 'dish-1', quantity: 1 }] });
+    const response = await postOrder({ type: 'dine_in', items: [{ menuItemId: 'dish-1', quantity: 1 }] });
     assert.equal(response.status, 201);
     const body = (await response.json()) as Record<string, unknown>;
     assert.deepEqual(body['restaurant'], { slug: 'restaurant-central', name: 'Restaurant Central' });
@@ -371,10 +371,10 @@ describe('POST /api/orders — APP-68', () => {
   });
 
   it('numérote les commandes par restaurant et par jour à Kinshasa', async () => {
-    const first = await posterCommande(commandeSurPlace, { key: 'number-first-0001' });
-    const second = await posterCommande(commandeSurPlace, { key: 'number-second-01' });
-    const otherRestaurant = await posterCommande({
-      ...commandeSurPlace,
+    const first = await postOrder(dineInOrder, { key: 'number-first-0001' });
+    const second = await postOrder(dineInOrder, { key: 'number-second-01' });
+    const otherRestaurant = await postOrder({
+      ...dineInOrder,
       restaurant: 'restaurant-etu',
       items: [{ menuItemId: 'dish-etu-1', quantity: 1 }],
     }, { key: 'number-other-001' });
@@ -384,13 +384,13 @@ describe('POST /api/orders — APP-68', () => {
   });
 
   it('initialise cash et mobile money à unpaid, et marque paid une commande gratuite', async () => {
-    const cash = await posterCommande(commandeSurPlace, { key: 'payment-cash-0001' });
-    const mobile = await posterCommande({ ...commandeSurPlace, paymentMethod: 'mobile_money' }, { key: 'payment-mobile-01' });
+    const cash = await postOrder(dineInOrder, { key: 'payment-cash-0001' });
+    const mobile = await postOrder({ ...dineInOrder, paymentMethod: 'mobile_money' }, { key: 'payment-mobile-01' });
     assert.equal((await cash.json() as { paymentStatus: string }).paymentStatus, 'unpaid');
     assert.equal((await mobile.json() as { paymentStatus: string }).paymentStatus, 'unpaid');
 
-    depot.menuItems.get('dish-1')!.priceFc = 0;
-    const free = await posterCommande({ ...commandeSurPlace, items: [{ menuItemId: 'dish-1', quantity: 1 }] }, { key: 'payment-free-0001' });
+    repository.menuItems.get('dish-1')!.priceFc = 0;
+    const free = await postOrder({ ...dineInOrder, items: [{ menuItemId: 'dish-1', quantity: 1 }] }, { key: 'payment-free-0001' });
     assert.equal((await free.json() as { paymentStatus: string }).paymentStatus, 'paid');
   });
 });
