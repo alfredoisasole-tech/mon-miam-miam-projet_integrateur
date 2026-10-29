@@ -30,6 +30,31 @@ describe('Contrôleur du panier — APP-67', () => {
     expect(result.current.totalFc).toBe(10000);
   });
 
+  it('expose une erreur lisible quand la quantité dépasse la limite', () => {
+    const { result } = renderHook(() => useCart());
+
+    act(() => {
+      result.current.addProduct(burger, 2);
+    });
+    act(() => {
+      result.current.updateProductQuantity(burger.id, 25);
+    });
+
+    expect(result.current.error).toBe('La quantité doit être comprise entre 1 et 20.');
+    expect(result.current.cart.lines[0]?.quantity).toBe(2);
+  });
+
+  it('expose une erreur lisible quand le plat à modifier ne figure pas dans le panier', () => {
+    const { result } = renderHook(() => useCart());
+
+    act(() => {
+      result.current.updateProductQuantity('plat-absent', 2);
+    });
+
+    expect(result.current.error).toBe('Ce plat ne figure pas dans le panier.');
+    expect(result.current.cart.lines).toEqual([]);
+  });
+
   it('garde le panier en attente du choix de l’étudiant avant de changer de restaurant', () => {
     const { result } = renderHook(() => useCart());
 
