@@ -2,10 +2,14 @@ import express, { type ErrorRequestHandler, type Express } from 'express';
 import type { Config } from './config.ts';
 import { AppError } from './http/errors.ts';
 import { cors, securityHeaders } from './http/security.ts';
+import type { Database } from './db/database.ts';
+import { registerRestaurantsMenuRoutes } from './controllers/restaurants-menu.controller.ts';
 
 export interface AppOptions {
   /** Routes supplémentaires, ajoutées avant la gestion des routes inconnues et des erreurs (utile pour les tests). */
   routes?: (app: Express) => void;
+  database?: Database;
+  now?: () => Date;
 }
 
 interface ErreurDeLecture {
@@ -43,6 +47,7 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
     res.json({ status: 'ok', time: new Date().toISOString() });
   });
 
+  if (options.database) registerRestaurantsMenuRoutes(app, options.database, { now: options.now });
   options.routes?.(app);
 
   app.use((_req, _res, next) => next(new AppError(404, 'NOT_FOUND', 'Route introuvable.')));
