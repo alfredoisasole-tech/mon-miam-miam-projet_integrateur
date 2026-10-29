@@ -92,7 +92,7 @@ CREATE TABLE assets (
   kind TEXT NOT NULL CHECK (kind IN ('logo', 'poster', 'menu')),
   mime TEXT NOT NULL,
   data BLOB NOT NULL,
-  size INTEGER NOT NULL,
+  size INTEGER NOT NULL CHECK (size > 0),
   created_at TEXT NOT NULL
 );
 
@@ -107,7 +107,8 @@ CREATE TABLE promotions (
   ends_at TEXT NOT NULL,
   is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
   created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
+  updated_at TEXT NOT NULL,
+  CHECK (ends_at >= starts_at)
 );
 
 CREATE TABLE orders (
@@ -141,7 +142,9 @@ CREATE TABLE orders (
   completed_at TEXT,
   cancelled_at TEXT,
   UNIQUE (restaurant_id, order_number),
-  UNIQUE (user_id, idempotency_key)
+  UNIQUE (user_id, idempotency_key),
+  CHECK (discount_fc <= subtotal_fc),
+  CHECK (total_fc = subtotal_fc - discount_fc + delivery_fee_fc)
 );
 
 CREATE TABLE order_items (
@@ -149,16 +152,16 @@ CREATE TABLE order_items (
   order_id TEXT NOT NULL REFERENCES orders(id),
   menu_item_id TEXT NOT NULL REFERENCES menu_items(id),
   name TEXT NOT NULL,
-  category TEXT NOT NULL,
+  category TEXT NOT NULL CHECK (category IN ('plat', 'boisson', 'dessert', 'snack')),
   unit_price_fc INTEGER NOT NULL CHECK (unit_price_fc >= 0),
   quantity INTEGER NOT NULL CHECK (quantity > 0),
-  line_total_fc INTEGER NOT NULL CHECK (line_total_fc >= 0)
+  line_total_fc INTEGER NOT NULL CHECK (line_total_fc >= 0 AND line_total_fc = unit_price_fc * quantity)
 );
 
 CREATE TABLE order_events (
   id TEXT PRIMARY KEY,
   order_id TEXT NOT NULL REFERENCES orders(id),
-  status TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled')),
   user_id TEXT REFERENCES users(id),
   created_at TEXT NOT NULL
 );
@@ -200,7 +203,8 @@ CREATE TABLE referrals (
   reward_points INTEGER NOT NULL DEFAULT 0 CHECK (reward_points >= 0),
   rewarded_order_id TEXT REFERENCES orders(id),
   created_at TEXT NOT NULL,
-  rewarded_at TEXT
+  rewarded_at TEXT,
+  CHECK (referrer_id <> referee_id)
 );
 
 CREATE TABLE claims (
@@ -245,3 +249,250 @@ CREATE INDEX idx_payments_order ON payments (order_id);
 CREATE INDEX idx_ledger_user ON points_ledger (user_id, created_at);
 CREATE INDEX idx_referrals_referrer ON referrals (referrer_id);
 CREATE INDEX idx_claims_restaurant_status ON claims (restaurant_id, status);
+
+-- A foreign key confirms that a parent row exists; these triggers also ensure
+-- that tenant-scoped rows point to parents in the same restaurant.
+CREATE TRIGGER orders_student_membership_insert
+BEFORE INSERT ON orders
+WHEN NOT EXISTS (
+  SELECT 1 FROM memberships m JOIN users u ON u.id = m.user_id
+  WHERE m.user_id = NEW.user_id AND m.restaurant_id = NEW.restaurant_id AND u.role = 'student'
+)
+BEGIN SELECT RAISE(ABORT, 'order user must be a student member of the restaurant'); END;
+
+CREATE TRIGGER orders_student_membership_update
+BEFORE UPDATE OF restaurant_id, user_id ON orders
+WHEN NOT EXISTS (
+  SELECT 1 FROM memberships m JOIN users u ON u.id = m.user_id
+  WHERE m.user_id = NEW.user_id AND m.restaurant_id = NEW.restaurant_id AND u.role = 'student'
+)
+BEGIN SELECT RAISE(ABORT, 'order user must be a student member of the restaurant'); END;
+
+CREATE TRIGGER orders_child_tenant_update
+BEFORE UPDATE OF restaurant_id, user_id ON orders
+WHEN EXISTS (
+    SELECT 1 FROM order_items oi JOIN menu_items mi ON mi.id = oi.menu_item_id
+    WHERE oi.order_id = OLD.id AND mi.restaurant_id <> NEW.restaurant_id
+  )
+  OR EXISTS (SELECT 1 FROM payments p WHERE p.order_id = OLD.id AND p.restaurant_id <> NEW.restaurant_id)
+  OR EXISTS (SELECT 1 FROM claims c WHERE c.order_id = OLD.id AND (c.restaurant_id <> NEW.restaurant_id OR c.user_id <> NEW.user_id))
+  OR EXISTS (
+    SELECT 1 FROM points_ledger l WHERE l.order_id = OLD.id AND (
+      l.restaurant_id <> NEW.restaurant_id OR
+      (l.user_id <> NEW.user_id AND NOT (l.kind = 'referral' AND EXISTS (
+        SELECT 1 FROM referrals r WHERE r.id = l.referral_id AND r.rewarded_order_id = OLD.id
+      )))
+    )
+  )
+  OR EXISTS (SELECT 1 FROM referrals r WHERE r.rewarded_order_id = OLD.id AND (r.restaurant_id <> NEW.restaurant_id OR r.referee_id <> NEW.user_id))
+BEGIN SELECT RAISE(ABORT, 'order update would invalidate child restaurant relationships'); END;
+
+CREATE TRIGGER membership_delete_guard
+BEFORE DELETE ON memberships
+WHEN EXISTS (SELECT 1 FROM orders o WHERE o.user_id = OLD.user_id AND o.restaurant_id = OLD.restaurant_id)
+  OR EXISTS (SELECT 1 FROM claims c WHERE c.user_id = OLD.user_id AND c.restaurant_id = OLD.restaurant_id)
+  OR EXISTS (SELECT 1 FROM points_ledger l WHERE l.user_id = OLD.user_id AND l.restaurant_id = OLD.restaurant_id)
+  OR EXISTS (SELECT 1 FROM referrals r WHERE r.restaurant_id = OLD.restaurant_id AND (r.referrer_id = OLD.user_id OR r.referee_id = OLD.user_id))
+BEGIN SELECT RAISE(ABORT, 'membership has restaurant-scoped history and cannot be deleted'); END;
+
+CREATE TRIGGER membership_update_guard
+BEFORE UPDATE OF user_id, restaurant_id ON memberships
+WHEN EXISTS (SELECT 1 FROM orders o WHERE o.user_id = OLD.user_id AND o.restaurant_id = OLD.restaurant_id)
+  OR EXISTS (SELECT 1 FROM claims c WHERE c.user_id = OLD.user_id AND c.restaurant_id = OLD.restaurant_id)
+  OR EXISTS (SELECT 1 FROM points_ledger l WHERE l.user_id = OLD.user_id AND l.restaurant_id = OLD.restaurant_id)
+  OR EXISTS (SELECT 1 FROM referrals r WHERE r.restaurant_id = OLD.restaurant_id AND (r.referrer_id = OLD.user_id OR r.referee_id = OLD.user_id))
+BEGIN SELECT RAISE(ABORT, 'membership has restaurant-scoped history and cannot be moved'); END;
+
+CREATE TRIGGER user_role_with_orders_guard
+BEFORE UPDATE OF role ON users
+WHEN NEW.role <> 'student' AND EXISTS (SELECT 1 FROM orders o WHERE o.user_id = OLD.id)
+BEGIN SELECT RAISE(ABORT, 'an account with orders cannot stop being a student'); END;
+
+CREATE TRIGGER order_items_restaurant_insert
+BEFORE INSERT ON order_items
+WHEN NOT EXISTS (
+  SELECT 1 FROM orders o JOIN menu_items mi ON mi.id = NEW.menu_item_id
+  WHERE o.id = NEW.order_id AND o.restaurant_id = mi.restaurant_id
+)
+BEGIN SELECT RAISE(ABORT, 'order item and menu item must belong to the same restaurant'); END;
+
+CREATE TRIGGER order_items_restaurant_update
+BEFORE UPDATE OF order_id, menu_item_id ON order_items
+WHEN NOT EXISTS (
+  SELECT 1 FROM orders o JOIN menu_items mi ON mi.id = NEW.menu_item_id
+  WHERE o.id = NEW.order_id AND o.restaurant_id = mi.restaurant_id
+)
+BEGIN SELECT RAISE(ABORT, 'order item and menu item must belong to the same restaurant'); END;
+
+CREATE TRIGGER menu_item_restaurant_history_update
+BEFORE UPDATE OF restaurant_id ON menu_items
+WHEN EXISTS (
+  SELECT 1 FROM order_items oi JOIN orders o ON o.id = oi.order_id
+  WHERE oi.menu_item_id = OLD.id AND o.restaurant_id <> NEW.restaurant_id
+)
+BEGIN SELECT RAISE(ABORT, 'menu item has order history in another restaurant'); END;
+
+CREATE TRIGGER payments_restaurant_insert
+BEFORE INSERT ON payments
+WHEN NOT EXISTS (SELECT 1 FROM orders o WHERE o.id = NEW.order_id AND o.restaurant_id = NEW.restaurant_id)
+BEGIN SELECT RAISE(ABORT, 'payment and order must belong to the same restaurant'); END;
+
+CREATE TRIGGER payments_restaurant_update
+BEFORE UPDATE OF restaurant_id, order_id ON payments
+WHEN NOT EXISTS (SELECT 1 FROM orders o WHERE o.id = NEW.order_id AND o.restaurant_id = NEW.restaurant_id)
+BEGIN SELECT RAISE(ABORT, 'payment and order must belong to the same restaurant'); END;
+
+CREATE TRIGGER claims_restaurant_insert
+BEFORE INSERT ON claims
+WHEN NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = NEW.user_id AND m.restaurant_id = NEW.restaurant_id)
+  OR (NEW.order_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM orders o WHERE o.id = NEW.order_id AND o.restaurant_id = NEW.restaurant_id AND o.user_id = NEW.user_id
+  ))
+  OR (NEW.proposed_by IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM users u WHERE u.id = NEW.proposed_by AND u.restaurant_id = NEW.restaurant_id
+  ))
+  OR (NEW.resolved_by IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM users u WHERE u.id = NEW.resolved_by AND u.restaurant_id = NEW.restaurant_id
+  ))
+BEGIN SELECT RAISE(ABORT, 'claim user, order, staff and restaurant must match'); END;
+
+CREATE TRIGGER claims_restaurant_update
+BEFORE UPDATE OF restaurant_id, user_id, order_id, proposed_by, resolved_by ON claims
+WHEN NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = NEW.user_id AND m.restaurant_id = NEW.restaurant_id)
+  OR (NEW.order_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM orders o WHERE o.id = NEW.order_id AND o.restaurant_id = NEW.restaurant_id AND o.user_id = NEW.user_id
+  ))
+  OR (NEW.proposed_by IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM users u WHERE u.id = NEW.proposed_by AND u.restaurant_id = NEW.restaurant_id
+  ))
+  OR (NEW.resolved_by IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM users u WHERE u.id = NEW.resolved_by AND u.restaurant_id = NEW.restaurant_id
+  ))
+BEGIN SELECT RAISE(ABORT, 'claim user, order, staff and restaurant must match'); END;
+
+CREATE TRIGGER points_ledger_restaurant_insert
+BEFORE INSERT ON points_ledger
+WHEN NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = NEW.user_id AND m.restaurant_id = NEW.restaurant_id)
+  OR (NEW.order_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM orders o WHERE o.id = NEW.order_id AND o.restaurant_id = NEW.restaurant_id
+      AND (o.user_id = NEW.user_id OR (NEW.kind = 'referral' AND EXISTS (
+        SELECT 1 FROM referrals r WHERE r.id = NEW.referral_id AND r.restaurant_id = NEW.restaurant_id
+          AND r.rewarded_order_id = NEW.order_id
+      )))
+  ))
+  OR (NEW.referral_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM referrals r WHERE r.id = NEW.referral_id AND r.restaurant_id = NEW.restaurant_id
+  ))
+  OR (NEW.created_by IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM users u WHERE u.id = NEW.created_by AND u.restaurant_id = NEW.restaurant_id
+  ))
+BEGIN SELECT RAISE(ABORT, 'ledger user, parents and restaurant must match'); END;
+
+CREATE TRIGGER points_ledger_restaurant_update
+BEFORE UPDATE OF restaurant_id, user_id, order_id, referral_id, created_by ON points_ledger
+WHEN NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = NEW.user_id AND m.restaurant_id = NEW.restaurant_id)
+  OR (NEW.order_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM orders o WHERE o.id = NEW.order_id AND o.restaurant_id = NEW.restaurant_id
+      AND (o.user_id = NEW.user_id OR (NEW.kind = 'referral' AND EXISTS (
+        SELECT 1 FROM referrals r WHERE r.id = NEW.referral_id AND r.restaurant_id = NEW.restaurant_id
+          AND r.rewarded_order_id = NEW.order_id
+      )))
+  ))
+  OR (NEW.referral_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM referrals r WHERE r.id = NEW.referral_id AND r.restaurant_id = NEW.restaurant_id
+  ))
+  OR (NEW.created_by IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM users u WHERE u.id = NEW.created_by AND u.restaurant_id = NEW.restaurant_id
+  ))
+BEGIN SELECT RAISE(ABORT, 'ledger user, parents and restaurant must match'); END;
+
+CREATE TRIGGER referrals_restaurant_insert
+BEFORE INSERT ON referrals
+WHEN NEW.referrer_id = NEW.referee_id
+  OR NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = NEW.referrer_id AND m.restaurant_id = NEW.restaurant_id)
+  OR NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = NEW.referee_id AND m.restaurant_id = NEW.restaurant_id)
+  OR (NEW.rewarded_order_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM orders o WHERE o.id = NEW.rewarded_order_id AND o.restaurant_id = NEW.restaurant_id AND o.user_id = NEW.referee_id
+  ))
+BEGIN SELECT RAISE(ABORT, 'referral users, order and restaurant must match'); END;
+
+CREATE TRIGGER referrals_restaurant_update
+BEFORE UPDATE OF restaurant_id, referrer_id, referee_id, rewarded_order_id ON referrals
+WHEN NEW.referrer_id = NEW.referee_id
+  OR NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = NEW.referrer_id AND m.restaurant_id = NEW.restaurant_id)
+  OR NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = NEW.referee_id AND m.restaurant_id = NEW.restaurant_id)
+  OR (NEW.rewarded_order_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM orders o WHERE o.id = NEW.rewarded_order_id AND o.restaurant_id = NEW.restaurant_id AND o.user_id = NEW.referee_id
+  ))
+BEGIN SELECT RAISE(ABORT, 'referral users, order and restaurant must match'); END;
+
+CREATE TRIGGER restaurant_logo_asset_insert
+BEFORE INSERT ON restaurants
+WHEN NEW.logo_asset_id IS NOT NULL AND NOT EXISTS (
+  SELECT 1 FROM assets a WHERE a.id = NEW.logo_asset_id AND a.restaurant_id = NEW.id AND a.kind = 'logo'
+)
+BEGIN SELECT RAISE(ABORT, 'restaurant logo must belong to that restaurant'); END;
+
+CREATE TRIGGER restaurant_logo_asset_update
+BEFORE UPDATE OF id, logo_asset_id ON restaurants
+WHEN NEW.logo_asset_id IS NOT NULL AND NOT EXISTS (
+  SELECT 1 FROM assets a WHERE a.id = NEW.logo_asset_id AND a.restaurant_id = NEW.id AND a.kind = 'logo'
+)
+BEGIN SELECT RAISE(ABORT, 'restaurant logo must belong to that restaurant'); END;
+
+CREATE TRIGGER menu_image_asset_insert
+BEFORE INSERT ON menu_items
+WHEN NEW.image_asset_id IS NOT NULL AND NOT EXISTS (
+  SELECT 1 FROM assets a WHERE a.id = NEW.image_asset_id AND a.restaurant_id = NEW.restaurant_id AND a.kind = 'menu'
+)
+BEGIN SELECT RAISE(ABORT, 'menu image must belong to that restaurant'); END;
+
+CREATE TRIGGER menu_image_asset_update
+BEFORE UPDATE OF restaurant_id, image_asset_id ON menu_items
+WHEN NEW.image_asset_id IS NOT NULL AND NOT EXISTS (
+  SELECT 1 FROM assets a WHERE a.id = NEW.image_asset_id AND a.restaurant_id = NEW.restaurant_id AND a.kind = 'menu'
+)
+BEGIN SELECT RAISE(ABORT, 'menu image must belong to that restaurant'); END;
+
+CREATE TRIGGER promotion_image_asset_insert
+BEFORE INSERT ON promotions
+WHEN NEW.image_asset_id IS NOT NULL AND NOT EXISTS (
+  SELECT 1 FROM assets a WHERE a.id = NEW.image_asset_id AND a.restaurant_id = NEW.restaurant_id AND a.kind = 'poster'
+)
+BEGIN SELECT RAISE(ABORT, 'promotion image must belong to that restaurant'); END;
+
+CREATE TRIGGER promotion_image_asset_update
+BEFORE UPDATE OF restaurant_id, image_asset_id ON promotions
+WHEN NEW.image_asset_id IS NOT NULL AND NOT EXISTS (
+  SELECT 1 FROM assets a WHERE a.id = NEW.image_asset_id AND a.restaurant_id = NEW.restaurant_id AND a.kind = 'poster'
+)
+BEGIN SELECT RAISE(ABORT, 'promotion image must belong to that restaurant'); END;
+
+CREATE TRIGGER asset_reference_update_guard
+BEFORE UPDATE OF restaurant_id, kind ON assets
+WHEN EXISTS (
+    SELECT 1 FROM restaurants r WHERE r.logo_asset_id = OLD.id AND (r.id <> NEW.restaurant_id OR NEW.kind <> 'logo')
+  )
+  OR EXISTS (
+    SELECT 1 FROM menu_items mi WHERE mi.image_asset_id = OLD.id AND (mi.restaurant_id <> NEW.restaurant_id OR NEW.kind <> 'menu')
+  )
+  OR EXISTS (
+    SELECT 1 FROM promotions p WHERE p.image_asset_id = OLD.id AND (p.restaurant_id <> NEW.restaurant_id OR NEW.kind <> 'poster')
+  )
+BEGIN SELECT RAISE(ABORT, 'asset update would invalidate a restaurant image reference'); END;
+
+CREATE TRIGGER order_events_restaurant_insert
+BEFORE INSERT ON order_events
+WHEN NEW.user_id IS NOT NULL AND NOT EXISTS (
+  SELECT 1 FROM orders o JOIN users u ON u.id = NEW.user_id
+  WHERE o.id = NEW.order_id AND o.restaurant_id = u.restaurant_id
+)
+BEGIN SELECT RAISE(ABORT, 'order event actor must belong to the order restaurant'); END;
+
+CREATE TRIGGER order_events_restaurant_update
+BEFORE UPDATE OF order_id, user_id ON order_events
+WHEN NEW.user_id IS NOT NULL AND NOT EXISTS (
+  SELECT 1 FROM orders o JOIN users u ON u.id = NEW.user_id
+  WHERE o.id = NEW.order_id AND o.restaurant_id = u.restaurant_id
+)
+BEGIN SELECT RAISE(ABORT, 'order event actor must belong to the order restaurant'); END;
