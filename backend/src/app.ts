@@ -3,13 +3,19 @@ import type { Config } from './config.ts';
 import { AppError } from './http/errors.ts';
 import { cors, securityHeaders } from './http/security.ts';
 import type { Database } from './db/database.ts';
+import { createAuthMiddleware, type TokenResolver } from './http/auth.ts';
 import { registerRestaurantsMenuRoutes } from './controllers/restaurants-menu.controller.ts';
+import { registerOrderRoutes } from './controllers/orders.controller.ts';
+import { OrdersService } from './services/orders.service.ts';
+import { SqliteOrdersRepository } from './repositories/sqlite-orders.repo.ts';
 
 export interface AppOptions {
   /** Routes supplémentaires, ajoutées avant la gestion des routes inconnues et des erreurs (utile pour les tests). */
   routes?: (app: Express) => void;
   database?: Database;
   now?: () => Date;
+  /** Résout l’identité du jeton ; l’authentification réelle peut être remplacée sans toucher aux routes. */
+  resolveToken?: TokenResolver;
 }
 
 interface ErreurDeLecture {
@@ -47,7 +53,14 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
     res.json({ status: 'ok', time: new Date().toISOString() });
   });
 
-  if (options.database) registerRestaurantsMenuRoutes(app, options.database, { now: options.now });
+  if (options.database) {
+    registerRestaurantsMenuRoutes(app, options.database, { now: options.now });
+    const authenticate = createAuthMiddleware(options.resolveToken ?? (() => null));
+    registerOrderRoutes(app, {
+      service: new OrdersService(new SqliteOrdersRepository(options.database), { now: options.now }),
+      authenticate,
+    });
+  }
   options.routes?.(app);
 
   app.use((_req, _res, next) => next(new AppError(404, 'NOT_FOUND', 'Route introuvable.')));

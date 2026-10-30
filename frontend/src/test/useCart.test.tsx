@@ -5,14 +5,14 @@ import type { CartProduct } from '../models/cart.ts';
 
 const burger: CartProduct = {
   id: 'burger',
-  restaurantId: 'restaurant-a',
+  restaurantSlug: 'restaurant-a',
   name: 'Burger',
   unitPriceFc: 5000,
 };
 
 const salad: CartProduct = {
   id: 'salad',
-  restaurantId: 'restaurant-b',
+  restaurantSlug: 'restaurant-b',
   name: 'Salade',
   unitPriceFc: 3500,
 };
@@ -65,13 +65,13 @@ describe('Contrôleur du panier — APP-67', () => {
       expect(result.current.addProduct(salad)).toBe('confirmation_required');
     });
 
-    expect(result.current.cart.restaurantId).toBe('restaurant-a');
+    expect(result.current.cart.restaurantSlug).toBe('restaurant-a');
     expect(result.current.pendingRestaurantChange?.name).toBe('Salade');
 
     act(() => {
       result.current.cancelRestaurantChange();
     });
-    expect(result.current.cart.restaurantId).toBe('restaurant-a');
+    expect(result.current.cart.restaurantSlug).toBe('restaurant-a');
 
     act(() => {
       result.current.addProduct(salad);
@@ -79,7 +79,7 @@ describe('Contrôleur du panier — APP-67', () => {
     act(() => {
       result.current.confirmRestaurantChange();
     });
-    expect(result.current.cart.restaurantId).toBe('restaurant-b');
+    expect(result.current.cart.restaurantSlug).toBe('restaurant-b');
     expect(result.current.cart.lines).toEqual([{ ...salad, quantity: 1 }]);
   });
 });

@@ -1,6 +1,7 @@
 export interface User {
   id: string;
   name: string;
+  role?: "student" | "employee" | "manager" | "admin";
 }
 
 /** Erreur renvoyée par le client HTTP : réponse d'erreur de l'API ou problème de réseau. */
