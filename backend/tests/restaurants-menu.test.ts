@@ -6,7 +6,7 @@ import { Database } from '../src/db/database.ts';
 import { migrate } from '../src/db/migrations.ts';
 import { demarrer, type Serveur } from './helpers.ts';
 
-describe('API publique restaurants et menu (L-7)', () => {
+describe('API publique restaurants et menu (APP-19)', () => {
   let db: Database;
   let serveur: Serveur;
 
@@ -27,6 +27,12 @@ describe('API publique restaurants et menu (L-7)', () => {
       ('a-main', 'r-a', 'Poulet', 'Poulet braisé', 4500, 'plat', 1, 0, 1, '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z'),
       ('a-sold', 'r-a', 'Épuisé', NULL, 1000, 'boisson', 0, 0, 2, '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z'),
       ('b-main', 'r-b', 'Plat de Bravo', NULL, 2000, 'plat', 1, 0, 0, '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z')`);
+    const png = Buffer.from('89504e470d0a1a0a', 'hex');
+    db.run(`INSERT INTO assets (id, restaurant_id, kind, mime, data, size, created_at) VALUES
+      ('img-a', 'r-a', 'menu', 'image/png', ?, ?, '2026-10-01T00:00:00.000Z'),
+      ('img-b', 'r-b', 'menu', 'image/png', ?, ?, '2026-10-01T00:00:00.000Z'),
+      ('svg-a', 'r-a', 'menu', 'image/svg+xml', ?, 20, '2026-10-01T00:00:00.000Z')`,
+      [png, png.length, png, png.length, Buffer.from('<svg onload="alert(1)"/>')]);
     serveur = await demarrer(createApp(loadConfig({ NODE_ENV: 'test' }), {
       database: db,
       now: () => new Date('2026-10-29T08:30:00.000Z'), // 09:30 à Kinshasa
@@ -44,15 +50,42 @@ describe('API publique restaurants et menu (L-7)', () => {
     });
   });
 
-  it('renvoie le profil et les réglages publics, et masque les restaurants désactivés', async () => {
+  it('renvoie le profil public (horaires, fidélité, livraison) et masque les restaurants désactivés', async () => {
     const response = await fetch(`${serveur.base}/api/restaurants/alpha`);
     assert.equal(response.status, 200);
-    const profile = await response.json() as { settings: { loyalty: { spendPerPointFc: number }; openingHours: { thu: unknown[] } } };
-    assert.equal(profile.settings.loyalty.spendPerPointFc, 3000);
-    assert.equal(profile.settings.openingHours.thu.length, 1);
+    const profile = await response.json() as Record<string, unknown> & {
+      loyalty: { spendPerPointFc: number }; openingHours: { thu: unknown[] }; delivery: { enabled: boolean };
+    };
+    assert.equal(profile.loyalty.spendPerPointFc, 3000);
+    assert.equal(profile.openingHours.thu.length, 1);
+    assert.equal(profile.delivery.enabled, true); // livraison activée par défaut
+    assert.equal(profile.isOpenNow, true);
+    assert.equal(profile.settings, undefined);
     const missing = await fetch(`${serveur.base}/api/restaurants/inactive`);
     assert.equal(missing.status, 404);
     assert.equal((await missing.json() as { error: { code: string } }).error.code, 'RESTAURANT_NOT_FOUND');
+  });
+
+  it('sert une image du restaurant demandé', async () => {
+    const response = await fetch(`${serveur.base}/api/restaurants/alpha/assets/img-a`);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-type'), 'image/png');
+  });
+
+  it("refuse l'image d'un autre restaurant (isolation)", async () => {
+    const response = await fetch(`${serveur.base}/api/restaurants/alpha/assets/img-b`);
+    assert.equal(response.status, 404);
+    assert.equal((await response.json() as { error: { code: string } }).error.code, 'ASSET_NOT_FOUND');
+  });
+
+  it('refuse de servir un type de fichier non autorisé (SVG)', async () => {
+    const response = await fetch(`${serveur.base}/api/restaurants/alpha/assets/svg-a`);
+    assert.equal(response.status, 404);
+  });
+
+  it("refuse les images d'un restaurant désactivé", async () => {
+    const response = await fetch(`${serveur.base}/api/restaurants/inactive/assets/img-a`);
+    assert.equal(response.status, 404);
   });
 
   it('isole le menu par restaurant, sépare le plat du jour et cache les plats indisponibles', async () => {

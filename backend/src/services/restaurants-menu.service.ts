@@ -40,12 +40,14 @@ function restaurantCard(row: RestaurantRow, now: Date) {
   };
 }
 
-function publicSettings(row: RestaurantRow) {
+function publicProfile(row: RestaurantRow) {
   return {
-    deliveryEnabled: row.delivery_enabled === 1,
-    deliveryFeeFc: row.delivery_fee_fc ?? 0,
-    deliveryCommunes: parseJson<string[]>(row.delivery_communes, []),
     openingHours: parseJson<Hours>(row.opening_hours, {}),
+    delivery: {
+      enabled: row.delivery_enabled === 1,
+      feeFc: row.delivery_fee_fc ?? 0,
+      communes: parseJson<string[]>(row.delivery_communes, []),
+    },
     loyalty: {
       spendPerPointFc: row.spend_per_point_fc ?? 3000,
       pointsForReward: row.points_per_meal ?? 15,
@@ -54,6 +56,9 @@ function publicSettings(row: RestaurantRow) {
     },
   };
 }
+
+// Seuls ces formats sont servis : un SVG pourrait contenir du script.
+const allowedImageTypes = ['image/png', 'image/jpeg', 'image/webp'];
 
 export function restaurantsMenuService(db: Database, options: { now?: () => Date } = {}) {
   const repository = restaurantsMenuRepository(db);
@@ -78,7 +83,7 @@ export function restaurantsMenuService(db: Database, options: { now?: () => Date
     },
     detail(slug: string) {
       const row = requireRestaurant(slug);
-      return { ...restaurantCard(row, now()), settings: publicSettings(row) };
+      return { ...restaurantCard(row, now()), ...publicProfile(row) };
     },
     menu(slug: string) {
       const restaurant = requireRestaurant(slug);
@@ -104,7 +109,8 @@ export function restaurantsMenuService(db: Database, options: { now?: () => Date
     },
     asset(slug: string, assetId: string) {
       const restaurant = requireRestaurant(slug);
-      return repository.getAsset(restaurant.id, assetId);
+      const asset = repository.getAsset(restaurant.id, assetId);
+      return asset && allowedImageTypes.includes(asset.mime) ? asset : undefined;
     },
   };
 }
