@@ -1,6 +1,6 @@
 # Contrat d’API — commandes (APP-21)
 
-Ce document définit les échanges du site avec l’API pour créer une commande et en consulter le suivi. Cette pull request ne produit que le contrat. Les sous-tâches Jira 13.1, 13.2 et 13.3 restent ouvertes jusqu'à l'écriture du code. Cette story produit le contrat ; elle ne met pas encore en œuvre le code.
+Ce document définit les échanges du site avec l’API pour créer une commande et en consulter le suivi. Les routes de commande sont montées lorsque l’application reçoit sa base SQLite et utilisent le résolveur d’identité fourni par l’application.
 
 ## Conventions communes
 
@@ -20,7 +20,7 @@ Ce document définit les échanges du site avec l’API pour créer une commande
 }
 ```
 
-Le code est stable ; le message est en français. Statuts communs : 400 (données invalides), 401 (non connecté), 403 (rôle interdit), 404 (introuvable), 409 (conflit d’état), 422 (règle métier refusée), 429 (trop de tentatives) et 500 (erreur inattendue sans détail technique).
+Le code est stable ; le message est en français. Statuts communs : 400 (données invalides), 401 (non connecté), 403 (rôle interdit ou étudiant non adhérent au restaurant choisi), 404 (introuvable), 409 (conflit d’état), 422 (règle métier refusée), 429 (trop de tentatives) et 500 (erreur inattendue sans détail technique).
 
 ## Panier côté site — sous-tâche Jira 13.1
 
@@ -100,11 +100,11 @@ Pour une livraison, remplacer `arrivalTime` par un objet `delivery` :
 
 | Champ | Règle |
 |---|---|
-| `restaurant` | Facultatif ; slug d’un restaurant actif. S’il est absent, le restaurant d’origine de l’étudiant est utilisé. |
+| `restaurant` | Facultatif ; slug d’un restaurant actif auquel l’étudiant est adhérent. S’il est absent, le restaurant d’origine de l’étudiant est utilisé. |
 | `type` | Obligatoire ; `dine_in` ou `delivery`. |
 | `arrivalTime` | Facultatif pour `dine_in`. S’il est fourni, date ISO 8601 valide, non passée, au plus 12 heures à l’avance et dans les horaires d’ouverture. À omettre pour `delivery`. |
 | `delivery` | Obligatoire pour `delivery`. `commune` doit être l’une des 24 communes reconnues de Kinshasa et desservie par le restaurant. Fournir au moins un `landmark` ou une `address`. `phone` est facultatif ; par défaut, le téléphone du compte étudiant est utilisé. `quartier` est facultatif. |
-| `paymentMethod` | Facultatif ; `cash` par défaut, ou `mobile_money`. Le paiement mobile money doit être activé pour le restaurant. |
+| `paymentMethod` | Facultatif ; `cash` par défaut, ou `mobile_money`. Une commande nouvelle reste `unpaid` jusqu’au traitement du paiement. |
 | `items` | Obligatoire ; de 1 à 30 lignes. Chaque ligne contient `menuItemId` et une quantité entière de 1 à 20. Les doublons d’un même plat sont regroupés ; leur quantité cumulée ne dépasse pas 20. |
 | `note` | Facultatif ; texte de 300 caractères maximum. |
 | `redeemMeal` | Facultatif ; booléen, `false` par défaut. Si `true`, demande une réduction avec les points disponibles dans ce restaurant. |
@@ -164,7 +164,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 |---|---|---|
 | 400 | `VALIDATION_ERROR` | JSON absent ou invalide, champ requis absent, type ou moyen de paiement inconnu, format de date invalide, clé `Idempotency-Key` absente ou invalide, quantité non entière ou hors limites, panier vide ou plus de 30 lignes. |
 | 401 | `UNAUTHORIZED` | Jeton absent ou invalide. |
-| 403 | `FORBIDDEN` | Rôle autre que `student`. |
+| 403 | `FORBIDDEN` | Rôle autre que `student` ou absence d’adhésion au restaurant choisi. |
 | 404 | `NOT_FOUND` | Slug de restaurant inconnu. |
 | 404 | `RESTAURANT_INACTIVE` | Restaurant désactivé. |
 | 409 | `IDEMPOTENCY_KEY_REUSED` | Clé déjà utilisée pour une commande au contenu différent. |
@@ -175,11 +175,10 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 | 422 | `OUTSIDE_OPENING_HOURS` | Heure d’arrivée hors des horaires d’ouverture. |
 | 422 | `DELIVERY_DISABLED` | Livraison désactivée pour ce restaurant. |
 | 422 | `COMMUNE_NOT_SERVED` | Commune non desservie par le restaurant. |
-| 422 | `PAYMENT_METHOD_UNAVAILABLE` | Mobile money non activé pour le restaurant. |
 | 422 | `INSUFFICIENT_POINTS` | `redeemMeal` vaut `true`, mais le solde de ce restaurant est insuffisant. |
 | 500 | `INTERNAL_ERROR` | Erreur inattendue ; aucun détail technique n’est renvoyé. |
 
-**Tests à écrire avant le code :** création sur place avec heure d’arrivée, création en livraison, prix recalculés côté serveur, valeurs et limites du panier, plats inconnus/d’un autre restaurant/indisponibles, restaurant fermé ou désactivé, validation des horaires, rejeu idempotent avec le même contenu (`200`) et avec un contenu différent (`409`, sans nouvelle commande), paiement et fidélité.
+**Scénarios couverts par les tests :** création sur place avec heure d’arrivée, création en livraison, prix recalculés côté serveur, valeurs et limites du panier, plats inconnus/d’un autre restaurant/indisponibles, restaurant fermé ou désactivé, validation des horaires, rejeu idempotent avec le même contenu (`200`) et avec un contenu différent (`409`, sans nouvelle commande), paiement et fidélité.
 
 ## 2. Consulter ses commandes
 
@@ -245,7 +244,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 | 403 | `FORBIDDEN` | Rôle autre que `student`. |
 | 500 | `INTERNAL_ERROR` | Erreur inattendue. |
 
-**Tests à écrire avant le code :** pagination par défaut et par page, filtre par statut, commandes de plusieurs restaurants présentes, commandes d’un autre étudiant absentes.
+**Scénarios couverts par les tests :** pagination par défaut et par page, filtre par statut, commandes de plusieurs restaurants présentes, commandes d’un autre étudiant absentes.
 
 ## 3. Consulter une commande et son historique
 
@@ -309,7 +308,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 | 404 | `NOT_FOUND` | Identifiant inexistant ou commande appartenant à un autre étudiant ; la réponse ne révèle pas qu’elle existe. |
 | 500 | `INTERNAL_ERROR` | Erreur inattendue. |
 
-**Tests à écrire avant le code :** propriétaire autorisé, identifiant inconnu en 404, commande d’un autre étudiant en 404, historique complet dans l’ordre chronologique avec dates ISO 8601 UTC.
+**Scénarios couverts par les tests :** propriétaire autorisé, identifiant inconnu en 404, commande d’un autre étudiant en 404, historique complet dans l’ordre chronologique avec dates ISO 8601 UTC.
 
 ## 4. Annuler une commande
 
@@ -373,9 +372,9 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 | 409 | `CANNOT_CANCEL` | Commande déjà confirmée, déjà annulée ou paiement mobile money en attente / déjà payé. |
 | 500 | `INTERNAL_ERROR` | Erreur inattendue. |
 
-**Tests à écrire avant le code :** annulation d’une commande pending non payée, refus après confirmation, refus quand le paiement mobile money est pending ou payé, propriétaire et isolation entre étudiants, restitution des points.
+**Scénarios couverts par les tests :** annulation d’une commande pending non payée, refus après confirmation, refus quand le paiement mobile money est pending ou payé, propriétaire et isolation entre étudiants, restitution des points.
 
-## Tests à écrire en premier
+## Scénarios de test de référence
 
 1. Accepter `dine_in` sans `arrivalTime` ; lorsqu’il est fourni, refuser les heures passées, au-delà de 12 heures ou hors horaires.
 2. Créer une commande de livraison avec commune desservie et adresse ou repère ; utiliser le téléphone du compte s’il n’est pas fourni.
@@ -385,7 +384,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 6. Refuser un plat inconnu ou rattaché à un autre restaurant avec `422 ITEM_NOT_FOUND`.
 7. Refuser un plat indisponible avec `422 ITEM_UNAVAILABLE`.
 8. Refuser un restaurant fermé avec `422 RESTAURANT_CLOSED` et un restaurant désactivé avec `404 RESTAURANT_INACTIVE`.
-9. Refuser une commune non desservie, une livraison désactivée et un moyen de paiement indisponible avec leurs codes métier.
+9. Refuser une commune non desservie ou une livraison désactivée avec leurs codes métier.
 10. Rejouer la même clé `Idempotency-Key` pour le même étudiant avec le même contenu et renvoyer la commande d’origine en `200` avec `Idempotent-Replayed: true`, sans doublon.
 11. Rejouer la même clé `Idempotency-Key` pour le même étudiant avec un contenu différent : répondre `409 IDEMPOTENCY_KEY_REUSED`, sans créer de nouvelle commande.
 12. Refuser une clé absente ou mal formée en `400` ; isoler les clés de deux étudiants.
