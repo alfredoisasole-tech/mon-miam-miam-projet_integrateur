@@ -20,6 +20,6 @@ export function registerRestaurantsMenuRoutes(app: Express, db: Database, option
       res.status(404).json({ error: { code: 'ASSET_NOT_FOUND', message: 'Image introuvable.', details: [] } });
       return;
     }
-    res.type(asset.mime).set('cache-control', 'public, max-age=3600').send(Buffer.from(asset.data));
+    res.type(asset.mime).set('x-content-type-options', 'nosniff').set('cache-control', 'public, max-age=3600').send(Buffer.from(asset.data));
   });
 }
