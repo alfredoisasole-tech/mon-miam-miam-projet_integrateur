@@ -10,7 +10,7 @@ L'application est séparée en deux parties distinctes qui communiquent via une 
 L'API est organisée en trois couches distinctes :
 - **Contrôleurs** (`controllers/`) : les routes HTTP qui reçoivent les requêtes, valident les données d'entrée, invoquent les services et formatent la réponse JSON.
 - **Services** (`services/`) : les règles métier pures, les calculs, les validations. C'est le "modèle" au sens métier.
-- **Dépôts** (`repositories/`) : l'accès brut aux données SQLite. Une classe ou fonction par table.
+- **Dépôts** (`repositories/`) : l'accès brut aux données SQLite. Un dépôt par sujet (menu, commandes, comptes...), seul à écrire du SQL.
 
 ### Côté Navigateur (Frontend - React / Vite / TypeScript)
 - **Modèle** : Le dossier `models/` qui contient les types TypeScript et les fonctions d'appel à l'API (client HTTP centralisé gérant les tokens et les erreurs).
@@ -36,3 +36,4 @@ graph TD
 
     M -->|Met à jour l'état| C
     C -->|Rafraîchit l'affichage| V
+```
