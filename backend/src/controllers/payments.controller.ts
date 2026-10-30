@@ -1,5 +1,6 @@
 import type { Express, NextFunction, Request, RequestHandler, Response } from 'express';
 import { AppError } from '../http/errors.ts';
+import type { Environnement } from '../config.ts';
 import { PaymentsService } from '../services/payments.service.ts';
 import type { AuthenticatedUser } from '../domain/orders.ts';
 
@@ -10,6 +11,7 @@ interface RequestWithRawBody extends Request {
 export interface PaymentRouteOptions {
   service: PaymentsService;
   authenticate: RequestHandler;
+  env: Environnement;
 }
 
 function currentStudent(response: Response, next: NextFunction): AuthenticatedUser | null {
@@ -28,6 +30,25 @@ export function registerPaymentRoutes(app: Express, options: PaymentRouteOptions
       if (typeof orderId !== 'string' || orderId.length === 0) throw new AppError(404, 'NOT_FOUND', 'Commande introuvable.');
       const result = await options.service.start(user.id, orderId, req.body as unknown);
       res.status(result.replayed ? 200 : 201).json(result.payment);
+    } catch (error) { next(error); }
+  });
+
+  app.post('/api/payments/:id/simulate', (req, _res, next) => {
+    if (options.env === 'production') {
+      next(new AppError(404, 'NOT_FOUND', 'Route introuvable.'));
+      return;
+    }
+    next();
+  }, options.authenticate, async (req, res, next) => {
+    const user = currentStudent(res, next);
+    if (!user) return;
+    try {
+      const paymentId = req.params['id'];
+      if (typeof paymentId !== 'string' || paymentId.length === 0) {
+        throw new AppError(404, 'PAYMENT_NOT_FOUND', 'Paiement introuvable.');
+      }
+      const result = await options.service.simulate(user.id, paymentId, req.body as unknown);
+      res.status(200).json(result);
     } catch (error) { next(error); }
   });
 

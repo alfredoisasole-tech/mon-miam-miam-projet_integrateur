@@ -69,7 +69,16 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
     at: string;
   }): Promise<StartPaymentResult> {
     return this.db.transaction(() => {
-      const order = this.db.get<OrderForPaymentRow>(`
+      let order = this.db.get<OrderForPaymentRow>(`
+        SELECT o.id, o.restaurant_id, o.status, o.payment_method, o.payment_status, o.total_fc
+        FROM orders o
+        WHERE o.id = ? AND o.user_id = ?
+          AND EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = o.user_id AND m.restaurant_id = o.restaurant_id)
+      `, [input.orderId, input.userId]);
+      if (!order) return { kind: 'not_found' } as const;
+
+      this.expireStalePendingPayment(order.id, order.restaurant_id, input.at);
+      order = this.db.get<OrderForPaymentRow>(`
         SELECT o.id, o.restaurant_id, o.status, o.payment_method, o.payment_status, o.total_fc
         FROM orders o
         WHERE o.id = ? AND o.user_id = ?
@@ -89,7 +98,7 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
       }
 
       if (order.status !== 'pending' || order.payment_method !== 'mobile_money'
-        || order.payment_status !== 'unpaid' || order.total_fc <= 0) {
+        || !['unpaid', 'failed'].includes(order.payment_status) || order.total_fc <= 0) {
         return { kind: 'not_payable' } as const;
       }
 
@@ -100,7 +109,7 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
       ]);
       const result = this.db.run(`UPDATE orders SET payment_status = 'pending', updated_at = ?
         WHERE id = ? AND restaurant_id = ? AND user_id = ? AND status = 'pending'
-          AND payment_method = 'mobile_money' AND payment_status = 'unpaid'`,
+          AND payment_method = 'mobile_money' AND payment_status IN ('unpaid', 'failed')`,
       [input.at, order.id, order.restaurant_id, input.userId]);
       if (Number(result.changes) !== 1) throw new Error('La commande a changé pendant le démarrage du paiement.');
 
@@ -141,37 +150,95 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
     at: string;
   }): Promise<ApplyPaymentNotificationResult> {
     return this.db.transaction(() => {
-      const payment = this.db.get<PaymentAndOrderRow>(`
-        SELECT p.id, p.restaurant_id, p.order_id, p.operator, p.phone, p.amount_fc, p.status, p.provider_ref,
-          p.created_at, p.updated_at, o.status AS order_status, o.payment_status AS order_payment_status
-        FROM payments p JOIN orders o ON o.id = p.order_id AND o.restaurant_id = p.restaurant_id
-        WHERE p.id = ?
-      `, [input.paymentId]);
-      if (!payment) return { kind: 'not_found' } as const;
-
-      if (payment.status === input.status) {
-        return { kind: 'replayed', paymentStatus: payment.status, orderStatus: payment.order_status } as const;
-      }
-      if (payment.status !== 'pending' || payment.order_status !== 'pending' || payment.order_payment_status !== 'pending') {
-        return { kind: 'already_finalized' } as const;
-      }
-
-      const paymentUpdate = this.db.run(`UPDATE payments SET status = ?, provider_ref = ?, updated_at = ?
-        WHERE id = ? AND restaurant_id = ? AND order_id = ? AND status = 'pending'`,
-      [input.status, input.providerRef, input.at, payment.id, payment.restaurant_id, payment.order_id]);
-      if (Number(paymentUpdate.changes) !== 1) throw new Error('Le paiement a changé pendant la confirmation.');
-
-      const nextOrderStatus: OrderStatus = input.status === 'paid' ? 'confirmed' : 'pending';
-      const orderUpdate = this.db.run(`UPDATE orders SET payment_status = ?, status = ?, updated_at = ?
-        WHERE id = ? AND restaurant_id = ? AND status = 'pending' AND payment_status = 'pending'`,
-      [input.status, nextOrderStatus, input.at, payment.order_id, payment.restaurant_id]);
-      if (Number(orderUpdate.changes) !== 1) throw new Error('La commande a changé pendant la confirmation du paiement.');
-
-      if (input.status === 'paid') {
-        this.db.run(`INSERT INTO order_events (id, order_id, status, created_at)
-          VALUES (?, ?, 'confirmed', ?)`, [randomUUID(), payment.order_id, input.at]);
-      }
-      return { kind: 'applied', paymentStatus: input.status, orderStatus: nextOrderStatus } as const;
+      return this.applyNotificationInTransaction(input);
     });
+  }
+
+  async applySimulationNotification(input: {
+    userId: string;
+    paymentId: string;
+    status: PaymentFinalStatus;
+    providerRef: string;
+    at: string;
+  }): Promise<ApplyPaymentNotificationResult> {
+    return this.db.transaction(() => {
+      const ownedPayment = this.db.get<{ id: string }>(`
+        SELECT p.id
+        FROM payments p JOIN orders o ON o.id = p.order_id AND o.restaurant_id = p.restaurant_id
+        WHERE p.id = ? AND o.user_id = ?
+          AND EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = o.user_id AND m.restaurant_id = o.restaurant_id)
+      `, [input.paymentId, input.userId]);
+      if (!ownedPayment) return { kind: 'not_found' } as const;
+      return this.applyNotificationInTransaction(input);
+    });
+  }
+
+  private applyNotificationInTransaction(input: {
+    paymentId: string;
+    status: PaymentFinalStatus;
+    providerRef: string;
+    at: string;
+  }): ApplyPaymentNotificationResult {
+    const payment = this.db.get<PaymentAndOrderRow>(`
+      SELECT p.id, p.restaurant_id, p.order_id, p.operator, p.phone, p.amount_fc, p.status, p.provider_ref,
+        p.created_at, p.updated_at, o.status AS order_status, o.payment_status AS order_payment_status
+      FROM payments p JOIN orders o ON o.id = p.order_id AND o.restaurant_id = p.restaurant_id
+      WHERE p.id = ?
+    `, [input.paymentId]);
+    if (!payment) return { kind: 'not_found' } as const;
+
+    if (payment.status === input.status) {
+      return { kind: 'replayed', paymentStatus: payment.status, orderStatus: payment.order_status } as const;
+    }
+    const latePaid = payment.status === 'failed' && payment.provider_ref === null && input.status === 'paid'
+      && ((payment.order_status === 'pending' && ['pending', 'failed'].includes(payment.order_payment_status))
+        || (payment.order_status === 'cancelled' && payment.order_payment_status === 'failed'));
+    if (!latePaid && (payment.status !== 'pending' || payment.order_status !== 'pending' || payment.order_payment_status !== 'pending')) {
+      return { kind: 'already_finalized' } as const;
+    }
+
+    const paymentUpdate = this.db.run(`UPDATE payments SET status = ?, provider_ref = ?, updated_at = ?
+      WHERE id = ? AND restaurant_id = ? AND order_id = ? AND status = ?`,
+    [input.status, input.providerRef, input.at, payment.id, payment.restaurant_id, payment.order_id, payment.status]);
+    if (Number(paymentUpdate.changes) !== 1) throw new Error('Le paiement a changé pendant la confirmation.');
+
+    const refundDue = latePaid && payment.order_status === 'cancelled';
+    const nextOrderStatus: OrderStatus = input.status === 'paid' && !refundDue ? 'confirmed' : payment.order_status;
+    const nextPaymentStatus = refundDue ? 'refund_due' : input.status;
+    if (latePaid && !refundDue) {
+      this.db.run(`UPDATE payments SET status = 'failed', updated_at = ?
+        WHERE order_id = ? AND restaurant_id = ? AND id <> ? AND status = 'pending'`,
+      [input.at, payment.order_id, payment.restaurant_id, payment.id]);
+    }
+    const orderUpdate = refundDue
+      ? this.db.run(`UPDATE orders SET payment_status = 'refund_due', updated_at = ?
+          WHERE id = ? AND restaurant_id = ? AND status = 'cancelled' AND payment_status = 'failed'`,
+        [input.at, payment.order_id, payment.restaurant_id])
+      : this.db.run(`UPDATE orders SET payment_status = ?, status = ?, updated_at = ?
+          WHERE id = ? AND restaurant_id = ? AND status = 'pending' AND payment_status IN ('pending', 'failed')`,
+        [nextPaymentStatus, nextOrderStatus, input.at, payment.order_id, payment.restaurant_id]);
+    if (Number(orderUpdate.changes) !== 1) throw new Error('La commande a changé pendant la confirmation du paiement.');
+
+    if (input.status === 'paid' && nextOrderStatus === 'confirmed') {
+      this.db.run(`INSERT INTO order_events (id, order_id, status, created_at)
+        VALUES (?, ?, 'confirmed', ?)`, [randomUUID(), payment.order_id, input.at]);
+    }
+    return { kind: 'applied', paymentStatus: input.status, orderStatus: nextOrderStatus } as const;
+  }
+
+  private expireStalePendingPayment(orderId: string, restaurantId: string, at: string): void {
+    const cutoff = new Date(Date.parse(at) - 15 * 60 * 1000).toISOString();
+    const expired = this.db.run(`UPDATE payments SET status = 'failed', updated_at = ?
+      WHERE order_id = ? AND restaurant_id = ? AND status = 'pending' AND created_at < ?`,
+    [at, orderId, restaurantId, cutoff]);
+    if (Number(expired.changes) === 0) return;
+
+    const stillPending = this.db.get<{ count: number }>(`SELECT COUNT(*) AS count FROM payments
+      WHERE order_id = ? AND restaurant_id = ? AND status = 'pending'`, [orderId, restaurantId]);
+    if (stillPending?.count === 0) {
+      this.db.run(`UPDATE orders SET payment_status = 'failed', updated_at = ?
+        WHERE id = ? AND restaurant_id = ? AND status = 'pending' AND payment_status = 'pending'`,
+      [at, orderId, restaurantId]);
+    }
   }
 }

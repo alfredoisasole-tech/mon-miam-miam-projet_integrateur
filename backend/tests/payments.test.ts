@@ -28,6 +28,7 @@ const DINE_IN_ORDER = {
 let database: Database;
 let server: Serveur;
 let orderCounter = 0;
+let currentNow = new Date(NOW);
 
 function seedDatabase(db: Database): void {
   const now = NOW.toISOString();
@@ -49,6 +50,7 @@ function seedDatabase(db: Database): void {
 
 beforeEach(async () => {
   orderCounter = 0;
+  currentNow = new Date(NOW);
   database = new Database(':memory:');
   migrate(database);
   seedDatabase(database);
@@ -59,7 +61,7 @@ beforeEach(async () => {
   ]);
   server = await demarrer(createApp(loadConfig({ NODE_ENV: 'test', PAYMENT_WEBHOOK_SECRET: WEBHOOK_SECRET }), {
     database,
-    now: () => new Date(NOW),
+    now: () => new Date(currentNow),
     resolveToken: (token) => users.get(token) ?? null,
   }));
 });
@@ -95,6 +97,14 @@ async function startPayment(orderId: string, body: unknown = PAYMENT_REQUEST, to
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
     body: JSON.stringify(body),
+  });
+}
+
+async function simulatePayment(paymentId: string, outcome: 'paid' | 'failed', token = 'student-1-token'): Promise<Response> {
+  return fetch(`${server.base}/api/payments/${paymentId}/simulate`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ outcome }),
   });
 }
 
@@ -143,6 +153,55 @@ describe('Paiements mobiles simulés — APP-75', () => {
     assert.equal(replay.status, 200);
     assert.deepEqual(replayPayment, firstPayment);
     assert.equal(database.get<{ count: number }>('SELECT COUNT(*) AS count FROM payments WHERE order_id = ? AND restaurant_id = ?', [order.id, 'r-alpha'])?.count, 1);
+  });
+
+  it('permet un nouvel essai après un échec et conserve le paiement échoué', async () => {
+    const order = await createOrder();
+    const first = await startPayment(order.id);
+    const firstId = (await first.json() as { paymentId: string }).paymentId;
+    assert.equal((await sendWebhook(firstId, 'failed')).status, 200);
+
+    const retry = await startPayment(order.id);
+    const retryResult = await retry.json() as { paymentId: string; status: string };
+    const payments = database.all<{ id: string; status: string }>(
+      'SELECT id, status FROM payments WHERE order_id = ? AND restaurant_id = ? ORDER BY created_at, id', [order.id, 'r-alpha'],
+    );
+
+    assert.equal(retry.status, 201);
+    assert.notEqual(retryResult.paymentId, firstId);
+    assert.equal(retryResult.status, 'pending');
+    assert.deepEqual(payments.map(({ id, status }) => ({ id, status })), [
+      { id: firstId, status: 'failed' }, { id: retryResult.paymentId, status: 'pending' },
+    ]);
+    assert.equal(database.get<{ status: string }>(
+      'SELECT payment_status AS status FROM orders WHERE id = ? AND restaurant_id = ?', [order.id, 'r-alpha'],
+    )?.status, 'pending');
+  });
+
+  it('refuse un nouvel essai après paiement ou annulation', async () => {
+    const paidOrder = await createOrder();
+    const paidStart = await startPayment(paidOrder.id);
+    const paidPaymentId = (await paidStart.json() as { paymentId: string }).paymentId;
+    await sendWebhook(paidPaymentId, 'paid');
+    const afterPaid = await startPayment(paidOrder.id);
+
+    const cancelledOrder = await createOrder();
+    const cancelledStart = await startPayment(cancelledOrder.id);
+    const cancelledPaymentId = (await cancelledStart.json() as { paymentId: string }).paymentId;
+    await sendWebhook(cancelledPaymentId, 'failed');
+    await fetch(`${server.base}/api/orders/${cancelledOrder.id}/cancel`, {
+      method: 'POST', headers: { authorization: 'Bearer student-1-token' },
+    });
+    const afterCancel = await startPayment(cancelledOrder.id);
+
+    assert.equal(afterPaid.status, 409);
+    assert.equal(afterCancel.status, 409);
+    assert.equal(database.get<{ count: number }>(
+      'SELECT COUNT(*) AS count FROM payments WHERE order_id = ? AND restaurant_id = ?', [paidOrder.id, 'r-alpha'],
+    )?.count, 1);
+    assert.equal(database.get<{ count: number }>(
+      'SELECT COUNT(*) AS count FROM payments WHERE order_id = ? AND restaurant_id = ?', [cancelledOrder.id, 'r-alpha'],
+    )?.count, 1);
   });
 
   it('refuse des coordonnées invalides, une commande en espèces ou un rôle interdit', async () => {
@@ -253,6 +312,82 @@ describe('Paiements mobiles simulés — APP-75', () => {
     assert.equal(cancelled.status, 200);
   });
 
+  it('conserve un paiement pending après 14 minutes puis le fait échouer lors d’une tentative après 16 minutes', async () => {
+    const order = await createOrder();
+    const first = await startPayment(order.id);
+    const firstPaymentId = (await first.json() as { paymentId: string }).paymentId;
+
+    currentNow = new Date(NOW.getTime() + 14 * 60 * 1000);
+    const atFourteenMinutes = await startPayment(order.id);
+    assert.equal(atFourteenMinutes.status, 200);
+    assert.equal(database.get<{ status: string }>('SELECT status FROM payments WHERE id = ?', [firstPaymentId])?.status, 'pending');
+
+    currentNow = new Date(NOW.getTime() + 16 * 60 * 1000);
+    const retry = await startPayment(order.id);
+    const retryPaymentId = (await retry.json() as { paymentId: string }).paymentId;
+    assert.equal(retry.status, 201);
+    assert.notEqual(retryPaymentId, firstPaymentId);
+    assert.equal(database.get<{ status: string }>('SELECT status FROM payments WHERE id = ?', [firstPaymentId])?.status, 'failed');
+    assert.equal(database.get<{ status: string }>('SELECT status FROM payments WHERE id = ?', [retryPaymentId])?.status, 'pending');
+  });
+
+  it('expire un paiement de 16 minutes au début de l’annulation et autorise ensuite l’annulation', async () => {
+    const order = await createOrder();
+    const started = await startPayment(order.id);
+    const paymentId = (await started.json() as { paymentId: string }).paymentId;
+    currentNow = new Date(NOW.getTime() + 16 * 60 * 1000);
+
+    const cancelled = await fetch(`${server.base}/api/orders/${order.id}/cancel`, {
+      method: 'POST', headers: { authorization: 'Bearer student-1-token' },
+    });
+
+    assert.equal(cancelled.status, 200);
+    assert.equal(database.get<{ status: string }>('SELECT status FROM payments WHERE id = ?', [paymentId])?.status, 'failed');
+    const details = database.get<{ status: string; payment_status: string }>(
+      'SELECT status, payment_status FROM orders WHERE id = ? AND restaurant_id = ?', [order.id, 'r-alpha'],
+    );
+    assert.equal(details?.status, 'cancelled');
+    assert.equal(details?.payment_status, 'failed');
+  });
+
+  it('accepte un paiement tardif si la commande attend encore, puis indique refund_due si elle est annulée', async () => {
+    const activeOrder = await createOrder();
+    const activeStart = await startPayment(activeOrder.id);
+    const activePaymentId = (await activeStart.json() as { paymentId: string }).paymentId;
+    currentNow = new Date(NOW.getTime() + 16 * 60 * 1000);
+    await startPayment(activeOrder.id);
+    const lateActive = await sendWebhook(activePaymentId, 'paid');
+
+    assert.equal(lateActive.status, 200);
+    const activeDetails = database.get<{ status: string; payment_status: string }>(
+      'SELECT status, payment_status FROM orders WHERE id = ? AND restaurant_id = ?', [activeOrder.id, 'r-alpha'],
+    );
+    assert.equal(activeDetails?.status, 'confirmed');
+    assert.equal(activeDetails?.payment_status, 'paid');
+    assert.equal(database.get<{ count: number }>(
+      "SELECT COUNT(*) AS count FROM payments WHERE order_id = ? AND restaurant_id = ? AND status = 'pending'", [activeOrder.id, 'r-alpha'],
+    )?.count, 0);
+
+    currentNow = new Date(NOW);
+    const cancelledOrder = await createOrder();
+    const cancelledStart = await startPayment(cancelledOrder.id);
+    const cancelledPaymentId = (await cancelledStart.json() as { paymentId: string }).paymentId;
+    currentNow = new Date(NOW.getTime() + 16 * 60 * 1000);
+    const cancelled = await fetch(`${server.base}/api/orders/${cancelledOrder.id}/cancel`, {
+      method: 'POST', headers: { authorization: 'Bearer student-1-token' },
+    });
+    const lateCancelled = await sendWebhook(cancelledPaymentId, 'paid');
+
+    assert.equal(cancelled.status, 200);
+    assert.equal(lateCancelled.status, 200);
+    const cancelledDetails = database.get<{ status: string; payment_status: string }>(
+      'SELECT status, payment_status FROM orders WHERE id = ? AND restaurant_id = ?', [cancelledOrder.id, 'r-alpha'],
+    );
+    assert.equal(cancelledDetails?.status, 'cancelled');
+    assert.equal(cancelledDetails?.payment_status, 'refund_due');
+    assert.equal(database.get<{ status: string }>('SELECT status FROM payments WHERE id = ?', [cancelledPaymentId])?.status, 'paid');
+  });
+
   it('ne permet pas à l’étudiant d’annuler une commande payée', async () => {
     const order = await createOrder();
     const started = await startPayment(order.id);
@@ -281,6 +416,90 @@ describe('Paiements mobiles simulés — APP-75', () => {
     assert.equal(database.get<{ status: string }>('SELECT status FROM payments WHERE id = ? AND restaurant_id = ?', [alphaPaymentId, 'r-alpha'])?.status, 'pending');
     assert.equal(database.get<{ payment_status: string }>('SELECT payment_status FROM orders WHERE id = ? AND restaurant_id = ?', [beta.id, 'r-beta'])?.payment_status, 'paid');
     assert.equal(database.get<{ status: string }>('SELECT status FROM payments WHERE id = ? AND restaurant_id = ?', [betaPaymentId, 'r-beta'])?.status, 'paid');
+  });
+
+  it('simule le paiement pour le propriétaire, de façon idempotente et sans signature', async () => {
+    const order = await createOrder();
+    const started = await startPayment(order.id);
+    const { paymentId } = await started.json() as { paymentId: string };
+
+    const first = await simulatePayment(paymentId, 'paid');
+    const replay = await simulatePayment(paymentId, 'paid');
+
+    assert.equal(first.status, 200);
+    assert.equal(replay.status, 200);
+    assert.equal((await first.json() as { status: string; orderStatus: string }).orderStatus, 'confirmed');
+    assert.equal(database.get<{ count: number }>(
+      "SELECT COUNT(*) AS count FROM order_events WHERE order_id = ? AND status = 'confirmed'", [order.id],
+    )?.count, 1);
+  });
+
+  it('permet de simuler un échec puis de réessayer le paiement', async () => {
+    const order = await createOrder();
+    const started = await startPayment(order.id);
+    const { paymentId } = await started.json() as { paymentId: string };
+
+    const failed = await simulatePayment(paymentId, 'failed');
+    const retry = await startPayment(order.id);
+
+    assert.equal(failed.status, 200);
+    assert.equal((await failed.json() as { status: string; orderStatus: string }).status, 'failed');
+    assert.equal(retry.status, 201);
+    assert.equal(database.get<{ status: string; payment_status: string }>(
+      'SELECT status, payment_status FROM orders WHERE id = ? AND restaurant_id = ?', [order.id, 'r-alpha'],
+    )?.payment_status, 'pending');
+  });
+
+  it('masque un paiement simulé au non-propriétaire', async () => {
+    const order = await createOrder();
+    const started = await startPayment(order.id);
+    const { paymentId } = await started.json() as { paymentId: string };
+
+    const response = await simulatePayment(paymentId, 'paid', 'student-2-token');
+
+    assert.equal(response.status, 404);
+    assert.equal((await response.json() as { error: { code: string } }).error.code, 'PAYMENT_NOT_FOUND');
+    assert.equal(database.get<{ status: string }>('SELECT status FROM payments WHERE id = ?', [paymentId])?.status, 'pending');
+  });
+
+  it('renvoie 404 en production pour la route de simulation', async () => {
+    const order = await createOrder();
+    const started = await startPayment(order.id);
+    const { paymentId } = await started.json() as { paymentId: string };
+    const users = new Map<string, AuthenticatedUser>([['student-1-token', { id: 'student-1', role: 'student' }]]);
+    const production = await demarrer(createApp(loadConfig({
+      NODE_ENV: 'production',
+      JWT_SECRET: 'secret-de-production-de-test-avec-plus-de-32-caracteres',
+      PAYMENT_WEBHOOK_SECRET: 'secret-webhook-de-test-avec-plus-de-32-caracteres',
+    }), { database, resolveToken: (token) => users.get(token) ?? null }));
+    try {
+      const response = await fetch(`${production.base}/api/payments/${paymentId}/simulate`, {
+        method: 'POST', headers: { authorization: 'Bearer student-1-token', 'content-type': 'application/json' },
+        body: JSON.stringify({ outcome: 'paid' }),
+      });
+      assert.equal(response.status, 404);
+      assert.equal((await response.json() as { error: { code: string } }).error.code, 'NOT_FOUND');
+      assert.equal(database.get<{ status: string }>('SELECT status FROM payments WHERE id = ?', [paymentId])?.status, 'pending');
+    } finally {
+      await production.fermer();
+    }
+  });
+
+  it('isole la simulation entre restaurants', async () => {
+    const alpha = await createOrder('mobile_money', 'alpha');
+    const beta = await createOrder('mobile_money', 'beta');
+    const alphaStart = await startPayment(alpha.id);
+    const betaStart = await startPayment(beta.id);
+    const { paymentId: alphaPaymentId } = await alphaStart.json() as { paymentId: string };
+    const { paymentId: betaPaymentId } = await betaStart.json() as { paymentId: string };
+
+    const simulated = await simulatePayment(betaPaymentId, 'paid');
+
+    assert.equal(simulated.status, 200);
+    assert.equal(database.get<{ status: string }>('SELECT status FROM payments WHERE id = ? AND restaurant_id = ?', [alphaPaymentId, 'r-alpha'])?.status, 'pending');
+    assert.equal(database.get<{ payment_status: string }>('SELECT payment_status FROM orders WHERE id = ? AND restaurant_id = ?', [alpha.id, 'r-alpha'])?.payment_status, 'pending');
+    assert.equal(database.get<{ status: string }>('SELECT status FROM payments WHERE id = ? AND restaurant_id = ?', [betaPaymentId, 'r-beta'])?.status, 'paid');
+    assert.equal(database.get<{ payment_status: string }>('SELECT payment_status FROM orders WHERE id = ? AND restaurant_id = ?', [beta.id, 'r-beta'])?.payment_status, 'paid');
   });
 
   it('refuse une confirmation contradictoire après la finalisation', async () => {

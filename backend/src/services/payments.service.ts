@@ -80,7 +80,7 @@ export class PaymentsService {
     });
     if (result.kind === 'not_found') throw new AppError(404, 'NOT_FOUND', 'Commande introuvable.');
     if (result.kind === 'not_payable') {
-      throw new AppError(409, 'ORDER_NOT_PAYABLE', 'Le paiement ne peut démarrer que pour une commande mobile money en attente et non payée.');
+      throw new AppError(409, 'ORDER_NOT_PAYABLE', 'Le paiement ne peut démarrer que pour une commande mobile money en attente, impayée ou avec un paiement échoué.');
     }
 
     const { payment } = result;
@@ -123,5 +123,34 @@ export class PaymentsService {
       throw new AppError(409, 'PAYMENT_ALREADY_FINALIZED', 'Le paiement a déjà reçu une confirmation différente ou sa commande ne peut plus être modifiée.');
     }
     return { paymentId: notification.paymentId, status: result.paymentStatus, orderStatus: result.orderStatus };
+  }
+
+  async simulate(userId: string, paymentId: string, body: unknown): Promise<{
+    paymentId: string;
+    status: PaymentFinalStatus;
+    orderStatus: OrderStatus;
+  }> {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      throw validationError('Le corps doit indiquer le résultat du paiement simulé.');
+    }
+    const outcome = (body as Record<string, unknown>)['outcome'];
+    if (outcome !== 'paid' && outcome !== 'failed') {
+      throw validationError('Le résultat du paiement doit être « paid » ou « failed ».');
+    }
+    if (paymentId.trim().length === 0 || paymentId.length > 128) {
+      throw new AppError(404, 'PAYMENT_NOT_FOUND', 'Paiement introuvable.');
+    }
+    const result = await this.repository.applySimulationNotification({
+      userId,
+      paymentId,
+      status: outcome,
+      providerRef: `simulation-${paymentId}`,
+      at: this.now().toISOString(),
+    });
+    if (result.kind === 'not_found') throw new AppError(404, 'PAYMENT_NOT_FOUND', 'Paiement introuvable.');
+    if (result.kind === 'already_finalized') {
+      throw new AppError(409, 'PAYMENT_ALREADY_FINALIZED', 'Le paiement a déjà reçu une confirmation différente ou sa commande ne peut plus être modifiée.');
+    }
+    return { paymentId, status: result.paymentStatus, orderStatus: result.orderStatus };
   }
 }

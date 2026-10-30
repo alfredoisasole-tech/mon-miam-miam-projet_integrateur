@@ -66,6 +66,13 @@ export interface PaymentsRepository {
     providerRef: string;
     at: string;
   }): Promise<ApplyPaymentNotificationResult>;
+  applySimulationNotification(input: {
+    userId: string;
+    paymentId: string;
+    status: PaymentFinalStatus;
+    providerRef: string;
+    at: string;
+  }): Promise<ApplyPaymentNotificationResult>;
 }
 
 /** Fournisseur local de simulation. L’adaptateur EasyPay viendra ici après réception et validation de sa documentation. */
