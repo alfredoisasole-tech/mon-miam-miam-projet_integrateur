@@ -1,8 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ConfigError, EXAMPLE_JWT_SECRET, loadConfig } from '../src/config.ts';
+import { randomBytes } from 'node:crypto';
+import { ConfigError, EXAMPLE_JWT_SECRET, EXAMPLE_PAYMENT_WEBHOOK_SECRET, loadConfig } from '../src/config.ts';
 
-const SECRET_SOLIDE = 'un-secret-de-test-long-et-aleatoire-0123456789abcdef';
+const SECRET_SOLIDE = randomBytes(32).toString('hex');
 
 describe('Configuration', () => {
   it('applique des valeurs par défaut en développement', () => {
@@ -12,6 +13,7 @@ describe('Configuration', () => {
     assert.equal(config.databasePath, './data/mon-miam-miam.sqlite');
     assert.deepEqual(config.corsOrigins, ['http://localhost:5173']);
     assert.ok(config.jwtSecret.length >= 32);
+    assert.match(config.paymentWebhookSecret, /non-secr[eè]te/i);
   });
 
   it('lit le port, le chemin de la base et la liste des adresses autorisées', () => {
@@ -30,6 +32,19 @@ describe('Configuration', () => {
       assert.throws(() => loadConfig({ NODE_ENV: 'production' }), (e: unknown) => e instanceof ConfigError && /JWT_SECRET/.test(e.message));
     });
 
+    it('refuse de démarrer sans PAYMENT_WEBHOOK_SECRET', () => {
+      assert.throws(() => loadConfig({ NODE_ENV: 'production', JWT_SECRET: SECRET_SOLIDE }),
+        (e: unknown) => e instanceof ConfigError && /PAYMENT_WEBHOOK_SECRET/.test(e.message));
+    });
+
+    it('refuse un PAYMENT_WEBHOOK_SECRET trop court', () => {
+      assert.throws(() => loadConfig({ NODE_ENV: 'production', JWT_SECRET: SECRET_SOLIDE, PAYMENT_WEBHOOK_SECRET: randomBytes(8).toString('hex') }), ConfigError);
+    });
+
+    it('refuse la valeur non secrète du fichier exemple en production', () => {
+      assert.throws(() => loadConfig({ NODE_ENV: 'production', JWT_SECRET: SECRET_SOLIDE, PAYMENT_WEBHOOK_SECRET: EXAMPLE_PAYMENT_WEBHOOK_SECRET }), ConfigError);
+    });
+
     it('refuse un JWT_SECRET de moins de 32 caractères', () => {
       assert.throws(() => loadConfig({ NODE_ENV: 'production', JWT_SECRET: 'trop-court' }), ConfigError);
     });
@@ -44,9 +59,11 @@ describe('Configuration', () => {
     });
 
     it('accepte un secret solide', () => {
-      const config = loadConfig({ NODE_ENV: 'production', JWT_SECRET: SECRET_SOLIDE });
+      const paymentSecret = randomBytes(32).toString('hex');
+      const config = loadConfig({ NODE_ENV: 'production', JWT_SECRET: SECRET_SOLIDE, PAYMENT_WEBHOOK_SECRET: paymentSecret });
       assert.equal(config.env, 'production');
       assert.equal(config.jwtSecret, SECRET_SOLIDE);
+      assert.equal(config.paymentWebhookSecret, paymentSecret);
     });
   });
 });
