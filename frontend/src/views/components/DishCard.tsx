@@ -1,30 +1,18 @@
 import React from 'react';
-// ⚠️ TEMPORAIRE : on utilise les mocks en attendant G-3 et G-8 de Gloirenk17
-import { useAuth, useCart } from '../../controllers/tempMocks';
+import type { MenuDish } from '../../controllers/useMenu.ts';
 import { formatPrice } from '../../models/format';
 
-interface Dish {
-  id: string;
-  name: string;
-  description: string;
-  priceFc: number;
-  isAvailable: boolean;
-}
-
 interface DishCardProps {
-  dish: Dish;
+  dish: MenuDish;
+  isStudent: boolean;
+  onAdd: (dish: MenuDish) => void;
 }
 
-export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
-  const { user } = useAuth();
-  const { add } = useCart();
-
-  const isStudent = user?.role === 'student';
-
+export const DishCard: React.FC<DishCardProps> = ({ dish, isStudent, onAdd }) => {
   return (
     <div className="dish-card" data-testid={`dish-${dish.id}`}>
       <h3>{dish.name}</h3>
-      <p>{dish.description}</p>
+      {dish.description && <p>{dish.description}</p>}
       <p className="price">{formatPrice(dish.priceFc)}</p>
       
       {!dish.isAvailable && (
@@ -32,8 +20,8 @@ export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
       )}
 
       {isStudent && dish.isAvailable && (
-        <button 
-          onClick={() => add(dish)} 
+        <button
+          onClick={() => onAdd(dish)}
           data-testid="add-button"
         >
           Ajouter

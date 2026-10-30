@@ -129,7 +129,8 @@ export interface OrdersRepository {
   findStudent(userId: string): Promise<StudentProfile | null>;
   findRestaurantById(restaurantId: string): Promise<Restaurant | null>;
   findRestaurantBySlug(slug: string): Promise<Restaurant | null>;
-  findMenuItemsByIds(ids: string[]): Promise<MenuItem[]>;
+  hasRestaurantMembership(userId: string, restaurantId: string): Promise<boolean>;
+  findMenuItemsByIds(ids: string[], restaurantId: string): Promise<MenuItem[]>;
   getAvailablePoints(userId: string, restaurantId: string, at: string): Promise<number>;
   getLoyaltyRemainderFc(userId: string, restaurantId: string): Promise<number>;
   findOrderByIdempotencyKey(userId: string, key: string): Promise<Order | null>;
@@ -141,7 +142,7 @@ export interface OrdersRepository {
     | { kind: 'cancelled'; order: Order }
   >;
   nextOrderSequence(restaurantId: string, dayKey: string): Promise<number>;
-  createOrder(order: Order): Promise<{ created: boolean; order: Order }>;
+  createOrder(order: Order): Promise<{ created: boolean; order: Order; insufficientPoints?: boolean }>;
 }
 
 export interface AuthenticatedUser {
