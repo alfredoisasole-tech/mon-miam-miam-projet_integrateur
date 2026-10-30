@@ -94,6 +94,7 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
     registerStaffOrderRoutes(app, { repository: orders, authenticate, now: options.now });
     registerPromotionRoutes(app, new PromotionsService(new SqlitePromotionsRepository(options.database), options.now));
     registerPaymentRoutes(app, {
+      env: config.env,
       service: new PaymentsService(
         new SqlitePaymentsRepository(options.database),
         options.paymentProvider ?? new SimulatedPaymentProvider(config.paymentWebhookSecret),
