@@ -174,6 +174,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 | 422 | `INVALID_ARRIVAL_TIME` | Heure passée ou au-delà de 12 heures à l’avance. |
 | 422 | `OUTSIDE_OPENING_HOURS` | Heure d’arrivée hors des horaires d’ouverture. |
 | 422 | `DELIVERY_DISABLED` | Livraison désactivée pour ce restaurant. |
+| 422 | `PAYMENT_METHOD_UNAVAILABLE` | Le paiement mobile money n’est pas disponible pour ce restaurant. |
 | 422 | `COMMUNE_NOT_SERVED` | Commune non desservie par le restaurant. |
 | 422 | `INSUFFICIENT_POINTS` | `redeemMeal` vaut `true`, mais le solde de ce restaurant est insuffisant. |
 | 500 | `INTERNAL_ERROR` | Erreur inattendue ; aucun détail technique n’est renvoyé. |

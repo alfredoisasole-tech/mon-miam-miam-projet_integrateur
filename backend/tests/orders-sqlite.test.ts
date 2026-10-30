@@ -111,6 +111,8 @@ describe('Commandes SQLite — APP-21', () => {
     const beta = await postOrder({ ...DINE_IN_ORDER, restaurant: 'beta', items: [{ menuItemId: 'beta-dish', quantity: 1 }] }, 'student-1-token', 'beta-order-001');
     const alphaId = (await alpha.json() as { id: string }).id;
     assert.equal(beta.status, 201);
+    database.run('UPDATE orders SET comment = ?, rating = ? WHERE id = ? AND restaurant_id = ?',
+      ['Très bon repas.', 5, alphaId, 'r-alpha']);
 
     const list = await fetch(`${server.base}/api/orders?page=1&pageSize=1&status=pending`, { headers: { authorization: 'Bearer student-1-token' } });
     const page = await list.json() as { total: number; items: Array<{ id: string; restaurant: { slug: string }; events?: unknown }> };
@@ -120,10 +122,12 @@ describe('Commandes SQLite — APP-21', () => {
     assert.equal(page.items[0]?.events, undefined);
 
     const detailResponse = await fetch(`${server.base}/api/orders/${alphaId}`, { headers: { authorization: 'Bearer student-1-token' } });
-    const detail = await detailResponse.json() as { events: Array<{ status: string; at: string }> };
+    const detail = await detailResponse.json() as { events: Array<{ status: string; at: string }>; comment: string | null; rating: number | null };
     assert.equal(detailResponse.status, 200);
     assert.deepEqual(detail.events.map((event) => event.status), ['pending']);
     assert.ok(detail.events.every((event) => event.at.endsWith('Z')));
+    assert.equal(detail.comment, 'Très bon repas.');
+    assert.equal(detail.rating, 5);
   });
 
   it('rejoue la clé idempotente sans doubler la commande et garde le paiement simulé unpaid', async () => {
@@ -179,6 +183,22 @@ describe('Commandes SQLite — APP-21', () => {
     assert.equal(cancelled.status, 200);
     assert.equal((await cancelled.json() as { status: string }).status, 'cancelled');
     assert.equal(await new SqliteOrdersRepository(database).getAvailablePoints('student-1', 'r-alpha', NOW.toISOString()), 15);
+  });
+
+  it('calcule le même solde malgré des points expirés et un ajustement négatif', async () => {
+    database.run("DELETE FROM points_ledger WHERE id = 'alpha-points'");
+    database.run(`INSERT INTO points_ledger (id, restaurant_id, user_id, kind, points, remaining, expires_at, created_at) VALUES
+      ('valid-points', 'r-alpha', 'student-1', 'earn', 20, 20, '2027-10-26T00:00:00.000Z', ?),
+      ('expired-points', 'r-alpha', 'student-1', 'earn', 100, 100, '2026-10-26T07:59:59.999Z', ?),
+      ('negative-adjustment', 'r-alpha', 'student-1', 'adjust', -5, 0, NULL, ?)`,
+    [NOW.toISOString(), NOW.toISOString(), NOW.toISOString()]);
+
+    const repository = new SqliteOrdersRepository(database);
+    assert.equal(await repository.getAvailablePoints('student-1', 'r-alpha', NOW.toISOString()), 15);
+
+    const response = await postOrder({ ...DINE_IN_ORDER, redeemMeal: true }, 'student-1-token', 'points-balance-01');
+    assert.equal(response.status, 201);
+    assert.equal((await response.json() as { pointsRedeemed: number }).pointsRedeemed, 15);
   });
 
   it('refuse un restaurant sans adhésion et permet mobile money sans simuler un paiement réussi', async () => {

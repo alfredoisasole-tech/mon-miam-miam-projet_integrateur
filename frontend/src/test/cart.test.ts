@@ -10,21 +10,21 @@ import {
 
 const burger: CartProduct = {
   id: 'burger',
-  restaurantId: 'restaurant-a',
+  restaurantSlug: 'restaurant-a',
   name: 'Burger',
   unitPriceFc: 5000,
 };
 
 const fries: CartProduct = {
   id: 'fries',
-  restaurantId: 'restaurant-a',
+  restaurantSlug: 'restaurant-a',
   name: 'Frites',
   unitPriceFc: 2000,
 };
 
 const salad: CartProduct = {
   id: 'salad',
-  restaurantId: 'restaurant-b',
+  restaurantSlug: 'restaurant-b',
   name: 'Salade',
   unitPriceFc: 3500,
 };
@@ -34,7 +34,7 @@ describe('Panier — APP-67', () => {
     const result = addCartItem(createEmptyCart(), burger, 2);
 
     expect(result.confirmationRequired).toBe(false);
-    expect(result.cart.restaurantId).toBe('restaurant-a');
+    expect(result.cart.restaurantSlug).toBe('restaurant-a');
     expect(result.cart.lines).toEqual([{ ...burger, quantity: 2 }]);
     expect(calculateIndicativeTotal(result.cart)).toBe(10000);
   });
@@ -59,7 +59,7 @@ describe('Panier — APP-67', () => {
     for (let index = 1; index <= 30; index += 1) {
       cart = addCartItem(cart, {
         id: `dish-${index}`,
-        restaurantId: 'restaurant-a',
+        restaurantSlug: 'restaurant-a',
         name: `Plat ${index}`,
         unitPriceFc: 1000,
       }).cart;
@@ -78,7 +78,7 @@ describe('Panier — APP-67', () => {
 
     const confirmed = addCartItem(cart, salad, 1, true);
     expect(confirmed.confirmationRequired).toBe(false);
-    expect(confirmed.cart.restaurantId).toBe('restaurant-b');
+    expect(confirmed.cart.restaurantSlug).toBe('restaurant-b');
     expect(confirmed.cart.lines).toEqual([{ ...salad, quantity: 1 }]);
   });
 
