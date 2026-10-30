@@ -83,23 +83,21 @@
   "slug": "zeduc-space",
   "name": "ZeDuc@Space",
   "slogan": "Le goût de la terrasse",
-  "description": "Restaurant préféré des étudiants de l'UCAC-ICAM...",
-  "logoUrl": "https://.../zeduc-logo.png",
-  "coverUrl": "https://.../zeduc-cover.png",
+  "logoUrl": "/api/restaurants/zeduc-space/assets/img_logo1",
   "colors": {
     "primary": "#cfbd97",
     "secondary": "#000000"
   },
-  "address": {
-    "commune": "Yansoki",
-    "quartier": "Terrasse",
-    "repere": "Sommet de la résidence la Terrasse"
-  },
-  "openingHours": {
-    "monday": { "open": "10:00", "close": "22:00" },
-    "tuesday": { "open": "10:00", "close": "22:00" }
-  },
   "isOpenNow": true,
+  "openingHours": {
+    "mon": [{ "open": "10:00", "close": "22:00" }],
+    "thu": [{ "open": "10:00", "close": "14:00" }, { "open": "18:00", "close": "22:00" }]
+  },
+  "delivery": {
+    "enabled": true,
+    "feeFc": 1000,
+    "communes": ["Yansoki"]
+  },
   "loyalty": {
     "spendPerPointFc": 3000,
     "pointsForReward": 15,
@@ -108,6 +106,11 @@
   }
 }
 ```
+
+**Règles** :
+
+- `openingHours` : clés `mon`, `tue`, `wed`, `thu`, `fri`, `sat`, `sun` ; chaque jour contient une **liste de créneaux** (plusieurs par jour possibles). Un jour absent = fermé. Les heures sont celles du fuseau du restaurant (Kinshasa par défaut).
+- `description`, `coverUrl` et `address` ne sont **pas encore** fournis : le schéma de la base n'a pas ces colonnes. Ils seront ajoutés avec une nouvelle migration si l'équipe les décide.
 
 **Erreurs** :
 
@@ -177,7 +180,17 @@
 
 ---
 
-## 4. Promotions d'un restaurant
+### `GET /api/restaurants/:slug/assets/:id`
+
+**Rôles autorisés** : public. Sert une image (logo ou plat) **du restaurant `:slug` uniquement**.
+
+- Formats servis : `image/png`, `image/jpeg`, `image/webp`. Tout autre format (SVG compris) répond 404.
+- Image d'un autre restaurant, inconnue ou restaurant désactivé : 404 (`ASSET_NOT_FOUND` ou `RESTAURANT_NOT_FOUND`).
+- Les champs `logoUrl` et `imageUrl` des autres réponses pointent vers cette route (chemin relatif).
+
+---
+
+## 4. Promotions d'un restaurant (pas encore implémentée)
 
 ### `GET /api/restaurants/:slug/promotions`
 
