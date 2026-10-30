@@ -38,14 +38,18 @@ export const MenuPage: React.FC = () => {
           </div>
         </section>
       )}
-      {menu.categories.map((category) => (
-        <section key={category.name} aria-label={category.name}>
-          <h3>{category.name}</h3>
-          <div className="menu-grid">
-            {category.items.map((dish) => <DishCard key={dish.id} dish={dish} isStudent={isStudent} onAdd={addDish} />)}
-          </div>
-        </section>
-      ))}
+      {menu.categories
+        .filter((category) => category.items.length > 0) 
+        .map((category) => (
+          <section key={category.name} aria-label={category.name}>
+            <h3>{category.name}</h3>
+            <div className="menu-grid">
+              {category.items.map((dish) => (
+                <DishCard key={dish.id} dish={dish} isStudent={isStudent} onAdd={addDish} />
+              ))}
+            </div>
+          </section>
+      ))} 
       {cart.error && <p role="alert">{cart.error}</p>}
       {cart.pendingRestaurantChange && (
         <div role="alertdialog" aria-label="Confirmer le changement de restaurant">
