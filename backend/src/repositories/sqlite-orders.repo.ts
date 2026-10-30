@@ -106,7 +106,8 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
       deliveryEnabled: row.delivery_enabled === 1,
       deliveryFeeFc: row.delivery_fee_fc ?? 0,
       deliveryCommunes: parseJson<string[]>(row.delivery_communes, []),
-      // La table restaurant_settings ne porte pas encore la disponibilité de mobile money.
+      // Aucune colonne de disponibilité mobile money n'existe encore dans restaurant_settings.
+      // Ce choix provisoire à true sera remplacé par la migration 002 préparée avec Lusimafu.
       mobileMoneyEnabled: true,
       spendPerPointFc: row.spend_per_point_fc ?? 3000,
       pointsPerMeal: row.points_per_meal ?? 15,
@@ -152,8 +153,8 @@ function mapOrderRow(row: OrderRow, items: OrderItemRow[], events: OrderEventRow
     arrivalTime: row.arrival_time,
     delivery,
     note: row.note,
-    comment: null,
-    rating: null,
+    comment: row.comment,
+    rating: row.rating,
     events: events.map((event) => ({ status: event.status, at: event.created_at })),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -231,13 +232,7 @@ export class SqliteOrdersRepository implements OrdersRepository {
   }
 
   async getAvailablePoints(userId: string, restaurantId: string, at: string): Promise<number> {
-    const row = this.db.get<{ total: number | null }>(`
-      SELECT COALESCE(SUM(CASE WHEN remaining IS NULL THEN points ELSE remaining END), 0) AS total
-      FROM points_ledger
-      WHERE user_id = ? AND restaurant_id = ? AND kind IN ('earn', 'referral', 'refund', 'adjust')
-        AND (expires_at IS NULL OR expires_at > ?)
-    `, [userId, restaurantId, at]);
-    return Math.max(0, row?.total ?? 0);
+    return this.availablePoints(userId, restaurantId, at);
   }
 
   async getLoyaltyRemainderFc(userId: string, restaurantId: string): Promise<number> {
