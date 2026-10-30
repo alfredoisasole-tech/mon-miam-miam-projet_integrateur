@@ -10,7 +10,7 @@ try {
   mkdirSync(dirname(config.databasePath), { recursive: true });
   const database = new Database(config.databasePath);
   migrate(database);
-  const app = createApp(config);
+  const app = createApp(config, { database });
   const server = app.listen(config.port, '0.0.0.0', () => {
     console.log(`[${new Date().toISOString()}] Mon Miam Miam : API prête sur le port ${config.port} (${config.env}).`);
   });
