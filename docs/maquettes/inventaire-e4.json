@@ -1,0 +1,405 @@
+{
+  "livrable": "E-4",
+  "branche": "docs/maquettes-validees",
+  "date_preparation": "2026-10-30",
+  "source_figma": "https://www.figma.com/design/nq0KxUaeuNisAe4a6yPvBs/Mon-Miam-Miam?node-id=4-111966",
+  "sources": [
+    {
+      "nom": "Mon Miam Miam.pdf",
+      "octets": 106159769,
+      "sha256": "4ef8f0e96447ba3c54211f06ed9d8a6ba29b7a4a82141d490dec8c1597abe4ba"
+    },
+    {
+      "nom": "Mon Miam Miam.fig",
+      "octets": 7597260,
+      "sha256": "88b3df4b945d083a850180d4bb7a418db37ec42c8d2f5350e6bf454d4397ea6f"
+    }
+  ],
+  "methode": "Rendu direct de chaque page du PDF fourni, à sa taille native ; aucune retouche du contenu.",
+  "charte_attendue": {
+    "couleur_principale": "#cfbd97",
+    "couleur_secondaire": "#000000",
+    "police": "Poppins"
+  },
+  "validation": {
+    "confirmation_utilisateur": "Emmanuel a confirmé le 30 octobre 2026 que le propriétaire a validé les maquettes et a fourni le lien Figma.",
+    "proprietaire": null,
+    "date_accord": null,
+    "preuve_datee": null
+  },
+  "test_navigation_privee": {
+    "statut": "reussi",
+    "date": "2026-10-30",
+    "navigateur": "Google Chrome, fenêtre Incognito",
+    "resultat": "Fichier Mon Miam Miam chargé sans compte ; inscription proposée pour commenter, modifier ou inspecter."
+  },
+  "ecrans": [
+    {
+      "page_pdf": 1,
+      "titre": "Accueil et restaurants",
+      "role": "Public",
+      "description": "Découvrir les restaurants, les promotions et le fonctionnement du service.",
+      "fichier": "maquettes/page-01.png",
+      "largeur": 1440,
+      "hauteur": 3156,
+      "octets": 1746835,
+      "sha256": "0a56d04a81aef54cccda7c1fca2464a257b83655416787d9db560b00d90b07ed"
+    },
+    {
+      "page_pdf": 2,
+      "titre": "Menu du restaurant et mini-panier",
+      "role": "Public / étudiant",
+      "description": "Consulter les plats et composer le panier du restaurant.",
+      "fichier": "maquettes/page-02.png",
+      "largeur": 1440,
+      "hauteur": 2237,
+      "octets": 1336808,
+      "sha256": "df1c514536f3fdcaaced504e81b36dcbf440a9eb8eeb594c7855133c438e1284"
+    },
+    {
+      "page_pdf": 3,
+      "titre": "Connexion",
+      "role": "Tous les comptes",
+      "description": "Se connecter et rejoindre son espace.",
+      "fichier": "maquettes/page-03.png",
+      "largeur": 1440,
+      "hauteur": 1080,
+      "octets": 498223,
+      "sha256": "77224e7502c62cd4394bb9c1503207a05facca6d95d0d714c3d1f7ddb66de857"
+    },
+    {
+      "page_pdf": 4,
+      "titre": "Commandes du service",
+      "role": "Employé",
+      "description": "Lister les commandes et leurs prochaines actions.",
+      "fichier": "maquettes/page-04.png",
+      "largeur": 1440,
+      "hauteur": 2595,
+      "octets": 365479,
+      "sha256": "ae13e8950c5a43f09938297a56388df17096d9d8b5f980579556daa687a165a2"
+    },
+    {
+      "page_pdf": 5,
+      "titre": "Détail de commande",
+      "role": "Employé",
+      "description": "Consulter les articles, la réception, le paiement et les actions de service.",
+      "fichier": "maquettes/page-05.png",
+      "largeur": 1440,
+      "hauteur": 4280,
+      "octets": 646719,
+      "sha256": "7dc76aa60b6e8d27a3cac36d21714f88f8f98d9a1c55631da9bc6d2a88d3dd7f"
+    },
+    {
+      "page_pdf": 6,
+      "titre": "Disponibilité des plats",
+      "role": "Employé",
+      "description": "Signaler les plats disponibles ou en rupture.",
+      "fichier": "maquettes/page-06.png",
+      "largeur": 1440,
+      "hauteur": 1981,
+      "octets": 350920,
+      "sha256": "18fd516f760c099e83d4b88356acc71fcc3a9866d91687faf1a26cf50fe7e4c1"
+    },
+    {
+      "page_pdf": 7,
+      "titre": "Réclamations des clients",
+      "role": "Employé",
+      "description": "Proposer une réponse à faire valider.",
+      "fichier": "maquettes/page-07.png",
+      "largeur": 1440,
+      "hauteur": 2566,
+      "octets": 406849,
+      "sha256": "2a26438ae0ef89497541710b921fafccfd549ccd3bb7b79b07545d0a4198b8e7"
+    },
+    {
+      "page_pdf": 8,
+      "titre": "Statistiques du service",
+      "role": "Employé",
+      "description": "Consulter les indicateurs et les plats les plus vendus.",
+      "fichier": "maquettes/page-08.png",
+      "largeur": 1440,
+      "hauteur": 2574,
+      "octets": 301525,
+      "sha256": "50c84f901022a6f71ab7c9d4bcbc4011e1e0629effbdfe0f488e74e9af717eb7"
+    },
+    {
+      "page_pdf": 9,
+      "titre": "Inscription étudiant",
+      "role": "Public",
+      "description": "Créer un compte étudiant.",
+      "fichier": "maquettes/page-09.png",
+      "largeur": 1440,
+      "hauteur": 1660,
+      "octets": 592088,
+      "sha256": "873539759219deada5a2dd0a6f05fdb2614ce19af3a6ff5a2bde32c2a7231f4a"
+    },
+    {
+      "page_pdf": 10,
+      "titre": "Mot de passe oublié",
+      "role": "Public",
+      "description": "Demander un lien de récupération du compte.",
+      "fichier": "maquettes/page-10.png",
+      "largeur": 1440,
+      "hauteur": 1080,
+      "octets": 96396,
+      "sha256": "990d88262432e7629ea65336915930b709fbaaaa401cefe1d19dbad791cae827"
+    },
+    {
+      "page_pdf": 11,
+      "titre": "Nouveau mot de passe",
+      "role": "Public",
+      "description": "Définir et confirmer un nouveau mot de passe.",
+      "fichier": "maquettes/page-11.png",
+      "largeur": 1440,
+      "hauteur": 1141,
+      "octets": 117216,
+      "sha256": "07b3426ae3f1aaae3afac7bf46d60b9ca1e78aad73dcce79eb545111087fe839"
+    },
+    {
+      "page_pdf": 12,
+      "titre": "Accueil : états complémentaires",
+      "role": "Public",
+      "description": "Présenter chargement, absence de promotion et autres états de l’accueil.",
+      "fichier": "maquettes/page-12.png",
+      "largeur": 1440,
+      "hauteur": 1588,
+      "octets": 293783,
+      "sha256": "c6f138055f87ebe9b0c05f6778a2d846abe0e7edf05b056b06c8e6a0c155452d"
+    },
+    {
+      "page_pdf": 13,
+      "titre": "Menu et changement de restaurant : états",
+      "role": "Public / étudiant",
+      "description": "Confirmer la remise à zéro du panier lors du changement de restaurant.",
+      "fichier": "maquettes/page-13.png",
+      "largeur": 1440,
+      "hauteur": 1537,
+      "octets": 231062,
+      "sha256": "360fca32ad464375b13681d90411b65842ef770d6f83580db71a29a90ac07b27"
+    },
+    {
+      "page_pdf": 14,
+      "titre": "Connexion : états complémentaires",
+      "role": "Tous les comptes",
+      "description": "Présenter les erreurs et les états d’attente de connexion.",
+      "fichier": "maquettes/page-14.png",
+      "largeur": 1440,
+      "hauteur": 1154,
+      "octets": 221456,
+      "sha256": "66760c0a8fe88c7fd852fd850bb323ea4926359895056f6eaf50e76e0fef300d"
+    },
+    {
+      "page_pdf": 15,
+      "titre": "Supervision du service",
+      "role": "Gérant",
+      "description": "Consulter l’avancement des commandes du restaurant.",
+      "fichier": "maquettes/page-15.png",
+      "largeur": 1440,
+      "hauteur": 3700,
+      "octets": 495032,
+      "sha256": "bfd3b2adacb86a8731e32619b0d48183a2148568387e49c6b96adda86600a1f1"
+    },
+    {
+      "page_pdf": 16,
+      "titre": "Gestion des employés",
+      "role": "Gérant",
+      "description": "Créer et gérer les accès des employés.",
+      "fichier": "maquettes/page-16.png",
+      "largeur": 1440,
+      "hauteur": 2321,
+      "octets": 347016,
+      "sha256": "f8dd70ddb84f217203125c08b923ff4063bef01c5b442e0ead0caa1e5b2e82ce"
+    },
+    {
+      "page_pdf": 17,
+      "titre": "Inscription : erreurs et confirmation",
+      "role": "Public",
+      "description": "Corriger les champs et confirmer la création du compte.",
+      "fichier": "maquettes/page-17.png",
+      "largeur": 1440,
+      "hauteur": 1408,
+      "octets": 522967,
+      "sha256": "614796ccc762ae6f86da86af0160a43ab045148db805835311fc325cf1aed86d"
+    },
+    {
+      "page_pdf": 18,
+      "titre": "Récupération : confirmations et erreurs",
+      "role": "Public",
+      "description": "Présenter lien envoyé, renvoi, expiration et succès.",
+      "fichier": "maquettes/page-18.png",
+      "largeur": 1440,
+      "hauteur": 1117,
+      "octets": 218758,
+      "sha256": "83867a13e99cee5ae3c090f24a256954e9380b25dff7d9211565001487bb992b"
+    },
+    {
+      "page_pdf": 19,
+      "titre": "Statistiques du restaurant",
+      "role": "Gérant",
+      "description": "Analyser ventes et fidélité sur une période.",
+      "fichier": "maquettes/page-19.png",
+      "largeur": 1440,
+      "hauteur": 2983,
+      "octets": 365951,
+      "sha256": "b53a0c5d6eb5e20b6a6727109f3f70f140cf2abee3cc96f30168fa56550c7c4a"
+    },
+    {
+      "page_pdf": 20,
+      "titre": "Validation des réponses aux réclamations",
+      "role": "Gérant",
+      "description": "Approuver ou rejeter les réponses proposées.",
+      "fichier": "maquettes/page-20.png",
+      "largeur": 1440,
+      "hauteur": 2534,
+      "octets": 395470,
+      "sha256": "dbf5218a5182d0917f390e69ae52cebe6523ced4ff70d71e6fa2e1bbcee99ec5"
+    },
+    {
+      "page_pdf": 21,
+      "titre": "Comptes et accès de l’équipe",
+      "role": "Administrateur restaurant",
+      "description": "Gérer les employés et gérants du restaurant.",
+      "fichier": "maquettes/page-21.png",
+      "largeur": 1440,
+      "hauteur": 3425,
+      "octets": 501463,
+      "sha256": "b25cb625097827b53ae90c2d756b60390285dbfeebf6d86b0697049ca1af520b"
+    },
+    {
+      "page_pdf": 22,
+      "titre": "Gestion de la carte",
+      "role": "Administrateur restaurant",
+      "description": "Consulter et gérer les plats du menu.",
+      "fichier": "maquettes/page-22.png",
+      "largeur": 1440,
+      "hauteur": 2033,
+      "octets": 350961,
+      "sha256": "1f51a2f52d7db0a4d9e069706f67e2af5f375889912cbee4f85b02e53e5ce0bf"
+    },
+    {
+      "page_pdf": 23,
+      "titre": "Ajout d’un plat",
+      "role": "Administrateur restaurant",
+      "description": "Renseigner les informations et la photo d’un nouveau plat.",
+      "fichier": "maquettes/page-23.png",
+      "largeur": 1440,
+      "hauteur": 1257,
+      "octets": 197931,
+      "sha256": "cd542944d4ea04fd9542b84bd4f46660ebc8e1a6a7a29f2ad070c64b3b0f1d21"
+    },
+    {
+      "page_pdf": 24,
+      "titre": "Modification d’un plat",
+      "role": "Administrateur restaurant",
+      "description": "Modifier les informations et la publication d’un plat.",
+      "fichier": "maquettes/page-24.png",
+      "largeur": 1440,
+      "hauteur": 2225,
+      "octets": 718267,
+      "sha256": "b92f4d5b3b7cc6db749e3705ad308fd28535f026367d251567f2983c338051ba"
+    },
+    {
+      "page_pdf": 25,
+      "titre": "Promotions et événements",
+      "role": "Administrateur restaurant",
+      "description": "Gérer les affiches et leurs périodes de publication.",
+      "fichier": "maquettes/page-25.png",
+      "largeur": 1440,
+      "hauteur": 2508,
+      "octets": 928056,
+      "sha256": "c2c835e2097ee093bb9a614f71ea7d4fbc6535ad8ef610c8af2b2c9f823b619c"
+    },
+    {
+      "page_pdf": 26,
+      "titre": "Paramètres du restaurant",
+      "role": "Administrateur restaurant",
+      "description": "Renseigner les informations, horaires et règles du restaurant.",
+      "fichier": "maquettes/page-26.png",
+      "largeur": 1440,
+      "hauteur": 3181,
+      "octets": 437701,
+      "sha256": "199684e5bc83764c2552ad8a8e0aca977e565ade4c8b280a0313af7be654bf1e"
+    },
+    {
+      "page_pdf": 27,
+      "titre": "Statistiques et analyses",
+      "role": "Administrateur restaurant",
+      "description": "Consulter les indicateurs du restaurant sur une période.",
+      "fichier": "maquettes/page-27.png",
+      "largeur": 1440,
+      "hauteur": 3211,
+      "octets": 402130,
+      "sha256": "561fbab30032fa1558f03b2a7056a593cb30d4bf7c3d41e1840eb087d911001a"
+    },
+    {
+      "page_pdf": 28,
+      "titre": "Gestion des réclamations",
+      "role": "Administrateur restaurant",
+      "description": "Valider les propositions ou publier une réponse directe.",
+      "fichier": "maquettes/page-28.png",
+      "largeur": 1440,
+      "hauteur": 2905,
+      "octets": 469669,
+      "sha256": "257623ea66bbfc37fe10251e235fe8dfd376b7098cd934df60a09e67c287370c"
+    },
+    {
+      "page_pdf": 29,
+      "titre": "Liste des restaurants",
+      "role": "Administrateur plateforme",
+      "description": "Gérer les restaurants et leur état actif ou inactif.",
+      "fichier": "maquettes/page-29.png",
+      "largeur": 1440,
+      "hauteur": 1390,
+      "octets": 203526,
+      "sha256": "b78b67cce8314c76707d0f3db3cb6423fd0e3e772291852745015de3b94e751d"
+    },
+    {
+      "page_pdf": 30,
+      "titre": "Création du restaurant",
+      "role": "Administrateur plateforme",
+      "description": "Renseigner les informations du nouveau restaurant.",
+      "fichier": "maquettes/page-30.png",
+      "largeur": 1440,
+      "hauteur": 2069,
+      "octets": 225700,
+      "sha256": "46f4d5a60a02df6ddb4a85910d5f1e2396575ccc4c73c141f844b3ef7e25d41a"
+    },
+    {
+      "page_pdf": 31,
+      "titre": "Premier administrateur",
+      "role": "Administrateur plateforme",
+      "description": "Renseigner le premier administrateur et vérifier le récapitulatif.",
+      "fichier": "maquettes/page-31.png",
+      "largeur": 1440,
+      "hauteur": 1877,
+      "octets": 249025,
+      "sha256": "304cb037450253c674e014786766e9f6f120ae4520a47ad52316a76fdea9a85f"
+    },
+    {
+      "page_pdf": 32,
+      "titre": "Activation et désactivation",
+      "role": "Administrateur plateforme",
+      "description": "Confirmer l’activation ou la désactivation d’un restaurant.",
+      "fichier": "maquettes/page-32.png",
+      "largeur": 1440,
+      "hauteur": 3457,
+      "octets": 484365,
+      "sha256": "afcaddc37fb3b138411943bf36031919fafe13e9a0a653f99ce2da1d2b4eab05"
+    }
+  ],
+  "adaptation_congolaise": {
+    "statut": "a_appliquer_dans_figma",
+    "date_demande": "2026-10-30",
+    "plats": [
+      "Riz aux haricots",
+      "Poulet mayonnaise",
+      "Fumbwa",
+      "Pondu"
+    ],
+    "boissons": [
+      "Coca-Cola",
+      "Fanta",
+      "Vital’O"
+    ]
+  }
+}
