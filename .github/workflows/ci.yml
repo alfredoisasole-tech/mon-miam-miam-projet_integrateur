@@ -26,6 +26,8 @@ jobs:
         run: npm run typecheck
       - name: Tests
         run: npm test
+      - name: Vérifier le schéma de la base
+        run: node ../database/verifier.mjs
 
   frontend:
     runs-on: ubuntu-latest

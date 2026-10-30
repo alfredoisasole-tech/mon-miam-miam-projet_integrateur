@@ -473,7 +473,7 @@ erDiagram
 - **Parrainage** : `points_ledger.referral_id` référence `referrals.id`; `users.referred_by` est une relation réflexive et `referrals` relie deux utilisateurs distincts par `referrer_id` et `referee_id`.
 - **Réclamations** : `claims.user_id` est obligatoire ; `order_id`, `proposed_by` et `resolved_by` sont facultatifs.
 - **Liens facultatifs** : `claims.order_id`, `claims.proposed_by`, `claims.resolved_by`, `order_events.user_id`, `points_ledger.order_id`, `points_ledger.referral_id`, `points_ledger.created_by`, `referrals.rewarded_order_id`, `users.referred_by`, ainsi que les trois références d'image vers `assets`.
-- **Cohérence entre restaurants** : toute commande, tout paiement, toute réclamation et toute ligne du journal de points doit appartenir au même restaurant que son parent. Cette règle est garantie par des tests automatisés couvrant les clés parentales et l'adhésion de l'étudiant au restaurant ; le seul `users.restaurant_id` ne suffit pas puisqu'il désigne le restaurant d'origine et que `memberships` autorise plusieurs restaurants.
+- **Cohérence entre restaurants** : les déclencheurs SQLite vérifient l'adhésion de l'étudiant au restaurant de sa commande ainsi que le rattachement des articles, paiements, réclamations, points, parrainages et images à leurs parents. Le vérificateur couvre ces rejets. Le seul `users.restaurant_id` ne suffit pas puisqu'il désigne le restaurant d'origine et que `memberships` autorise plusieurs restaurants.
 - **Administrateurs de plateforme** : `platform_admins` n'est rattachée à aucun restaurant.
 
 ## 3. Validation des clés, des contraintes et de la cohérence
@@ -543,12 +543,12 @@ Le modèle a été vérifié entre ses trois sections : les entités, les relati
 - `restaurant_settings.spend_per_point_fc`, `points_per_meal` et `points_validity_months` sont strictement supérieurs à zéro.
 - `memberships.loyalty_remainder_fc` est supérieur ou égal à zéro.
 
-### Règles de calcul (tests)
+### Règles de calcul
 
 - `order_items.line_total_fc = order_items.unit_price_fc × order_items.quantity`.
 - `orders.total_fc = orders.subtotal_fc − orders.discount_fc + orders.delivery_fee_fc`.
 
-Ces calculs sont des règles métier à vérifier par des tests automatisés ; ils ne sont pas présentés comme des contraintes de base de données.
+Ces calculs sont vérifiés par les contraintes `CHECK` du schéma et par le vérificateur automatisé.
 
 ### Points à corriger
 
