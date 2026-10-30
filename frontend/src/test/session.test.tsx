@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, act, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, act, waitFor, fireEvent, cleanup } from "@testing-library/react";
 import React from "react";
 import {
   AuthProvider,
@@ -48,6 +47,8 @@ function RestaurantConsumer() {
 }
 
 // ─── Setup ───────────────────────────────────────────────────────────────────
+
+afterEach(cleanup);
 
 beforeEach(() => {
   localStorage.clear();
@@ -108,7 +109,7 @@ describe("AuthProvider", () => {
       </AuthProvider>
     );
 
-    await userEvent.click(screen.getByText("login"));
+    fireEvent.click(screen.getByText("login"));
 
     await waitFor(() =>
       expect(screen.getByTestId("user").textContent).toBe("Gloire")
@@ -130,7 +131,7 @@ describe("AuthProvider", () => {
       expect(screen.getByTestId("user").textContent).toBe("Gloire")
     );
 
-    await userEvent.click(screen.getByText("logout"));
+    fireEvent.click(screen.getByText("logout"));
 
     await waitFor(() =>
       expect(screen.getByTestId("user").textContent).toBe("anonymous")
@@ -149,7 +150,7 @@ describe("RestaurantProvider", () => {
       </RestaurantProvider>
     );
 
-    await userEvent.click(screen.getByText("choose zeduc"));
+    fireEvent.click(screen.getByText("choose zeduc"));
 
     expect(screen.getByTestId("slug").textContent).toBe("zeduc-space");
     expect(localStorage.getItem("mmm_restaurant")).toBe("zeduc-space");
@@ -176,7 +177,7 @@ describe("RestaurantProvider", () => {
       </RestaurantProvider>
     );
 
-    await userEvent.click(screen.getByText("clear"));
+    fireEvent.click(screen.getByText("clear"));
 
     expect(screen.getByTestId("slug").textContent).toBe("none");
     expect(localStorage.getItem("mmm_restaurant")).toBeNull();
