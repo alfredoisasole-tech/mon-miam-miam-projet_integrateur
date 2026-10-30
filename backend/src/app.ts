@@ -1,4 +1,4 @@
-import express, { type ErrorRequestHandler, type Express } from 'express';
+import express, { type ErrorRequestHandler, type Express, type Request } from 'express';
 import type { Config } from './config.ts';
 import { AppError } from './http/errors.ts';
 import { cors, securityHeaders } from './http/security.ts';
@@ -15,6 +15,10 @@ import { SqlitePromotionsRepository } from './repositories/sqlite-promotions.rep
 import { PromotionsService } from './services/promotions.service.ts';
 import { registerPromotionRoutes } from './controllers/promotions.controller.ts';
 import { registerMenuAdminRoutes } from './controllers/menu-admin.controller.ts';
+import { registerPaymentRoutes } from './controllers/payments.controller.ts';
+import { PaymentsService } from './services/payments.service.ts';
+import { SqlitePaymentsRepository } from './repositories/sqlite-payments.repo.ts';
+import { SimulatedPaymentProvider, type PaymentProvider } from './domain/payments.ts';
 
 export interface AppOptions {
   /** Routes supplémentaires, ajoutées avant la gestion des routes inconnues et des erreurs (utile pour les tests). */
@@ -24,10 +28,16 @@ export interface AppOptions {
   sendPasswordResetCode?: (identifier: string, code: string) => Promise<void>;
   /** Résout l’identité du jeton ; l’authentification réelle peut être remplacée sans toucher aux routes. */
   resolveToken?: TokenResolver;
+  /** Fournisseur remplaçable dans les tests et lors de l’intégration future d’un agrégateur. */
+  paymentProvider?: PaymentProvider;
 }
 
 interface ErreurDeLecture {
   type?: string;
+}
+
+interface RequestWithRawBody extends Request {
+  rawBody?: Buffer;
 }
 
 /** Toute erreur de l'API prend la même forme : { error: { code, message, details } }. */
@@ -56,7 +66,14 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
   app.disable('x-powered-by');
   app.use(securityHeaders());
   app.use(cors(config.corsOrigins));
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({
+    limit: '1mb',
+    verify: (request, _response, body) => {
+      if ((request as Request).originalUrl.split('?')[0] === '/api/payments/webhook') {
+        (request as RequestWithRawBody).rawBody = Buffer.from(body);
+      }
+    },
+  }));
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
@@ -76,6 +93,14 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
     });
     registerStaffOrderRoutes(app, { repository: orders, authenticate, now: options.now });
     registerPromotionRoutes(app, new PromotionsService(new SqlitePromotionsRepository(options.database), options.now));
+    registerPaymentRoutes(app, {
+      service: new PaymentsService(
+        new SqlitePaymentsRepository(options.database),
+        options.paymentProvider ?? new SimulatedPaymentProvider(config.paymentWebhookSecret),
+        { now: options.now },
+      ),
+      authenticate,
+    });
   }
   options.routes?.(app);
 
