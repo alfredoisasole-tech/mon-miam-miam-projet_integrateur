@@ -16,6 +16,7 @@ Configuration prévue :
 | `DATABASE_PATH` | `/var/data/mon-miam-miam.sqlite` |
 | Disque Render | disque persistant monté sur `/var/data` |
 | `JWT_SECRET` | secret d’environnement d’au moins 32 caractères, jamais stocké dans Git |
+| `PAYMENT_WEBHOOK_SECRET` | secret d’environnement d’au moins 32 caractères pour les signatures HMAC des webhooks, obligatoire en production et jamais stocké dans Git |
 | `CORS_ORIGINS` | origine exacte du site Vercel, à renseigner avant le lancement |
 
 Le code applique les migrations au démarrage. Sans disque persistant, les écritures du système de fichiers Render sont perdues lors d’un redémarrage ou d’un redéploiement. Un disque Render est limité à une instance de service ; SQLite sur ce disque ne doit donc pas être déployé avec plusieurs instances.

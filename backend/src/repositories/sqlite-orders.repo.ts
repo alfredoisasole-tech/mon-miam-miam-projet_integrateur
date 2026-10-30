@@ -284,6 +284,27 @@ export class SqliteOrdersRepository implements OrdersRepository {
     | { kind: 'cancelled'; order: Order }
   > {
     return this.db.transaction(() => {
+      const identity = this.db.get<{ restaurant_id: string }>(`
+        SELECT o.restaurant_id FROM orders o
+        WHERE o.id = ? AND o.user_id = ?
+          AND o.restaurant_id IN (SELECT m.restaurant_id FROM memberships m WHERE m.user_id = ?)
+      `, [orderId, userId, userId]);
+      if (!identity) return { kind: 'not_found' } as const;
+
+      const cutoff = new Date(Date.parse(at) - 15 * 60 * 1000).toISOString();
+      const expired = this.db.run(`UPDATE payments SET status = 'failed', updated_at = ?
+        WHERE order_id = ? AND restaurant_id = ? AND status = 'pending' AND created_at < ?`,
+      [at, orderId, identity.restaurant_id, cutoff]);
+      if (Number(expired.changes) > 0) {
+        const stillPending = this.db.get<{ count: number }>(`SELECT COUNT(*) AS count FROM payments
+          WHERE order_id = ? AND restaurant_id = ? AND status = 'pending'`, [orderId, identity.restaurant_id]);
+        if (stillPending?.count === 0) {
+          this.db.run(`UPDATE orders SET payment_status = 'failed', updated_at = ?
+            WHERE id = ? AND restaurant_id = ? AND status = 'pending' AND payment_status = 'pending'`,
+          [at, orderId, identity.restaurant_id]);
+        }
+      }
+
       const row = this.db.get<OrderRow>(`
         SELECT ${orderColumns}
         FROM orders o JOIN restaurants r ON r.id = o.restaurant_id
