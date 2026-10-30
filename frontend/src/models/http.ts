@@ -1,54 +1,31 @@
-const API_BASE = "/api";
-
-class HttpClient {
-  private getToken(): string | null {
-    try {
-      return localStorage.getItem("mmm_token");
-    } catch {
-      return null;
-    }
-  }
-
-  async get<T>(path: string): Promise<T> {
-    const token = this.getToken();
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const res = await fetch(`${API_BASE}${path}`, { headers });
-
-    if (!res.ok) {
-      const error: any = new Error(`HTTP ${res.status}`);
-      error.status = res.status;
-      if (res.status === 401) error.code = "UNAUTHORIZED";
-      throw error;
-    }
-
-    return res.json();
-  }
-
-  async post<T>(path: string, body: any): Promise<T> {
-    const token = this.getToken();
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const res = await fetch(`${API_BASE}${path}`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      const error: any = new Error(`HTTP ${res.status}`);
-      error.status = res.status;
-      throw error;
-    }
-
-    return res.json();
-  }
+interface ApiError extends Error {
+  code: string;
+  status: number;
 }
 
-export const api = new HttpClient();
+const baseUrl = (import.meta.env.VITE_API_URL ?? "/api").replace(/\/+$/, "");
+
+export const api = {
+  async get<T>(path: string): Promise<T> {
+    let token: string | null = null;
+
+    try {
+      token = localStorage.getItem("mmm_token");
+    } catch {
+      // localStorage peut être indisponible.
+    }
+
+    const response = await fetch(`${baseUrl}/${path.replace(/^\/+/, "")}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) {
+      const error = new Error(`Erreur HTTP ${response.status}`) as ApiError;
+      error.status = response.status;
+      error.code = response.status === 401 ? "UNAUTHORIZED" : "HTTP_ERROR";
+      throw error;
+    }
+
+    return (await response.json()) as T;
+  },
+};
