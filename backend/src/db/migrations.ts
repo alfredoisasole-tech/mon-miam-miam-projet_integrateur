@@ -6,6 +6,11 @@ export type Migration = { id: string; sql: string };
 
 const schemaPath = new URL('../../../database/schema.sql', import.meta.url);
 
+// Règle : une migration déjà fusionnée ne se modifie jamais. Tout changement
+// de la base ajoute une nouvelle migration numérotée (002_..., 003_...),
+// sinon les bases existantes ne seraient pas mises à jour.
+// Le schéma est lu depuis le dossier `database/` à la racine du dépôt :
+// le serveur doit donc être lancé avec le dépôt complet.
 export const migrations: Migration[] = [
   { id: '001_initial', sql: readFileSync(fileURLToPath(schemaPath), 'utf8') },
 ];
