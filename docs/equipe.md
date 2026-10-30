@@ -53,17 +53,17 @@ Le responsable indiqué est la personne assignée à la story dans Jira. Elle en
 | --- | --- |
 | Règles, architecture et organisation | Judy et Emmanuel documentent les rôles, les règles multi-restaurants et l’organisation ; Gloire documente les règles de commande et de paiement ; Lusimafu formalise les conventions Git ; Alfredo prépare le dépôt et les choix techniques. |
 | Interfaces et API | A fournit les maquettes, la charte et les composants communs. B réalise les principaux parcours React. C fournit les API et les contrôles serveur. Gabriel coordonne le contrat d’API avec les personnes qui l’implémentent et l’utilisent. |
-| Commandes et paiement | Gloire réalise le panier et la gestion des commandes côté personnel ; Don prend en charge les commandes côté serveur ; Gabriel réalise le paiement simulé et l’écran de suivi ; Brayan réalise le choix du paiement, la redirection et les pages de retour. |
+| Commandes et paiement | Gabriel développe le panier ([APP-67](https://judbie2030-45660043.atlassian.net/browse/APP-67)), enregistre et valide la commande ([APP-68](https://judbie2030-45660043.atlassian.net/browse/APP-68)) et affiche le suivi de commande ([APP-69](https://judbie2030-45660043.atlassian.net/browse/APP-69)) ; Brayan prend en charge le paiement ([APP-23](https://judbie2030-45660043.atlassian.net/browse/APP-23)) ; Gloire gère les commandes reçues par le restaurant ([APP-22](https://judbie2030-45660043.atlassian.net/browse/APP-22)). |
 | Fidélité | Gloire réalise le calcul et l’affichage des points ; Brayan applique la remise dans le parcours de commande ; Alfredo vérifie qu’un solde ne peut pas être utilisé deux fois. |
 | Statistiques | Lusimafu calcule les indicateurs côté serveur ; Emmanuel réalise leur affichage dans l’espace du restaurant. |
 | Administration de la plateforme | Judy réalise l’interface ; Don fournit les API et leurs protections. Les données restent isolées par restaurant. |
 | Tests et livraison | Chaque binôme vérifie ses changements. Judy coordonne les parcours de bout en bout et la démonstration ; Alfredo rassemble le rapport de tests et les éléments de livraison ; les autres membres apportent leurs résultats et leur documentation. |
 
-Les étiquettes des stories ne détaillent pas toutes ces contributions. Deux points doivent notamment être confirmés par Judy : Gabriel, du binôme D, intervient sur le paiement alors que US15 porte seulement l’étiquette B ; Lusimafu, du binôme C, prépare l’installation de la base alors que US21 porte seulement l’étiquette D. Ces contributions sont indiquées ici sans modifier les affectations Jira.
+Les étiquettes des stories ne détaillent pas toutes ces contributions. Un point doit notamment être confirmé par Judy : Lusimafu, du binôme C, prépare l’installation de la base alors que US21 porte seulement l’étiquette D. Cette contribution est indiquée ici sans modifier les affectations Jira.
 
 ## Relecture et intégration
 
-La branche de cette documentation est `docs/equipe`. La pull request vise `dev` et reprend la référence APP-37. Judy vérifie la composition des binômes, la correspondance des stories et les contributions partagées avant la fusion. Le statut « Terminé » d’APP-37 dans Jira ne constitue pas, à lui seul, une validation de ce fichier.
+La branche initiale de cette documentation est `docs/equipe.md`. La pull request vise `dev` et reprend la référence APP-37. Judy vérifie la composition des binômes, la correspondance des stories et les contributions partagées avant la fusion. Le statut « Terminé » d’APP-37 dans Jira ne constitue pas, à lui seul, une validation de ce fichier.
 
 Pour les relectures habituelles, B relit les PR de A, C celles de B, D celles de C et A celles de D. Les changements apportés aux fichiers partagés sont également relus par leur propriétaire. Les règles de branche, de commit et de fusion sont définies dans [les conventions Git](conventions-git.md).
 
