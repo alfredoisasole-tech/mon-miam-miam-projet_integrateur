@@ -1,5 +1,11 @@
 # Zoning et wireframes - Mon Miam Miam
 
+## Maquettes en couleur - E-4
+
+Le dossier [Maquettes et lien Figma](MAQUETTES.md) contient l’inventaire et les 32 planches en couleur issues de la maquette fournie. Le lien Figma a été testé sans connexion en navigation privée le 30 octobre 2026. La nouvelle demande de menus congolais, la conformité Poppins et la date de validation sont suivies dans [les contrôles E-4](validation-e4.md).
+
+## Wireframes - E-3
+
 Ce dossier présente les parcours prévus pour E-3 : choisir un restaurant, composer une commande, revenir du paiement, traiter les commandes et gérer les restaurants de la plateforme.
 
 - **Responsable :** Emmanuel Mboyo (`emmanuelmboyo-dotcom`).
