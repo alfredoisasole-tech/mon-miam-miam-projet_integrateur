@@ -13,7 +13,7 @@ export const MenuPage: React.FC = () => {
   const addDish = (dish: MenuDish) => {
     cart.addProduct({
       id: dish.id,
-      restaurantId: menu?.restaurant ?? '',
+      restaurantSlug: menu?.restaurant ?? '',
       name: dish.name,
       unitPriceFc: dish.priceFc,
     });

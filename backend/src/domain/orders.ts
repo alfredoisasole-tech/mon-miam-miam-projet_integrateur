@@ -116,8 +116,8 @@ export interface Order {
   arrivalTime: string | null;
   delivery: DeliveryDetails | null;
   note: string | null;
-  comment: null;
-  rating: null;
+  comment: string | null;
+  rating: number | null;
   events: OrderEvent[];
   createdAt: string;
   updatedAt: string;
