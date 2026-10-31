@@ -1,6 +1,8 @@
 # Contenus congolais demandés - E-4
 
-Demande d’Emmanuel reçue le 30 octobre 2026. Ces changements sont à appliquer dans les calques éditables du fichier Figma avant de renouveler les exports.
+Demande d’Emmanuel reçue le 30 octobre 2026. Adaptation en cours dans la [copie Figma E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam).
+
+Avancement constaté le 31 octobre 2026 : 76 mentions de Poulet DG, 14 de Ndolé aux crevettes, 16 de Riz sauté au bœuf et 24 de Brochettes remplacées ; descriptions des quatre plats mises à jour. Les 38 mentions de jus de bissap et les deux mentions abrégées de bissap ont été remplacées par Coca-Cola. Les recherches des anciens libellés n’affichent plus de résultat après remplacement. La présentation promotionnelle mentionne aussi Fanta et Vital’O. Les photographies correspondantes, les cartes de boissons, le contrôle typographique et les nouveaux exports restent à réaliser.
 
 ## Plats
 
