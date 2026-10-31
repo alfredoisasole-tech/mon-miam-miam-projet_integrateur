@@ -4,6 +4,8 @@ Préparation : 30 octobre 2026 ; suivi actualisé le 31 octobre 2026. Responsabl
 
 ## Copie de travail actuelle
 
+Dernier avancement dans l’interface : les quatre photos sont intégrées dans le menu `56:5451` et une rangée de travail Coca-Cola/Fanta est ajoutée. Les descriptions et prix d’exemple de 800 FC ont été contrôlés sur les textes de cette copie. Trois illustrations de boissons sont sauvegardées dans `visuels/`. Le remplacement des images dans les autres écrans, la fin des boissons et les exports restent à effectuer. Les changements de premier plan interrompent les actions natives ; le quota du connecteur est toujours atteint.
+
 Suivi : [APP-99 — E-4 : Maquettes et liens Figma](https://judbie2030-45660043.atlassian.net/browse/APP-99). Le ticket reste ouvert tant que les critères ci-dessous ne sont pas tous vérifiés.
 
 La [copie E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam) est modifiable dans son compte. Le tableau historique ci-dessous porte sur le fichier source de Judbie ; son refus d’édition ne concerne pas la copie.
