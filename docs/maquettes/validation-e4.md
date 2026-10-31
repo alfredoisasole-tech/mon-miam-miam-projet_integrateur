@@ -10,7 +10,7 @@ La [copie E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/
 - La copie a été ouverte sans compte dans le navigateur intégré le 31 octobre ; un test Chrome Incognito propre à cette copie reste à consigner.
 - Les 1 504 textes sélectionnés avec la même police Inter ont été passés en Poppins : le panneau de famille de polices affiche désormais Poppins. Figma signale toutefois que certaines modifications ne seront pas synchronisées avant sa reconnexion. La synchronisation, les autres styles et les débordements doivent être contrôlés avant export.
 - Les photos, les cartes de boissons et les exports de la version modifiée restent à terminer. Les PNG actuels correspondent toujours au PDF source.
-- Validation datée du propriétaire : en attente. Aucun accord daté n’a été fourni pour la copie modifiée.
+- Validateur : Judbie. Emmanuel rapporte un accord donné le 26 octobre 2026. Cet accord précède les adaptations du 31 octobre ; leur relecture par Judbie reste à obtenir. Aucune trace externe datée de l’accord n’a été fournie.
 
 ## Historique du contrôle de la source
 
@@ -33,10 +33,10 @@ Le 30 octobre 2026 est la date de préparation et de test du lien. Elle ne rempl
 
 ## Validation à consigner
 
-- Propriétaire ayant validé : **à renseigner**.
-- Date réelle de l’accord : **à renseigner**.
+- Propriétaire ayant validé : **Judbie**, selon la confirmation d’Emmanuel.
+- Date de l’accord rapportée : **26 octobre 2026**.
 - Version concernée : fichier Figma ci-dessus ; préciser la version après adaptation des menus.
-- Trace de l’accord : commentaire Figma, réponse dans la PR ou confirmation explicite avec nom et date.
+- Trace de l’accord : confirmation explicite d’Emmanuel dans cette conversation, avec nom et date ; aucune trace externe datée fournie. La validation des adaptations ultérieures reste à obtenir.
 - Résultat final E-4 : **en cours**.
 
 ## Points de cohérence issus d’E-3
