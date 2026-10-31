@@ -23,9 +23,10 @@
   },
   "validation": {
     "confirmation_utilisateur": "Emmanuel a confirmé le 30 octobre 2026 que le propriétaire a validé les maquettes et a fourni le lien Figma.",
-    "proprietaire": null,
-    "date_accord": null,
-    "preuve_datee": null
+    "proprietaire": "Judbie",
+    "date_accord": "2026-10-26",
+    "preuve_datee": "Accord rapporté par Emmanuel dans cette conversation ; aucune trace externe datée fournie.",
+    "portee": "Version initiale ; les adaptations réalisées après le 26 octobre restent à faire relire par Judbie."
   },
   "test_navigation_privee": {
     "statut": "reussi",
