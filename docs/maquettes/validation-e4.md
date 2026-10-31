@@ -1,12 +1,25 @@
 # Contrôles et validation - E-4
 
-Préparation : 30 octobre 2026. Responsable : Emmanuel Mboyo. Branche : `docs/maquettes-validees`.
+Préparation : 30 octobre 2026 ; suivi actualisé le 31 octobre 2026. Responsable : Emmanuel Mboyo. Branche : `docs/maquettes-validees`.
+
+## Copie de travail actuelle
+
+La [copie E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam) est modifiable dans son compte. Le tableau historique ci-dessous porte sur le fichier source de Judbie ; son refus d’édition ne concerne pas la copie.
+
+- Les quatre noms de plats et leurs descriptions ont été adaptés ; Coca-Cola remplace le bissap dans les exemples. Fanta et Vital’O figurent dans la présentation promotionnelle.
+- La copie a été ouverte sans compte dans le navigateur intégré le 31 octobre ; un test Chrome Incognito propre à cette copie reste à consigner.
+- Les 1 504 textes sélectionnés avec la même police Inter restent à convertir : le panneau affichait encore Inter après tentative. Figma a ensuite signalé que certaines modifications ne seront pas synchronisées avant sa reconnexion. La conformité Poppins et la synchronisation doivent être confirmées avant export.
+- Les photos, les cartes de boissons et les exports de la version modifiée restent à terminer. Les PNG actuels correspondent toujours au PDF source.
+- Validation datée du propriétaire : en attente. Aucun accord daté n’a été fourni pour la copie modifiée.
+
+## Historique du contrôle de la source
 
 ## Résultat des contrôles
 
 | Contrôle | Résultat au 30 octobre 2026 | Preuve ou action restante |
 | --- | --- | --- |
 | Lien du bon fichier | Confirmé par Emmanuel | [Mon Miam Miam dans Figma](https://www.figma.com/design/nq0KxUaeuNisAe4a6yPvBs/Mon-Miam-Miam?node-id=4-111966) |
+| Connexion et accès en modification | Compte Emmanuel confirmé ; siège Figma « View » ; modification refusée | Le connecteur identifie Emmanuel MBOYO et son siège « View ». La création d’une session pour ce fichier est refusée faute d’accès en modification. Demander au propriétaire du fichier l’accès « Editor » avant toute adaptation. Aucun changement de maquette n’a été appliqué. |
 | Lecture sans compte | Réussi | Fichier chargé dans Chrome Incognito ; interface Figma accessible et inscription proposée pour commenter, modifier ou inspecter. Accès anonyme également vérifié dans un second navigateur. |
 | Charte : beige `#cfbd97` et noir `#000000` | Présence vérifiée dans la source | Couleurs vectorielles relevées sur la page d’accueil du PDF ; les rendus conservent les couleurs de la source. |
 | Charte : police Poppins | À finaliser | Le FIG fourni référence Poppins et Inter. Contrôler les familles réellement utilisées et remplacer les textes non conformes dans Figma. |

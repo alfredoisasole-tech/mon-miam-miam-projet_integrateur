@@ -5,12 +5,15 @@
 - Responsable : Emmanuel Mboyo (`emmanuelmboyo-dotcom`).
 - Branche : `docs/maquettes-validees`.
 - Planning : mardi 27 octobre 2026 ; préparation réelle le 30 octobre 2026.
-- [Ouvrir le fichier Figma confirmé par Emmanuel](https://www.figma.com/design/nq0KxUaeuNisAe4a6yPvBs/Mon-Miam-Miam?node-id=4-111966).
+- [Ouvrir la copie de travail E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam).
+- [Maquette source de Judbie](https://www.figma.com/design/nq0KxUaeuNisAe4a6yPvBs/Mon-Miam-Miam?node-id=4-111966).
 - [Inventaire technique des 32 exports](inventaire-e4.json).
 - [Contrôles, validation et points restant à confirmer](validation-e4.md).
 - [Contenu congolais demandé pour la prochaine version](contenu-congolais.md).
 
-Le lien Figma a été ouvert sans connexion dans une fenêtre Chrome en navigation privée le 30 octobre 2026. Les maquettes étaient accessibles ; l’inscription était proposée pour commenter, modifier ou inspecter.
+Le lien source a été ouvert sans connexion dans une fenêtre Chrome en navigation privée le 30 octobre 2026. La copie de travail a également été chargée sans compte dans le navigateur intégré le 31 octobre 2026 ; son test en navigation privée reste à consigner.
+
+Dans la copie éditable, les noms Poulet mayonnaise, Fumbwa, Riz aux haricots et Pondu ont été appliqués, ainsi que leurs descriptions. Coca-Cola remplace le bissap dans les commandes et promotions ; Fanta et Vital’O figurent dans la présentation promotionnelle. Les photos, les cartes de boissons, l’uniformisation en Poppins et les exports actualisés restent à terminer.
 
 ## Sources et portée
 
