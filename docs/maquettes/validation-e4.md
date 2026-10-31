@@ -8,7 +8,7 @@ La [copie E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/
 
 - Les quatre noms de plats et leurs descriptions ont été adaptés ; Coca-Cola remplace le bissap dans les exemples. Fanta et Vital’O figurent dans la présentation promotionnelle.
 - La copie a été ouverte sans compte dans le navigateur intégré le 31 octobre ; un test Chrome Incognito propre à cette copie reste à consigner.
-- Les 1 504 textes sélectionnés avec la même police Inter restent à convertir : le panneau affichait encore Inter après tentative. Figma a ensuite signalé que certaines modifications ne seront pas synchronisées avant sa reconnexion. La conformité Poppins et la synchronisation doivent être confirmées avant export.
+- Les 1 504 textes sélectionnés avec la même police Inter ont été passés en Poppins : le panneau de famille de polices affiche désormais Poppins. Figma signale toutefois que certaines modifications ne seront pas synchronisées avant sa reconnexion. La synchronisation, les autres styles et les débordements doivent être contrôlés avant export.
 - Les photos, les cartes de boissons et les exports de la version modifiée restent à terminer. Les PNG actuels correspondent toujours au PDF source.
 - Validation datée du propriétaire : en attente. Aucun accord daté n’a été fourni pour la copie modifiée.
 
