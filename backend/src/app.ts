@@ -4,12 +4,23 @@ import { AppError } from './http/errors.ts';
 import { cors, securityHeaders } from './http/security.ts';
 import type { Database } from './db/database.ts';
 import { registerRestaurantsMenuRoutes } from './controllers/restaurants-menu.controller.ts';
+import { registerAuthRoutes } from './controllers/auth.controller.ts';
+import { AuthService } from './services/auth.service.ts';
+import { createAuthMiddleware } from './http/auth.ts';
+import { SqliteOrdersRepository } from './repositories/sqlite-orders.repo.ts';
+import { OrdersService } from './services/orders.service.ts';
+import { registerOrderRoutes, registerStaffOrderRoutes } from './controllers/orders.controller.ts';
+import { registerPlatformRestaurantRoutes } from './controllers/platform-restaurants.controller.ts';
+import { SqlitePromotionsRepository } from './repositories/sqlite-promotions.repo.ts';
+import { PromotionsService } from './services/promotions.service.ts';
+import { registerPromotionRoutes } from './controllers/promotions.controller.ts';
 
 export interface AppOptions {
   /** Routes supplémentaires, ajoutées avant la gestion des routes inconnues et des erreurs (utile pour les tests). */
   routes?: (app: Express) => void;
   database?: Database;
   now?: () => Date;
+  sendPasswordResetCode?: (identifier: string, code: string) => Promise<void>;
 }
 
 interface ErreurDeLecture {
@@ -19,6 +30,7 @@ interface ErreurDeLecture {
 /** Toute erreur de l'API prend la même forme : { error: { code, message, details } }. */
 const gestionnaireDErreurs: ErrorRequestHandler = (erreur: unknown, _req, res, _next) => {
   if (erreur instanceof AppError) {
+    if (erreur.code === 'TOO_MANY_ATTEMPTS') res.setHeader('Retry-After', '900');
     res.status(erreur.status).json({ error: { code: erreur.code, message: erreur.message, details: erreur.details } });
     return;
   }
@@ -47,7 +59,17 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
     res.json({ status: 'ok', time: new Date().toISOString() });
   });
 
-  if (options.database) registerRestaurantsMenuRoutes(app, options.database, { now: options.now });
+  if (options.database) {
+    registerRestaurantsMenuRoutes(app, options.database, { now: options.now });
+    const auth = new AuthService(options.database, config.jwtSecret, options.now);
+    const authenticate = createAuthMiddleware((token) => auth.authenticate(token));
+    registerAuthRoutes(app, auth, authenticate, options.sendPasswordResetCode);
+    registerPlatformRestaurantRoutes(app, options.database, authenticate);
+    const orders = new SqliteOrdersRepository(options.database);
+    registerOrderRoutes(app, { service: new OrdersService(orders, { now: options.now }), authenticate });
+    registerStaffOrderRoutes(app, { repository: orders, authenticate, now: options.now });
+    registerPromotionRoutes(app, new PromotionsService(new SqlitePromotionsRepository(options.database), options.now));
+  }
   options.routes?.(app);
 
   app.use((_req, _res, next) => next(new AppError(404, 'NOT_FOUND', 'Route introuvable.')));

@@ -2,6 +2,7 @@ import type { Express, NextFunction, RequestHandler, Response } from 'express';
 import { AppError } from '../http/errors.ts';
 import { OrdersService } from '../services/orders.service.ts';
 import type { AuthenticatedUser, OrderStatus } from '../domain/orders.ts';
+import type { SqliteOrdersRepository } from '../repositories/sqlite-orders.repo.ts';
 
 export interface OrderRouteOptions { service: OrdersService; authenticate: RequestHandler }
 
@@ -76,6 +77,67 @@ export function registerOrderRoutes(app: Express, options: OrderRouteOptions): v
       const orderId = req.params['id'];
       if (typeof orderId !== 'string') throw new AppError(404, 'NOT_FOUND', 'Commande introuvable.');
       res.status(200).json(await options.service.cancel(user.id, orderId));
+    } catch (error) { next(error); }
+  });
+}
+
+const STAFF_ROLES = new Set(['employee', 'manager', 'admin']);
+const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['preparing', 'cancelled'],
+  preparing: ['ready'],
+  ready: ['completed', 'out_for_delivery'],
+  out_for_delivery: ['completed'],
+  completed: [],
+  cancelled: [],
+};
+
+export function registerStaffOrderRoutes(
+  app: Express,
+  options: { repository: SqliteOrdersRepository; authenticate: RequestHandler; now?: () => Date },
+): void {
+  app.get('/api/staff/orders', options.authenticate, async (req, res, next) => {
+    const user = res.locals['authenticatedUser'] as AuthenticatedUser | undefined;
+    if (!user || !STAFF_ROLES.has(user.role) || !user.restaurantId) {
+      next(new AppError(403, 'FORBIDDEN', 'Cette action est réservée au personnel d’un restaurant.'));
+      return;
+    }
+    try {
+      const status = req.query['status'];
+      if (status !== undefined && (typeof status !== 'string' || !ORDER_STATUSES.has(status as OrderStatus))) {
+        throw new AppError(400, 'VALIDATION_ERROR', 'Le statut de commande est invalide.');
+      }
+      const orders = await options.repository.listRestaurantOrders(user.restaurantId, status as OrderStatus | undefined);
+      res.status(200).json({ items: orders });
+    } catch (error) { next(error); }
+  });
+
+  app.patch('/api/staff/orders/:id/status', options.authenticate, async (req, res, next) => {
+    const user = res.locals['authenticatedUser'] as AuthenticatedUser | undefined;
+    if (!user || !STAFF_ROLES.has(user.role) || !user.restaurantId) {
+      next(new AppError(403, 'FORBIDDEN', 'Cette action est réservée au personnel d’un restaurant.'));
+      return;
+    }
+    try {
+      const orderId = req.params['id'];
+      const status = req.body?.status;
+      if (typeof orderId !== 'string' || typeof status !== 'string' || !ORDER_STATUSES.has(status as OrderStatus)) {
+        throw new AppError(400, 'VALIDATION_ERROR', 'Le statut demandé est invalide.');
+      }
+      const existing = (await options.repository.listRestaurantOrders(user.restaurantId)).find((order) => order.id === orderId);
+      if (!existing) throw new AppError(404, 'NOT_FOUND', 'Commande introuvable.');
+      const nextStatus = status as OrderStatus;
+      if (!STATUS_TRANSITIONS[existing.status].includes(nextStatus)
+        || (nextStatus === 'out_for_delivery' && existing.type !== 'delivery')
+        || (nextStatus === 'completed' && existing.type === 'delivery' && existing.status !== 'out_for_delivery')
+        || (nextStatus === 'cancelled' && ['pending', 'paid'].includes(existing.paymentStatus))) {
+        throw new AppError(409, 'INVALID_STATUS_TRANSITION', 'Cette transition de statut n’est pas autorisée.');
+      }
+      const order = await options.repository.updateRestaurantOrderStatus(
+        user.restaurantId, orderId, existing.status, user.id, nextStatus, (options.now?.() ?? new Date()).toISOString(),
+      );
+      if (!order) throw new AppError(409, 'ORDER_CHANGED', 'La commande a été modifiée par une autre requête. Actualisez-la avant de réessayer.');
+      res.status(200).json(order);
     } catch (error) { next(error); }
   });
 }
