@@ -4,6 +4,7 @@
 
 - Responsable : Emmanuel Mboyo (`emmanuelmboyo-dotcom`).
 - Branche : `docs/maquettes-validees`.
+- Ticket : [APP-99 — E-4 : Maquettes et liens Figma](https://judbie2030-45660043.atlassian.net/browse/APP-99).
 - Planning : mardi 27 octobre 2026 ; préparation réelle le 30 octobre 2026.
 - [Ouvrir la copie de travail E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam).
 - [Maquette source de Judbie](https://www.figma.com/design/nq0KxUaeuNisAe4a6yPvBs/Mon-Miam-Miam?node-id=4-111966).

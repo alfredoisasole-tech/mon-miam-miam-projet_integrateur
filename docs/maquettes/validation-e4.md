@@ -4,6 +4,8 @@ Préparation : 30 octobre 2026 ; suivi actualisé le 31 octobre 2026. Responsabl
 
 ## Copie de travail actuelle
 
+Suivi : [APP-99 — E-4 : Maquettes et liens Figma](https://judbie2030-45660043.atlassian.net/browse/APP-99). Le ticket reste ouvert tant que les critères ci-dessous ne sont pas tous vérifiés.
+
 La [copie E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam) est modifiable dans son compte. Le tableau historique ci-dessous porte sur le fichier source de Judbie ; son refus d’édition ne concerne pas la copie.
 
 - Les quatre noms de plats et leurs descriptions ont été adaptés ; Coca-Cola remplace le bissap dans les exemples. Fanta et Vital’O figurent dans la présentation promotionnelle.
