@@ -1,6 +1,6 @@
 # Contrat d’API — commandes (APP-21)
 
-Ce document définit les échanges du site avec l’API pour créer une commande et en consulter le suivi. Cette pull request ne produit que le contrat. Les sous-tâches Jira 13.1, 13.2 et 13.3 restent ouvertes jusqu'à l'écriture du code. Cette story produit le contrat ; elle ne met pas encore en œuvre le code.
+Ce document définit les échanges du site avec l’API pour créer une commande et en consulter le suivi. La création, la consultation, l’annulation par l’étudiant et la persistance SQLite sont implémentées. Le paiement mobile money reste une story séparée.
 
 ## Conventions communes
 
@@ -374,6 +374,16 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 | 500 | `INTERNAL_ERROR` | Erreur inattendue. |
 
 **Tests à écrire avant le code :** annulation d’une commande pending non payée, refus après confirmation, refus quand le paiement mobile money est pending ou payé, propriétaire et isolation entre étudiants, restitution des points.
+
+## 5. Commandes du personnel
+
+### `GET /api/staff/orders`
+
+Employé, gérant ou administrateur d’un restaurant connecté. La liste est limitée au restaurant du compte ; un paramètre `status` facultatif filtre par statut.
+
+### `PATCH /api/staff/orders/:id/status`
+
+Corps JSON : `{ "status": "confirmed" }`. Les transitions suivent le parcours de commande défini ci-dessus. Une livraison ne peut être marquée `completed` qu’après `out_for_delivery`. Une commande mobile money ne peut pas être terminée avant confirmation du paiement. Les événements et changements d’état sont enregistrés dans la même transaction SQLite ; une commande d’un autre restaurant répond `404`.
 
 ## Tests à écrire en premier
 

@@ -4,6 +4,8 @@
 > Sous-tâches : 6.1 (inscription), 6.2 (connexion/déconnexion), 6.3 (erreurs)
 > Dernière mise à jour : 27 octobre 2026
 
+> État du dépôt : inscription, connexion, profil, jetons signés et réinitialisation via un expéditeur injectable sont implémentés. Le transport e-mail/SMS doit être fourni par le déploiement via `AppOptions.sendPasswordResetCode` ; sans expéditeur, la demande répond `503 RESET_DELIVERY_UNAVAILABLE` au lieu de prétendre qu’un code a été envoyé.
+
 ## Règles transversales
 
 - **Compte unique** : un étudiant a UN SEUL compte pour tous les restaurants.
@@ -11,9 +13,13 @@
 - **E-mail insensible à la casse** : `Alice@Exemple.com` et `alice@exemple.com` désignent le même compte.
 - **Téléphone normalisé** au format `+243XXXXXXXXX` (12 chiffres après le `+`).
 - **Mot de passe** : au moins 8 caractères, au moins une majuscule, au moins un chiffre.
+- Les codes de réinitialisation générés font huit caractères hexadécimaux et expirent après 60 minutes.
 - **Le mot de passe n'est jamais renvoyé ni journalisé**, même en cas d'erreur.
 - **Déconnexion** : le site oublie le jeton côté client. Il n'y a **pas de route serveur** de déconnexion.
 - **Messages d'erreur génériques** : « Identifiants incorrects » que le compte n'existe pas OU que le mot de passe soit faux (pour ne pas révéler l'existence d'un compte).
+- Les mots de passe sont hachés avec `scrypt`. Les jetons signés expirent après huit heures et chaque requête vérifie encore le statut et le rôle du compte en base.
+- Une réinitialisation réussie incrémente la version de sécurité du compte et invalide ses jetons existants.
+- Après huit erreurs pour un compte, celui-ci est verrouillé jusqu'à une réinitialisation réussie. Les limites par adresse IP et l'envoi/réinitialisation de codes sont également limités.
 
 ---
 
@@ -124,7 +130,7 @@
 | 400 | `INVALID_BODY` | « Identifiant ou mot de passe manquant » |
 | 401 | `INVALID_CREDENTIALS` | « Identifiants incorrects » (même message si compte inconnu OU mauvais mot de passe) |
 | 403 | `ACCOUNT_DISABLED` | « Ce compte est désactivé » |
-| 429 | `TOO_MANY_ATTEMPTS` | « Trop de tentatives, réessayez dans X minutes » (en-tête `Retry-After`) |
+| 429 | `TOO_MANY_ATTEMPTS` | « Trop de tentatives, réessayez dans 15 minutes » (en-tête `Retry-After: 900`) |
 
 **Règles de limitation** :
 
@@ -192,7 +198,7 @@
 ```json
 {
   "identifier": "alice@exemple.com",
-  "code": "A1B2C3",
+  "code": "A1B2C3D4",
   "newPassword": "NouveauMot1"
 }
 ```
@@ -217,9 +223,9 @@
 
 ---
 
-## Tests à écrire en premier (TDD)
+## État des tests
 
-Avant d'écrire le code, écrire ces tests dans `backend/tests/api/auth.test.ts` :
+Les tests d'API se trouvent dans `backend/tests/auth-api.test.ts`. Les tests des 16 cas listés ci-dessous restent à compléter :
 
 1. **Inscription réussie** → 201, token et user renvoyés, adhésion créée.
 2. **Inscription avec e-mail déjà pris** → 409 `EMAIL_TAKEN`.

@@ -4,6 +4,8 @@ Modèle conçu à partir du cahier des charges et des règles de la plateforme.
 
 Vue synthétique des 34 relations, réparties en six vues. Les détails des clés et des cardinalités suivent. Cliquez sur l'image pour l'ouvrir en pleine taille.
 
+Le schéma métier décrit ici comporte 16 entités. Les migrations backend ajoutent aussi deux tables techniques (`order_sequences` pour numéroter les commandes sans collision et `auth_lockouts` pour persister les verrouillages de compte) ; elles ne modifient pas les 16 entités métier.
+
 [![Modèle de données — 34 relations en six vues](modele-de-donnees.png)](modele-de-donnees.png)
 
 ## 1. Entités et attributs

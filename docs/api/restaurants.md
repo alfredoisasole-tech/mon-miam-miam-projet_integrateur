@@ -190,7 +190,7 @@
 
 ---
 
-## 4. Promotions d'un restaurant (pas encore implémentée)
+## 4. Promotions d'un restaurant
 
 ### `GET /api/restaurants/:slug/promotions`
 
@@ -239,16 +239,15 @@ Ces règles sont implémentées côté React, pas côté API :
 
 ---
 
-## Tests à écrire en premier (TDD)
+## 6. Administration de la plateforme
 
-Avant d'écrire le code, écrire ces tests dans `backend/tests/api/restaurants.test.ts` :
+Les routes suivantes exigent un jeton d’un compte `platform_admin`.
 
-1. **Liste vide** (aucun restaurant) → 200, `items: []`.
-2. **Liste avec restaurants désactivés** → seuls les actifs sont renvoyés, triés par nom.
-3. **Profil d'un slug inconnu** → 404 `RESTAURANT_NOT_FOUND`.
-4. **Profil d'un slug désactivé** → 404 `RESTAURANT_NOT_FOUND` (même réponse).
-5. **Menu avec plats d'un autre restaurant** → ces plats n'apparaissent pas.
-6. **Menu avec plats épuisés** → ces plats n'apparaissent pas.
-7. **Menu avec catégories vides** → ces catégories ne sont pas renvoyées.
-8. **Promotions hors dates** → ne sont pas renvoyées.
-9. **Promotions désactivées** → ne sont pas renvoyées.
+- `POST /api/platform/restaurants` crée un restaurant et son premier compte administrateur dans une transaction. Corps attendu : `{ "slug", "name", "admin": { "name", "email", "phone", "password" } }`. Les champs visuels sont facultatifs ; les horaires initiaux sont 08 h–22 h, tous les jours.
+- `PATCH /api/platform/restaurants/:slug/status` accepte `{ "status": "active" }` ou `{ "status": "inactive" }`. Les routes publiques masquent ensuite un restaurant inactif.
+
+La liste publique, le profil, le menu, les images et les promotions sont raccordés à SQLite. La gestion d’écriture des plats et des promotions n’est pas comprise dans ces routes de consultation.
+
+## État des tests
+
+Les tests de lecture publique sont dans `backend/tests/restaurants-menu.test.ts`; l’administration et les promotions sont couvertes dans `backend/tests/platform-api.test.ts`.
