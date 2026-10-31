@@ -12,6 +12,7 @@ La [copie E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/
 - La copie a été ouverte sans compte dans le navigateur intégré le 31 octobre ; un test Chrome Incognito propre à cette copie reste à consigner.
 - Les 1 504 textes sélectionnés avec la même police Inter ont été passés en Poppins : le panneau de famille de polices affiche désormais Poppins. Figma signale toutefois que certaines modifications ne seront pas synchronisées avant sa reconnexion. La synchronisation, les autres styles et les débordements doivent être contrôlés avant export.
 - Les photos, les cartes de boissons et les exports de la version modifiée restent à terminer. Les PNG actuels correspondent toujours au PDF source.
+- Quatre [visuels de plats](visuels/README.md) ont été générés dans Figma et sauvegardés dans le dépôt le 31 octobre. Leur intégration aux cartes reste à faire. Le connecteur a atteint la limite du forfait Starter après la génération ; l’éditeur Chrome affichait ensuite une page blanche, empêchant l’intégration par l’interface.
 - Validateur : Judbie. Emmanuel rapporte un accord donné le 26 octobre 2026. Cet accord précède les adaptations du 31 octobre ; leur relecture par Judbie reste à obtenir. Aucune trace externe datée de l’accord n’a été fournie.
 
 ## Historique du contrôle de la source
