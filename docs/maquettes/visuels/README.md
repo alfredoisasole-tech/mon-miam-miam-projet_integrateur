@@ -14,12 +14,8 @@ Quatre photographies de démonstration générées avec Figma AI le 31 octobre 2
 
 Les trois illustrations de boissons sont également générées par Figma AI et consomment des crédits. Elles ne constituent pas des photographies officielles des marques ; étiquettes, conditionnements et variantes doivent être vérifiés avant un usage commercial.
 
-## Intégration observée dans la copie
+## Intégration
 
-Les quatre photos de plats ont été importées par l’interface dans l’écran `56:5451` : poulet `56:5514`, fumbwa `56:5523`, riz `56:5533`, pondu `56:5542`. Les autres écrans et la seconde série de maquettes conservent encore leurs anciens visuels.
+Les illustrations sont intégrées dans les quatre cartes de plats et les trois cartes de boissons de l’écran `56:5451`. Les images culinaires ayant les mêmes empreintes que celles du menu source ont été remplacées dans les autres cartes, miniatures et promotions. La section `2022:2` porte le nom « E-4 · Boissons » ; Coca-Cola, Fanta et Vital’O ont une photo visible, une description et un bouton Ajouter.
 
-Une rangée de travail pour les boissons a été créée (`2022:2`). Les descriptions de Coca-Cola et Fanta et leurs prix d’exemple de 800 FC ont été renseignés par remplacement unitaire, avec contrôle des identifiants des textes. Les images de boissons, l’état de disponibilité de Fanta, l’ajout de Vital’O et le titre de section restent à terminer. Cette rangée ne doit pas être considérée comme un écran validé.
-
-Les fichiers PNG originaux sont conservés ici pour éviter la perte des liens temporaires. Dimensions annoncées par Figma : 1 280 × 960 pixels.
-
-Les images sont créées comme calques séparés dans la [copie E-4](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam). Leur remplacement dans les cartes et promotions existantes reste à appliquer et à vérifier ; leur génération seule ne clôture pas cette étape. Les 32 exports de planches ne sont pas encore actualisés.
+Les 32 exports actualisés du 1er novembre 2026 figurent dans [maquettes/](../MAQUETTES.md). Les fichiers PNG des visuels mesurent 1 280 × 960 pixels et restent conservés ici. La nouvelle version attend l’approbation de Judbie ; l’accord initial du 26 octobre ne couvre pas automatiquement ces adaptations.
