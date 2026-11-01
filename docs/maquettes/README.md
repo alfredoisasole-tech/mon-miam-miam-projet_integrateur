@@ -2,7 +2,7 @@
 
 ## Maquettes en couleur - E-4
 
-Le dossier [Maquettes et lien Figma](MAQUETTES.md) contient l’inventaire et les 32 planches en couleur issues de la maquette fournie. Le lien Figma a été testé sans connexion en navigation privée le 30 octobre 2026. La nouvelle demande de menus congolais, la conformité Poppins et la date de validation sont suivies dans [les contrôles E-4](validation-e4.md).
+Le dossier [Maquettes et lien Figma](MAQUETTES.md) contient les 32 planches exportées directement de Figma le 1er novembre 2026, après adaptation des plats et boissons et harmonisation Poppins. La copie d’Emmanuel est accessible sans compte : test Chrome Incognito réussi. Judbie est le validateur ; son accord initial du 26 octobre et l’approbation attendue de la version modifiée sont distingués dans [les contrôles E-4](validation-e4.md).
 
 ## Wireframes - E-3
 
