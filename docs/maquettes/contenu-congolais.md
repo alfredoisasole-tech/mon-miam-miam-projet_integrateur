@@ -1,8 +1,6 @@
-# Contenus congolais demandés - E-4
+# Contenus congolais — E-4
 
-Demande d’Emmanuel reçue le 30 octobre 2026. Adaptation en cours dans la [copie Figma E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam).
-
-Avancement constaté le 31 octobre 2026 : 76 mentions de Poulet DG, 14 de Ndolé aux crevettes, 16 de Riz sauté au bœuf et 24 de Brochettes remplacées ; descriptions des quatre plats mises à jour. Les 38 mentions de jus de bissap et les deux mentions abrégées de bissap ont été remplacées par Coca-Cola. Les recherches des anciens libellés n’affichent plus de résultat après remplacement. La présentation promotionnelle mentionne aussi Fanta et Vital’O. Les photographies correspondantes, les cartes de boissons, le contrôle typographique et les nouveaux exports restent à réaliser.
+Adaptation réalisée dans la [copie Figma E-4](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam), exports du 1er novembre 2026. Les anciens noms de plats et le bissap ont été remplacés dans les exemples ; les illustrations sont conservées dans [visuels/](visuels/README.md).
 
 ## Plats
 
@@ -26,6 +24,6 @@ Remplacer les jus présentés dans les exemples par **Coca-Cola**, **Fanta** et 
 - Statistiques : noms des plats et classements.
 - Promotions : offres, affiches et descriptions des combinaisons plat + boisson.
 
-Les photographies doivent correspondre aux nouveaux plats ; changer seulement le texte sous une ancienne photo ne suffit pas. Les quantités, prix d’exemple, sous-totaux et promotions doivent rester cohérents entre les écrans.
+Les photos correspondantes sont intégrées aux cartes et aux visuels culinaires reconnus des autres écrans. Les trois boissons possèdent leur propre carte illustrée. Le mini-panier présente Coca-Cola à 800 FC par unité.
 
-Après modification, contrôler l’absence des anciens noms dans les textes visibles, l’utilisation de Poppins, le débordement des textes plus longs et les nouveaux exports. Faire confirmer cette version par le propriétaire avec une date réelle.
+Les 32 exports ont été actualisés et parcourus visuellement le 1er novembre 2026. Le contrôle Figma relève uniquement Poppins sur les segments de texte de la page. La version modifiée reste à approuver par Judbie avec sa date réelle.

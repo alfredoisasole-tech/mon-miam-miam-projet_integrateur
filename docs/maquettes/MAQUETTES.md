@@ -1,42 +1,34 @@
-# E-4 - Maquettes et lien Figma
+# E-4 — Maquettes et lien Figma
 
-**État : version source documentée ; adaptation des menus congolais, conformité typographique et date de validation à finaliser.**
+**Livrable graphique exporté et publié pour relecture. Approbation de la version modifiée attendue de Judbie.**
 
 - Responsable : Emmanuel Mboyo (`emmanuelmboyo-dotcom`).
-- Branche : `docs/maquettes-validees`.
-- Ticket : [APP-99 — E-4 : Maquettes et liens Figma](https://judbie2030-45660043.atlassian.net/browse/APP-99).
-- Planning : mardi 27 octobre 2026 ; préparation réelle le 30 octobre 2026.
-- [Ouvrir la copie de travail E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam).
-- [Maquette source de Judbie](https://www.figma.com/design/nq0KxUaeuNisAe4a6yPvBs/Mon-Miam-Miam?node-id=4-111966).
-- [Inventaire technique des 32 exports](inventaire-e4.json).
-- [Contrôles, validation et points restant à confirmer](validation-e4.md).
-- [Contenu congolais demandé pour la prochaine version](contenu-congolais.md).
+- Branche : `docs/maquettes-validees` ; ticket [APP-99](https://judbie2030-45660043.atlassian.net/browse/APP-99).
+- Planning : mardi 27 octobre 2026 ; exports actualisés le 1er novembre 2026.
+- [Maquettes Figma E-4 d’Emmanuel](https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam?node-id=56-5451), accessibles en lecture sans compte.
+- [Source initiale de Judbie](https://www.figma.com/design/nq0KxUaeuNisAe4a6yPvBs/Mon-Miam-Miam?node-id=4-111966).
+- [Contrôles et validation](validation-e4.md), [inventaire technique](inventaire-e4.json), [rapport d’export Figma](rapport-figma-e4.json), [contenu et visuels](contenu-congolais.md).
 
-Le lien source a été ouvert sans connexion dans une fenêtre Chrome en navigation privée le 30 octobre 2026. La copie de travail a également été chargée sans compte dans le navigateur intégré le 31 octobre 2026 ; son test en navigation privée reste à consigner.
+## Version et provenance
 
-Dans la copie éditable, les noms Poulet mayonnaise, Fumbwa, Riz aux haricots et Pondu ont été appliqués, ainsi que leurs descriptions. Coca-Cola remplace le bissap dans les commandes et promotions ; Fanta et Vital’O figurent dans la présentation promotionnelle. Les photos, les cartes de boissons, l’uniformisation en Poppins et les exports actualisés restent à terminer.
+Les 32 PNG ci-dessous sont les exports directs à l’échelle 1x des cadres de travail Figma, après adaptation des plats et boissons et harmonisation en Poppins. Ils remplacent les anciens rendus du PDF fourni. La largeur est de 1 440 pixels ; les planches longues regroupent aussi des états et formulaires. Les identifiants Figma, dimensions et empreintes SHA-256 sont consignés dans l’inventaire. Les fichiers FIG/PDF initiaux restent hors du dépôt, avec leurs empreintes conservées pour la traçabilité.
 
-## Sources et portée
+Les quatre plats sont Poulet mayonnaise, Fumbwa, Riz aux haricots et Pondu. Le menu comporte trois cartes de boissons avec leurs illustrations : Coca-Cola, Fanta et Vital’O. Les anciens visuels culinaires reconnus ont été remplacés dans les cartes, miniatures et promotions. Les visuels sont des illustrations de démonstration générées par IA, conservées dans [visuels/](visuels/README.md).
 
-Les 32 images ci-dessous sont des rendus directs des 32 pages du PDF `Mon Miam Miam.pdf` fourni avec le fichier `Mon Miam Miam.fig`. Le PDF indique Figma comme producteur et une date de création au 29 octobre 2026. Les images conservent les écrans, données d’exemple et états de la source ; elles ne constituent pas une correction de ses règles métier.
+## Charte et accès
 
-Ces exports représentent la version fournie avant la demande de remplacement des plats et boissons. Ils devront être remplacés par les exports de la version modifiée avant de déclarer E-4 terminée.
-
-La largeur native est de 1 440 pixels et la hauteur varie selon la page. Les planches longues incluent souvent plusieurs états : une page du PDF ne correspond donc pas toujours à un écran unique. Les aperçus ne sont pas annoncés comme des exports Figma 2x. Les fichiers source volumineux restent hors du dépôt ; leurs empreintes figurent dans l’inventaire.
-
-## Charte attendue
-
-| Élément | Valeur | Usage |
+| Élément | Valeur | Contrôle |
 | --- | --- | --- |
-| Couleur principale | `#cfbd97` | Boutons, accents et éléments de marque |
-| Couleur secondaire | `#000000` | Texte principal et navigation sombre |
-| Police | Poppins | Titres, corps, formulaires, boutons et tableaux |
+| Couleur principale | `#cfbd97` | Beige conservé pour la marque et les accents |
+| Couleur secondaire | `#000000` | Noir conservé dans la navigation et les textes |
+| Police | Poppins | 4 701 segments contrôlés sur la page des maquettes ; aucune autre famille relevée |
+| Lecture sans compte | Réussie le 1er novembre 2026 | Nouvelle fenêtre Chrome Incognito ; [capture du contrôle](test-lecture-publique.png) |
 
-Les couleurs demandées sont présentes dans le PDF. Le fichier FIG fourni contient des références à Poppins et à Inter : la présence de Poppins seule ne prouve pas que tous les textes l’utilisent. La conformité typographique complète doit être vérifiée et, si nécessaire, corrigée dans le fichier Figma avant de clôturer E-4.
+Judbie a validé la version initiale le **26 octobre 2026**, selon Emmanuel. Les changements ultérieurs sont soumis à sa relecture : cette date n’est pas présentée comme l’approbation de la version modifiée.
 
 ## Liste des écrans et planches
 
-| Page PDF | Écran / planche | Public concerné | Fonction |
+| Planche | Écran / planche | Public concerné | Fonction |
 | --- | --- | --- | --- |
 | 01 | [Accueil et restaurants](maquettes/page-01.png) | Public | Découvrir les restaurants, les promotions et le fonctionnement du service. |
 | 02 | [Menu du restaurant et mini-panier](maquettes/page-02.png) | Public / étudiant | Consulter les plats et composer le panier du restaurant. |

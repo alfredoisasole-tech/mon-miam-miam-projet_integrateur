@@ -1,8 +1,8 @@
 {
   "livrable": "E-4",
   "branche": "docs/maquettes-validees",
-  "date_preparation": "2026-10-30",
-  "source_figma": "https://www.figma.com/design/nq0KxUaeuNisAe4a6yPvBs/Mon-Miam-Miam?node-id=4-111966",
+  "date_preparation": "2026-11-01",
+  "source_figma": "https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam",
   "sources": [
     {
       "nom": "Mon Miam Miam.pdf",
@@ -15,7 +15,7 @@
       "sha256": "88b3df4b945d083a850180d4bb7a418db37ec42c8d2f5350e6bf454d4397ea6f"
     }
   ],
-  "methode": "Rendu direct de chaque page du PDF fourni, à sa taille native ; aucune retouche du contenu.",
+  "methode": "Exports PNG directs des 32 cadres Figma de travail (série 56:), échelle 1x, après adaptation du contenu et conversion des segments de texte en Poppins.",
   "charte_attendue": {
     "couleur_principale": "#cfbd97",
     "couleur_secondaire": "#000000",
@@ -26,13 +26,16 @@
     "proprietaire": "Judbie",
     "date_accord": "2026-10-26",
     "preuve_datee": "Accord rapporté par Emmanuel dans cette conversation ; aucune trace externe datée fournie.",
-    "portee": "Version initiale ; les adaptations réalisées après le 26 octobre restent à faire relire par Judbie."
+    "portee": "Version initiale ; les adaptations réalisées après le 26 octobre restent à faire relire par Judbie.",
+    "statut_version_modifiee": "À faire relire par Judbie après adaptations du 1er novembre."
   },
   "test_navigation_privee": {
     "statut": "reussi",
-    "date": "2026-10-30",
-    "navigateur": "Google Chrome, fenêtre Incognito",
-    "resultat": "Fichier Mon Miam Miam chargé sans compte ; inscription proposée pour commenter, modifier ou inspecter."
+    "date": "2026-11-01",
+    "navigateur": "Google Chrome, nouvelle fenêtre Incognito",
+    "url": "https://www.figma.com/design/mnn8o6VMsuz24FWleKDdlm/Mon-Miam-Miam?node-id=56-5451",
+    "resultat": "Copie chargée sans compte ; menu et trois photos de boissons visibles. Inscription proposée pour commenter, modifier ou inspecter.",
+    "preuve": "test-lecture-publique.png"
   },
   "ecrans": [
     {
@@ -42,9 +45,11 @@
       "description": "Découvrir les restaurants, les promotions et le fonctionnement du service.",
       "fichier": "maquettes/page-01.png",
       "largeur": 1440,
-      "hauteur": 3156,
-      "octets": 1746835,
-      "sha256": "0a56d04a81aef54cccda7c1fca2464a257b83655416787d9db560b00d90b07ed"
+      "hauteur": 3190,
+      "octets": 1845927,
+      "sha256": "3d232edaa878905ab5a88f6c7984398bc7fee00a5b4a92397f224ca3fa3a9da4",
+      "figma_node": "56:5620",
+      "figma_nom": "P1 · Accueil public"
     },
     {
       "page_pdf": 2,
@@ -53,9 +58,11 @@
       "description": "Consulter les plats et composer le panier du restaurant.",
       "fichier": "maquettes/page-02.png",
       "largeur": 1440,
-      "hauteur": 2237,
-      "octets": 1336808,
-      "sha256": "df1c514536f3fdcaaced504e81b36dcbf440a9eb8eeb594c7855133c438e1284"
+      "hauteur": 2702,
+      "octets": 1741031,
+      "sha256": "8e60e0b3e6ce750f0257db760b9f11cb0680ab7f533a3ce121532558a49df617",
+      "figma_node": "56:5451",
+      "figma_nom": "P2 · Restaurant et menu public"
     },
     {
       "page_pdf": 3,
@@ -65,8 +72,10 @@
       "fichier": "maquettes/page-03.png",
       "largeur": 1440,
       "hauteur": 1080,
-      "octets": 498223,
-      "sha256": "77224e7502c62cd4394bb9c1503207a05facca6d95d0d714c3d1f7ddb66de857"
+      "octets": 525351,
+      "sha256": "4527429f9fc3d9434845a986acd0c213b0993c1eff4610630ee4a7e0e51f9af5",
+      "figma_node": "56:5406",
+      "figma_nom": "P3 · Connexion"
     },
     {
       "page_pdf": 4,
@@ -75,9 +84,11 @@
       "description": "Lister les commandes et leurs prochaines actions.",
       "fichier": "maquettes/page-04.png",
       "largeur": 1440,
-      "hauteur": 2595,
-      "octets": 365479,
-      "sha256": "ae13e8950c5a43f09938297a56388df17096d9d8b5f980579556daa687a165a2"
+      "hauteur": 2600,
+      "octets": 254166,
+      "sha256": "edc5093f19fa5da4d0b22969dfc78ea7b05ad321d0e7e68b610dfcdb0465f7af",
+      "figma_node": "56:4651",
+      "figma_nom": "M1 · Commandes"
     },
     {
       "page_pdf": 5,
@@ -86,9 +97,11 @@
       "description": "Consulter les articles, la réception, le paiement et les actions de service.",
       "fichier": "maquettes/page-05.png",
       "largeur": 1440,
-      "hauteur": 4280,
-      "octets": 646719,
-      "sha256": "7dc76aa60b6e8d27a3cac36d21714f88f8f98d9a1c55631da9bc6d2a88d3dd7f"
+      "hauteur": 4285,
+      "octets": 508326,
+      "sha256": "80c129ec7034a11b48284f5165f0ca6a15e7ff0024e4568ca93ca3532f2e957b",
+      "figma_node": "56:4375",
+      "figma_nom": "M2 · Détail commande et refus"
     },
     {
       "page_pdf": 6,
@@ -97,9 +110,11 @@
       "description": "Signaler les plats disponibles ou en rupture.",
       "fichier": "maquettes/page-06.png",
       "largeur": 1440,
-      "hauteur": 1981,
-      "octets": 350920,
-      "sha256": "18fd516f760c099e83d4b88356acc71fcc3a9866d91687faf1a26cf50fe7e4c1"
+      "hauteur": 2010,
+      "octets": 279661,
+      "sha256": "d08a17a115b0f95204dd68fcd2bce6628b0ef930cb6e4d605075b0f4d483fb47",
+      "figma_node": "56:4158",
+      "figma_nom": "M3 · Disponibilité des plats"
     },
     {
       "page_pdf": 7,
@@ -108,9 +123,11 @@
       "description": "Proposer une réponse à faire valider.",
       "fichier": "maquettes/page-07.png",
       "largeur": 1440,
-      "hauteur": 2566,
-      "octets": 406849,
-      "sha256": "2a26438ae0ef89497541710b921fafccfd549ccd3bb7b79b07545d0a4198b8e7"
+      "hauteur": 2571,
+      "octets": 269636,
+      "sha256": "7e238e2aa3e961182e1f3180f06873e08d59bdc893431bfccae9115339a53eee",
+      "figma_node": "56:3930",
+      "figma_nom": "M4 · Réclamations"
     },
     {
       "page_pdf": 8,
@@ -119,9 +136,11 @@
       "description": "Consulter les indicateurs et les plats les plus vendus.",
       "fichier": "maquettes/page-08.png",
       "largeur": 1440,
-      "hauteur": 2574,
-      "octets": 301525,
-      "sha256": "50c84f901022a6f71ab7c9d4bcbc4011e1e0629effbdfe0f488e74e9af717eb7"
+      "hauteur": 2619,
+      "octets": 209801,
+      "sha256": "c2f224f3893bbc0241b956a1c51b237a4fe7a30a26b2aa005c824e95e66407c6",
+      "figma_node": "56:3717",
+      "figma_nom": "M5 · Statistiques de la semaine"
     },
     {
       "page_pdf": 9,
@@ -131,8 +150,10 @@
       "fichier": "maquettes/page-09.png",
       "largeur": 1440,
       "hauteur": 1660,
-      "octets": 592088,
-      "sha256": "873539759219deada5a2dd0a6f05fdb2614ce19af3a6ff5a2bde32c2a7231f4a"
+      "octets": 582476,
+      "sha256": "6409d7f37fbecc0a368fff5280048fa126b7c0897465c0a79cd68f390435a0da",
+      "figma_node": "56:5337",
+      "figma_nom": "P4 · Inscription étudiant"
     },
     {
       "page_pdf": 10,
@@ -142,8 +163,10 @@
       "fichier": "maquettes/page-10.png",
       "largeur": 1440,
       "hauteur": 1080,
-      "octets": 96396,
-      "sha256": "990d88262432e7629ea65336915930b709fbaaaa401cefe1d19dbad791cae827"
+      "octets": 69229,
+      "sha256": "21405c4b52b87318bc73580ff6b24f239f0176882f94b84598dd85f720d1cfe3",
+      "figma_node": "56:5309",
+      "figma_nom": "P5 · Mot de passe oublié"
     },
     {
       "page_pdf": 11,
@@ -152,9 +175,11 @@
       "description": "Définir et confirmer un nouveau mot de passe.",
       "fichier": "maquettes/page-11.png",
       "largeur": 1440,
-      "hauteur": 1141,
-      "octets": 117216,
-      "sha256": "07b3426ae3f1aaae3afac7bf46d60b9ca1e78aad73dcce79eb545111087fe839"
+      "hauteur": 1146,
+      "octets": 83047,
+      "sha256": "914f9ab5f8ff31ee8d90c085f69a2bd41ca801f3ca65bee0727cabee066eb5c5",
+      "figma_node": "56:5272",
+      "figma_nom": "P5 · Nouveau mot de passe"
     },
     {
       "page_pdf": 12,
@@ -163,9 +188,11 @@
       "description": "Présenter chargement, absence de promotion et autres états de l’accueil.",
       "fichier": "maquettes/page-12.png",
       "largeur": 1440,
-      "hauteur": 1588,
-      "octets": 293783,
-      "sha256": "c6f138055f87ebe9b0c05f6778a2d846abe0e7edf05b056b06c8e6a0c155452d"
+      "hauteur": 1593,
+      "octets": 274009,
+      "sha256": "abc58fba35970a4e7df19b24de8a20dab07242d316e6553136553a4a7319f1d7",
+      "figma_node": "56:5225",
+      "figma_nom": "P1 · États de l’accueil"
     },
     {
       "page_pdf": 13,
@@ -174,9 +201,11 @@
       "description": "Confirmer la remise à zéro du panier lors du changement de restaurant.",
       "fichier": "maquettes/page-13.png",
       "largeur": 1440,
-      "hauteur": 1537,
-      "octets": 231062,
-      "sha256": "360fca32ad464375b13681d90411b65842ef770d6f83580db71a29a90ac07b27"
+      "hauteur": 1566,
+      "octets": 156789,
+      "sha256": "52d3c78d230df625130df87c1d751e1e7801eb26bee91396e9f6fb3ef6cb62a1",
+      "figma_node": "56:5166",
+      "figma_nom": "P2 · États du menu et du panier"
     },
     {
       "page_pdf": 14,
@@ -185,9 +214,11 @@
       "description": "Présenter les erreurs et les états d’attente de connexion.",
       "fichier": "maquettes/page-14.png",
       "largeur": 1440,
-      "hauteur": 1154,
-      "octets": 221456,
-      "sha256": "66760c0a8fe88c7fd852fd850bb323ea4926359895056f6eaf50e76e0fef300d"
+      "hauteur": 1159,
+      "octets": 160772,
+      "sha256": "c9f68808138e7b2e8e11903c6a84127a9e10ef13bd5905ad092dab793182ad7f",
+      "figma_node": "56:5095",
+      "figma_nom": "P3 · États de connexion"
     },
     {
       "page_pdf": 15,
@@ -196,9 +227,11 @@
       "description": "Consulter l’avancement des commandes du restaurant.",
       "fichier": "maquettes/page-15.png",
       "largeur": 1440,
-      "hauteur": 3700,
-      "octets": 495032,
-      "sha256": "bfd3b2adacb86a8731e32619b0d48183a2148568387e49c6b96adda86600a1f1"
+      "hauteur": 3710,
+      "octets": 361821,
+      "sha256": "451e11001c36f67d2d8954c796d50cec6138565fa2b900cc54431a350e53366c",
+      "figma_node": "56:3355",
+      "figma_nom": "G1 · Supervision"
     },
     {
       "page_pdf": 16,
@@ -207,9 +240,11 @@
       "description": "Créer et gérer les accès des employés.",
       "fichier": "maquettes/page-16.png",
       "largeur": 1440,
-      "hauteur": 2321,
-      "octets": 347016,
-      "sha256": "f8dd70ddb84f217203125c08b923ff4063bef01c5b442e0ead0caa1e5b2e82ce"
+      "hauteur": 2326,
+      "octets": 243848,
+      "sha256": "42e455aa63c08098c4d4186f63889fbe006a4a4f14001ef7e9ccd9227027095b",
+      "figma_node": "56:3102",
+      "figma_nom": "G2 · Employés"
     },
     {
       "page_pdf": 17,
@@ -218,9 +253,11 @@
       "description": "Corriger les champs et confirmer la création du compte.",
       "fichier": "maquettes/page-17.png",
       "largeur": 1440,
-      "hauteur": 1408,
-      "octets": 522967,
-      "sha256": "614796ccc762ae6f86da86af0160a43ab045148db805835311fc325cf1aed86d"
+      "hauteur": 1413,
+      "octets": 510393,
+      "sha256": "a450e6767641fb6596606355a53753012151b3df9ff921e72ce38f642ecf1e15",
+      "figma_node": "56:5040",
+      "figma_nom": "P4 · États d’inscription"
     },
     {
       "page_pdf": 18,
@@ -229,9 +266,11 @@
       "description": "Présenter lien envoyé, renvoi, expiration et succès.",
       "fichier": "maquettes/page-18.png",
       "largeur": 1440,
-      "hauteur": 1117,
-      "octets": 218758,
-      "sha256": "83867a13e99cee5ae3c090f24a256954e9380b25dff7d9211565001487bb992b"
+      "hauteur": 1146,
+      "octets": 152188,
+      "sha256": "a0ed8c3981dc87bf726cb8f5083a3b3952e124e41155da57cce9ae5ff61dfa53",
+      "figma_node": "56:4993",
+      "figma_nom": "P5 · États de récupération et de réinitialisation"
     },
     {
       "page_pdf": 19,
@@ -240,9 +279,11 @@
       "description": "Analyser ventes et fidélité sur une période.",
       "fichier": "maquettes/page-19.png",
       "largeur": 1440,
-      "hauteur": 2983,
-      "octets": 365951,
-      "sha256": "b53a0c5d6eb5e20b6a6727109f3f70f140cf2abee3cc96f30168fa56550c7c4a"
+      "hauteur": 2993,
+      "octets": 255563,
+      "sha256": "27ec94b1744ad264e7deea23da8217a1997b02498347157344cb0f0140034ae5",
+      "figma_node": "56:2864",
+      "figma_nom": "G3 · Statistiques générales"
     },
     {
       "page_pdf": 20,
@@ -251,9 +292,11 @@
       "description": "Approuver ou rejeter les réponses proposées.",
       "fichier": "maquettes/page-20.png",
       "largeur": 1440,
-      "hauteur": 2534,
-      "octets": 395470,
-      "sha256": "dbf5218a5182d0917f390e69ae52cebe6523ced4ff70d71e6fa2e1bbcee99ec5"
+      "hauteur": 2539,
+      "octets": 272336,
+      "sha256": "0ce0026cc8816bc2b0ee8fa06512c0a0e3ac7d94944c8a3090bcc3de5c25c1ad",
+      "figma_node": "56:2669",
+      "figma_nom": "G4 · Validation des réclamations"
     },
     {
       "page_pdf": 21,
@@ -262,9 +305,11 @@
       "description": "Gérer les employés et gérants du restaurant.",
       "fichier": "maquettes/page-21.png",
       "largeur": 1440,
-      "hauteur": 3425,
-      "octets": 501463,
-      "sha256": "b25cb625097827b53ae90c2d756b60390285dbfeebf6d86b0697049ca1af520b"
+      "hauteur": 3454,
+      "octets": 356356,
+      "sha256": "9fc5c51518b9b0588596933c6cc140fd0989cb2a884ec5869637f02c75d4bd23",
+      "figma_node": "56:2306",
+      "figma_nom": "A1 · Comptes et accès"
     },
     {
       "page_pdf": 22,
@@ -273,9 +318,11 @@
       "description": "Consulter et gérer les plats du menu.",
       "fichier": "maquettes/page-22.png",
       "largeur": 1440,
-      "hauteur": 2033,
-      "octets": 350961,
-      "sha256": "1f51a2f52d7db0a4d9e069706f67e2af5f375889912cbee4f85b02e53e5ce0bf"
+      "hauteur": 2062,
+      "octets": 271286,
+      "sha256": "b8b107eeebaadd7881125c627f181198effa061dcf8b1278cfe4bf6bde7db789",
+      "figma_node": "56:2052",
+      "figma_nom": "A2 · Menu du restaurant"
     },
     {
       "page_pdf": 23,
@@ -284,9 +331,11 @@
       "description": "Renseigner les informations et la photo d’un nouveau plat.",
       "fichier": "maquettes/page-23.png",
       "largeur": 1440,
-      "hauteur": 1257,
-      "octets": 197931,
-      "sha256": "cd542944d4ea04fd9542b84bd4f46660ebc8e1a6a7a29f2ad070c64b3b0f1d21"
+      "hauteur": 1262,
+      "octets": 146189,
+      "sha256": "a01b7495e19aeedba88f971a7cba08bd26a46319e98285618d434cb42399c1a4",
+      "figma_node": "56:1933",
+      "figma_nom": "A3 · Ajouter un plat"
     },
     {
       "page_pdf": 24,
@@ -295,9 +344,11 @@
       "description": "Modifier les informations et la publication d’un plat.",
       "fichier": "maquettes/page-24.png",
       "largeur": 1440,
-      "hauteur": 2225,
-      "octets": 718267,
-      "sha256": "b92f4d5b3b7cc6db749e3705ad308fd28535f026367d251567f2983c338051ba"
+      "hauteur": 2230,
+      "octets": 762119,
+      "sha256": "9555a9fee25a871fb023a230b88984857c39cbec2630ce20bd6e185d18e9a240",
+      "figma_node": "56:1772",
+      "figma_nom": "A3 · Modifier le plat"
     },
     {
       "page_pdf": 25,
@@ -306,9 +357,11 @@
       "description": "Gérer les affiches et leurs périodes de publication.",
       "fichier": "maquettes/page-25.png",
       "largeur": 1440,
-      "hauteur": 2508,
-      "octets": 928056,
-      "sha256": "c2c835e2097ee093bb9a614f71ea7d4fbc6535ad8ef610c8af2b2c9f823b619c"
+      "hauteur": 2537,
+      "octets": 1040974,
+      "sha256": "552229d0244633581c844a0cd9e8e720f55c2b8f1acddb1373015e97f2e6b8ce",
+      "figma_node": "56:1563",
+      "figma_nom": "A4 · Promotions et événements"
     },
     {
       "page_pdf": 26,
@@ -317,9 +370,11 @@
       "description": "Renseigner les informations, horaires et règles du restaurant.",
       "fichier": "maquettes/page-26.png",
       "largeur": 1440,
-      "hauteur": 3181,
-      "octets": 437701,
-      "sha256": "199684e5bc83764c2552ad8a8e0aca977e565ade4c8b280a0313af7be654bf1e"
+      "hauteur": 3186,
+      "octets": 305715,
+      "sha256": "392d2d4bcc30e727993adb10fc24493fead873beedb84a9c290554c0274bb1e4",
+      "figma_node": "56:1307",
+      "figma_nom": "A5 · Paramètres du restaurant"
     },
     {
       "page_pdf": 27,
@@ -328,9 +383,11 @@
       "description": "Consulter les indicateurs du restaurant sur une période.",
       "fichier": "maquettes/page-27.png",
       "largeur": 1440,
-      "hauteur": 3211,
-      "octets": 402130,
-      "sha256": "561fbab30032fa1558f03b2a7056a593cb30d4bf7c3d41e1840eb087d911001a"
+      "hauteur": 3245,
+      "octets": 282562,
+      "sha256": "47153ee044b5aa773996fd470b30563022005168ff02eac1f5ca4bd5f4fe7908",
+      "figma_node": "56:1045",
+      "figma_nom": "A6 · Statistiques du restaurant"
     },
     {
       "page_pdf": 28,
@@ -339,9 +396,11 @@
       "description": "Valider les propositions ou publier une réponse directe.",
       "fichier": "maquettes/page-28.png",
       "largeur": 1440,
-      "hauteur": 2905,
-      "octets": 469669,
-      "sha256": "257623ea66bbfc37fe10251e235fe8dfd376b7098cd934df60a09e67c287370c"
+      "hauteur": 2910,
+      "octets": 316160,
+      "sha256": "bfb1b90df4e57ba23c6a0e210c0e146d4c26cb292506026c6b3cddc63b91f065",
+      "figma_node": "56:827",
+      "figma_nom": "A7 · Réclamations et réponses"
     },
     {
       "page_pdf": 29,
@@ -351,8 +410,10 @@
       "fichier": "maquettes/page-29.png",
       "largeur": 1440,
       "hauteur": 1390,
-      "octets": 203526,
-      "sha256": "b78b67cce8314c76707d0f3db3cb6423fd0e3e772291852745015de3b94e751d"
+      "octets": 137235,
+      "sha256": "2ded4ac36a97772cebc70a85a3d89bc3826e0384ffa6281690778420716e10b8",
+      "figma_node": "56:681",
+      "figma_nom": "PF1 · Restaurants"
     },
     {
       "page_pdf": 30,
@@ -361,9 +422,11 @@
       "description": "Renseigner les informations du nouveau restaurant.",
       "fichier": "maquettes/page-30.png",
       "largeur": 1440,
-      "hauteur": 2069,
-      "octets": 225700,
-      "sha256": "46f4d5a60a02df6ddb4a85910d5f1e2396575ccc4c73c141f844b3ef7e25d41a"
+      "hauteur": 2074,
+      "octets": 163018,
+      "sha256": "9d16caf344afb497632df80b4d31a61c3aa123ed7c8b2126e6428f22a05776b5",
+      "figma_node": "56:507",
+      "figma_nom": "PF2 · Étape restaurant"
     },
     {
       "page_pdf": 31,
@@ -372,9 +435,11 @@
       "description": "Renseigner le premier administrateur et vérifier le récapitulatif.",
       "fichier": "maquettes/page-31.png",
       "largeur": 1440,
-      "hauteur": 1877,
-      "octets": 249025,
-      "sha256": "304cb037450253c674e014786766e9f6f120ae4520a47ad52316a76fdea9a85f"
+      "hauteur": 1882,
+      "octets": 178088,
+      "sha256": "b67aa6c229d2b11fa0f85222965b6148e7486eb82326d66cd8ac17ccdc560730",
+      "figma_node": "56:397",
+      "figma_nom": "PF2 · Premier administrateur"
     },
     {
       "page_pdf": 32,
@@ -383,9 +448,11 @@
       "description": "Confirmer l’activation ou la désactivation d’un restaurant.",
       "fichier": "maquettes/page-32.png",
       "largeur": 1440,
-      "hauteur": 3457,
-      "octets": 484365,
-      "sha256": "afcaddc37fb3b138411943bf36031919fafe13e9a0a653f99ce2da1d2b4eab05"
+      "hauteur": 3462,
+      "octets": 332887,
+      "sha256": "61cb2a26314c7a90c291178a32c0a09bd76c4bbcabcc42e30163d3cdf50423ad",
+      "figma_node": "56:2",
+      "figma_nom": "PF3 · Désactiver et réactiver"
     }
   ],
   "adaptation_congolaise": {
@@ -402,5 +469,14 @@
       "Fanta",
       "Vital’O"
     ]
-  }
+  },
+  "source_figma_initiale": "https://www.figma.com/design/nq0KxUaeuNisAe4a6yPvBs/Mon-Miam-Miam?node-id=4-111966",
+  "controle_polices": {
+    "portee": "Page 1 : les deux séries et leurs états",
+    "familles": {
+      "Poppins": 4701
+    },
+    "rapport": "rapport-figma-e4.json"
+  },
+  "date_export": "2026-11-01T07:00:03.916Z"
 }
