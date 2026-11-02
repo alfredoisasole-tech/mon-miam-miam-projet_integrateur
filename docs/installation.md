@@ -136,3 +136,40 @@ Arrêtez l'API, supprimez le fichier de base, puis relancez `npm run db:migrate`
 ```bash
 rm backend/data/mon-miam-miam.sqlite*
 ```
+
+## 6. Vérifications après installation
+
+À exécuter dans l'ordre, depuis un clone neuf, après avoir copié `backend/.env.example` en `backend/.env` (avec les quatre mots de passe `SEED_*` si vous voulez des données de démonstration).
+
+| # | Commande | Résultat attendu |
+|---|---|---|
+| 1 | `cd backend && npm ci` | installation sans erreur |
+| 2 | `npm run typecheck` | aucune erreur |
+| 3 | `npm test` | tous les tests passent (116 au 2 novembre 2026) |
+| 4 | `node ../database/verifier.mjs` | « Vérification des contraintes et des données de test réussie. » |
+| 5 | `npm run db:migrate` | « Base prête : … (4 migrations appliquées). » |
+| 6 | `npm run seed` | « Données de démonstration créées. » (ou « déjà présentes » au 2e passage) |
+| 7 | `npm start` | « API prête sur le port 3000 (development). » |
+| 8 | `curl localhost:3000/api/health` | `{"status":"ok","time":"…"}` |
+| 9 | `curl localhost:3000/api/restaurants` | liste avec `chez-lea` et `zeduc-space` |
+| 10 | `curl localhost:3000/api/restaurants/zeduc-space/menu` | menu de 10 plats répartis par catégories |
+| 11 | `curl -o /dev/null -w "%{http_code}" localhost:3000/api/staff/menu` | `401` (route protégée, jeton absent) |
+| 12 | `cd ../frontend && npm ci && npm test` | tous les tests passent (93 au 2 novembre 2026) |
+| 13 | `npm run build` | typage et construction réussis, dossier `dist/` créé |
+| 14 | `npm run dev` puis ouvrir `http://localhost:5173` | le site s'affiche (HTTP 200), y compris le rechargement direct de `/menu` |
+| 15 | `curl localhost:5173/api/health` | même réponse qu'à l'étape 8 : le proxy du site atteint l'API |
+
+Les étapes 8 à 11 et 15 nécessitent que l'API tourne (étape 7) ; l'étape 15 nécessite aussi que le site tourne (étape 14). Les étapes 9 et 10 supposent que le seed a été exécuté (étape 6).
+
+Dernière vérification complète : 2 novembre 2026, clone neuf, Node.js 22.23.4, toutes les étapes ci-dessus réussies. L'avertissement « SQLite is an experimental feature » affiché par Node.js est normal.
+
+### En cas de problème
+
+| Symptôme | Cause probable | Solution |
+|---|---|---|
+| « Configuration invalide : JWT_SECRET est obligatoire en production » | `NODE_ENV=production` avec un secret court ou repris de l'exemple | générer un secret de 32 caractères minimum (voir section 2) |
+| « … doit être défini dans l'environnement » au seed | un mot de passe `SEED_*` manque | renseigner les quatre variables dans `backend/.env` |
+| Erreur de lecture de `database/schema.sql` | API lancée sans le dépôt complet | cloner le dépôt entier, ne pas copier `backend/` seul |
+| Le site s'affiche mais les données sont vides ou en erreur | API arrêtée, ou seed non exécuté | vérifier l'étape 8, puis l'étape 6 |
+| Erreur CORS dans le navigateur | l'adresse du site n'est pas dans `CORS_ORIGINS` | ajouter l'origine exacte (sans `/` final) |
+| Les routes d'étudiants ou d'employés répondent 401 | le résolveur d'identité n'est pas encore branché sur `main.ts` | limite connue, voir [deploiement.md](deploiement.md) |
