@@ -23,7 +23,7 @@ Le code applique les migrations au démarrage. Sans disque persistant, les écri
 
 Le démarrage ne crée pas de restaurants, menus ni comptes : `database/schema.sql` ne contient que la structure. Les données du vérificateur et des tests ne doivent pas devenir les données de production. Avant le lancement, fournir les restaurants et menus réels, puis choisir un processus contrôlé pour les charger. Ne pas créer de comptes avec des mots de passe de démonstration.
 
-Les routes de commandes restent protégées par `TokenResolver`. `main.ts` n’injecte pas encore de résolveur Lusimafu ; jusqu’à cette intégration, l’API refuse les jetons et les routes authentifiées répondent 401. L’API publique de restaurants et le contrôle de santé restent accessibles.
+Les routes authentifiées utilisent le service de connexion de l’API (`AuthService`, jetons signés avec `JWT_SECRET`) : `main.ts` n’a pas besoin d’y injecter de résolveur. Vérifié le 2 novembre 2026 sur une base initialisée avec le seed : connexion par `POST /api/auth/login`, puis `GET /api/orders` répond 200 avec le jeton. Sans jeton, ces routes répondent 401 ; l’API publique de restaurants et le contrôle de santé restent accessibles.
 
 Références : [répertoire racine et monorepos Render](https://render.com/docs/monorepo-support), [disques persistants Render](https://render.com/docs/disks).
 
@@ -40,5 +40,4 @@ Vercel documente les réécritures vers des origines externes dans [sa documenta
 1. Confirmer le chemin `/var/data/mon-miam-miam.sqlite` et créer le disque persistant Render correspondant.
 2. Fournir les données réelles des restaurants et menus, puis convenir du chargement initial.
 3. Renseigner les domaines Vercel et Render, activer la réécriture recommandée et vérifier les images en Preview.
-4. Brancher `TokenResolver` sur le résolveur d’identité Lusimafu.
-5. Décider où activer ou désactiver `mobile_money` : le schéma actuel ne stocke pas ce réglage par restaurant, et la route commandes laisse les commandes mobile money à l’état `unpaid`.
+4. Décider où activer ou désactiver `mobile_money` : le schéma actuel ne stocke pas ce réglage par restaurant, et la route commandes laisse les commandes mobile money à l’état `unpaid`.
