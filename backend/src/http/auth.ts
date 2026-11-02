@@ -9,13 +9,13 @@ export function createAuthMiddleware(resolveToken: TokenResolver): RequestHandle
   return (req, res, next) => {
     const match = req.header('authorization')?.match(/^Bearer\s+([^\s]+)$/i);
     if (!match) {
-      next(new AppError(401, 'UNAUTHORIZED', 'Vous devez vous connecter pour continuer.'));
+      next(new AppError(401, 'UNAUTHORIZED', 'Connexion requise'));
       return;
     }
 
     Promise.resolve(resolveToken(match[1]!)).then((user) => {
       if (!user) {
-        next(new AppError(401, 'UNAUTHORIZED', 'Votre jeton de connexion est invalide.'));
+        next(new AppError(401, 'UNAUTHORIZED', 'Connexion requise'));
         return;
       }
       if (user.status && user.status !== 'active') {

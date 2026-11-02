@@ -14,6 +14,12 @@ describe('Configuration', () => {
     assert.ok(config.jwtSecret.length >= 32);
   });
 
+  it('ne réutilise pas un secret de développement codé en dur', () => {
+    const first = loadConfig({}).jwtSecret;
+    const second = loadConfig({}).jwtSecret;
+    assert.notEqual(first, second);
+  });
+
   it('lit le port, le chemin de la base et la liste des adresses autorisées', () => {
     const config = loadConfig({ PORT: '4010', DATABASE_PATH: '/var/data/a.sqlite', CORS_ORIGINS: 'https://a.exemple, https://b.exemple' });
     assert.equal(config.port, 4010);

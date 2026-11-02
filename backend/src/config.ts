@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 export type Environnement = 'development' | 'test' | 'production';
 
 export interface Config {
@@ -18,7 +20,6 @@ export class ConfigError extends Error {
 
 /** Valeur écrite dans .env.example : elle est publique, donc interdite en production. */
 export const EXAMPLE_JWT_SECRET = 'changez-moi-avec-une-longue-valeur-aleatoire-de-32-caracteres-minimum';
-const DEV_JWT_SECRET = 'secret-de-developpement-a-ne-jamais-utiliser-en-production';
 const MIN_SECRET_LENGTH = 32;
 
 function lirePort(brut: string | undefined): number {
@@ -40,7 +41,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       throw new ConfigError(`JWT_SECRET est obligatoire en production : ${MIN_SECRET_LENGTH} caractères minimum, différent de la valeur d'exemple.`);
     }
   } else if (jwtSecret === '') {
-    jwtSecret = DEV_JWT_SECRET;
+    // Secret éphémère pour le développement local et les tests : aucun secret
+    // partagé ou réutilisable n'est stocké dans le dépôt.
+    jwtSecret = randomBytes(MIN_SECRET_LENGTH).toString('hex');
   }
 
   return {
