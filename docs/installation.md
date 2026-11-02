@@ -38,6 +38,12 @@ cp backend/.env.example backend/.env
 | `JWT_SECRET` | **oui en production** | valeur de développement | Signature des jetons de connexion. 32 caractères minimum, différent de la valeur d'exemple. |
 | `PAYMENT_WEBHOOK_SECRET` | **oui en production** | valeur de développement | Signature HMAC des webhooks de paiement. 32 caractères minimum, différent de la valeur d'exemple. |
 | `CORS_ORIGINS` | non | `http://localhost:5173` | Adresses du site autorisées à appeler l'API, séparées par des virgules (origine exacte, sans `/` final). |
+| `PAYMENT_PROVIDER` | non | `simulation` | Fournisseur de paiement : `simulation` ou `easypay` (voir [easypay.md](api/easypay.md)). |
+| `EASYPAY_MODE` | non | `sandbox` | `sandbox` (essais) ou `v1` (production), seulement avec `easypay`. |
+| `EASYPAY_CID` | **oui avec `easypay`** | — | Identifiant de corrélation du marchand Easypay. |
+| `EASYPAY_TOKEN` | **oui avec `easypay`** | — | Clé de l'espace développeur Easypay. Elle voyage dans l'adresse des appels : ne jamais la journaliser. |
+| `EASYPAY_IPN_KEY` | **oui avec `easypay`** | — | Clé secrète de l'adresse de notification (32 caractères minimum). |
+| `SITE_URL` | **oui avec `easypay`** | — | Adresse publique du site, sans `/` final (`https` en production) : adresses de retour après paiement. |
 | `SEED_RESTAURANT_ADMIN_PASSWORD` | seulement pour `npm run seed` | — | Mot de passe des administrateurs de restaurant de démonstration. |
 | `SEED_EMPLOYEE_PASSWORD` | seulement pour `npm run seed` | — | Mot de passe de l'employé de démonstration. |
 | `SEED_STUDENT_PASSWORD` | seulement pour `npm run seed` | — | Mot de passe de l'étudiant de démonstration. |
@@ -147,7 +153,7 @@ rm backend/data/mon-miam-miam.sqlite*
 | 2 | `npm run typecheck` | aucune erreur |
 | 3 | `npm test` | tous les tests passent (116 au 2 novembre 2026) |
 | 4 | `node ../database/verifier.mjs` | « Vérification des contraintes et des données de test réussie. » |
-| 5 | `npm run db:migrate` | « Base prête : … (4 migrations appliquées). » |
+| 5 | `npm run db:migrate` | « Base prête : … (5 migrations appliquées). » |
 | 6 | `npm run seed` | « Données de démonstration créées. » (ou « déjà présentes » au 2e passage) |
 | 7 | `npm start` | « API prête sur le port 3000 (development). » |
 | 8 | `curl localhost:3000/api/health` | `{"status":"ok","time":"…"}` |
