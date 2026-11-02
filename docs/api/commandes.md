@@ -319,7 +319,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 
 **Sous-tâche Jira :** 13.3 « Afficher le suivi de commande ».
 
-**Entrée :** identifiant de commande dans le chemin ; aucun corps. L’étudiant peut annuler uniquement si le statut est `pending` et si le paiement est `unpaid` ou `failed`. Un paiement mobile money déjà `pending` ne peut pas être annulé par l’étudiant.
+**Entrée :** identifiant de commande dans le chemin ; aucun corps. L’étudiant peut annuler uniquement si le statut est `pending` et si le paiement est `unpaid` ou `failed`. Un paiement mobile money déjà `pending` ne peut pas être annulé par l’étudiant. Une commande dont le total est de 0 FC parce qu’elle est réglée entièrement avec des points est marquée `paid` dès sa création, mais rien n’a été payé : elle reste annulable tant qu’elle est `pending`, et les points sont rendus.
 
 **Réponse :** `200 OK`, commande complète avec le statut `cancelled`, la date d’annulation et l’événement correspondant. Les points utilisés sont restitués ; une commande annulée ne gagne pas de points.
 
@@ -392,7 +392,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 13. Créer une commande dans plusieurs restaurants et paginer/filtrer la liste de l’étudiant sans exposer les commandes d’un autre étudiant.
 14. Autoriser le propriétaire à lire le détail et répondre `404` pour un identifiant inconnu ou appartenant à un autre étudiant.
 15. Renvoyer les événements du détail avec les statuts et dates UTC dans l’ordre chronologique ; ne pas inclure l’historique dans la liste.
-16. Autoriser l’annulation uniquement en statut `pending` avec paiement `unpaid` ou `failed` ; restituer les points utilisés.
+16. Autoriser l’annulation uniquement en statut `pending` avec paiement `unpaid` ou `failed` (ou total de 0 FC réglé avec des points) ; restituer les points utilisés.
 17. Refuser `redeemMeal` avec `422 INSUFFICIENT_POINTS` si le solde est insuffisant dans le restaurant de la commande.
 18. Initialiser `paymentStatus` à `unpaid` pour cash et mobile money ; seul le serveur peut confirmer le paiement.
 
