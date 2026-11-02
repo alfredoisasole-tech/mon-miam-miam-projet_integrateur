@@ -149,6 +149,7 @@ export class OrdersService {
     }
     if (!restaurant) throw new AppError(404, 'NOT_FOUND', 'Restaurant introuvable.');
     if (restaurant.status !== 'active') throw new AppError(404, 'RESTAURANT_INACTIVE', 'Ce restaurant n’accepte pas de commandes.');
+    if (!(await this.repository.hasRestaurantMembership(userId, restaurant.id))) throw new AppError(403, 'FORBIDDEN', 'Vous n’êtes pas inscrit à ce restaurant.');
     const now = this.options.now?.() ?? new Date();
     if (!isRestaurantOpenAt(restaurant, now)) throw new AppError(422, 'RESTAURANT_CLOSED', 'Le restaurant est fermé au moment de la commande.');
     if (input.arrivalTime) {
@@ -162,7 +163,7 @@ export class OrdersService {
     }
     if (input.paymentMethod === 'mobile_money' && !restaurant.settings.mobileMoneyEnabled) throw new AppError(422, 'PAYMENT_METHOD_UNAVAILABLE', 'Le paiement mobile money n’est pas disponible pour ce restaurant.');
 
-    const menuItems = await this.repository.findMenuItemsByIds(input.items.map((item) => item.menuItemId));
+    const menuItems = await this.repository.findMenuItemsByIds(input.items.map((item) => item.menuItemId), restaurant.id);
     const itemsById = new Map(menuItems.map((item) => [item.id, item]));
     const items: OrderItem[] = input.items.map((requested) => {
       const item = itemsById.get(requested.menuItemId);
@@ -189,6 +190,7 @@ export class OrdersService {
       events: [{ status: 'pending', at: createdAt }], createdAt, updatedAt: createdAt, completedAt: null, cancelledAt: null,
     };
     const result = await this.repository.createOrder(order);
+    if (result.insufficientPoints) throw new AppError(422, 'INSUFFICIENT_POINTS', 'Le solde de points est insuffisant dans ce restaurant.');
     if (!result.created) {
       if (canonicalizeOrder(result.order) === canonicalizeRequest(input, restaurant.id, delivery)) return { order: serializeOrder(result.order), replayed: true };
       throw new AppError(409, 'IDEMPOTENCY_KEY_REUSED', 'Cette clé a déjà servi pour une commande au contenu différent.');
