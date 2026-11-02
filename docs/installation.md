@@ -172,4 +172,4 @@ Dernière vérification complète : 2 novembre 2026, clone neuf, Node.js 22.23.4
 | Erreur de lecture de `database/schema.sql` | API lancée sans le dépôt complet | cloner le dépôt entier, ne pas copier `backend/` seul |
 | Le site s'affiche mais les données sont vides ou en erreur | API arrêtée, ou seed non exécuté | vérifier l'étape 8, puis l'étape 6 |
 | Erreur CORS dans le navigateur | l'adresse du site n'est pas dans `CORS_ORIGINS` | ajouter l'origine exacte (sans `/` final) |
-| Les routes d'étudiants ou d'employés répondent 401 | le résolveur d'identité n'est pas encore branché sur `main.ts` | limite connue, voir [deploiement.md](deploiement.md) |
+| Une route d'étudiant ou de personnel répond 401 | jeton absent, invalide ou expiré | se connecter avec `POST /api/auth/login` (`identifier` et `password`), puis envoyer l'en-tête `Authorization: Bearer <jeton>` ; sans données de démonstration, aucun compte n'existe (voir section 5) |
