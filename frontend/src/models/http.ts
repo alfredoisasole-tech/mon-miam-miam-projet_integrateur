@@ -22,15 +22,19 @@ function lireJeton(): string | null {
     return null;
   }
 }
-
 async function requete<T>(chemin: string, options: Options = {}): Promise<T> {
   const { methode = "GET", corps, idempotencyKey } = options;
 
   const entetes: Record<string, string> = {};
   const jeton = lireJeton();
-  if (jeton) entetes.Authorization = `Bearer ${jeton}`;
+  if (jeton) {
+    entetes.Authorization = `Bearer ${jeton}`;
+  }
   if (corps !== undefined) entetes["Content-Type"] = "application/json";
   if (idempotencyKey) entetes["Idempotency-Key"] = idempotencyKey;
+
+  // ...
+
 
   let reponse: Response;
   try {

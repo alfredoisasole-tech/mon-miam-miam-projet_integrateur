@@ -13,9 +13,9 @@ Réglages enregistrés dans le projet Vercel le 2 novembre 2026 : **Root Directo
 
 E-8 déploie le frontend uniquement. Le proxy `/api` de Vite fonctionne en développement, pas sur Vercel. Sans backend public et sans réécriture vers Render, les appels API ne fonctionnent pas : un restaurant déjà sélectionné peut afficher une erreur de chargement ; sans sélection, `/menu` invite à choisir un restaurant. Ce comportement ne prouve pas que le backend est déployé. Ne pas définir une URL d’API fictive ni une variable `VITE_API_URL` vide dans Vercel. Le futur raccordement de l’API et des images est décrit dans [la préparation du déploiement](../deploiement.md).
 
-La branche reprend le code E-6 déjà livré pour disposer du routeur et de la page `/menu` (la PR #36 avait été fusionnée dans la branche E-5, pas dans `dev`). E-7 et ses statistiques en brouillon ne sont pas inclus. Les écrans métier non encore développés restent indisponibles.
+La branche est mise à jour avec `dev` au commit `218cb2b`, qui contient désormais E-6 via la PR #44. `frontend/src/App.tsx` et `docs/layout.md` sont identiques à `dev` : accueil, `/menu`, `/login`, `/register` et page 404 sont conservés. Le diff E-8 contient uniquement `frontend/vercel.json` et le présent README. E-7 et ses statistiques en brouillon ne sont pas inclus.
 
-Contrôles locaux réussis : **75 tests frontend**, typage TypeScript, build Vite et validation JSON de la configuration. Ils ne remplacent pas les contrôles du vrai déploiement ci-dessous.
+Contrôles locaux après mise à jour avec `dev` : **90 tests frontend réussis dans 15 fichiers**, typage TypeScript, build Vite et validation JSON de la configuration réussis avec Node.js 24. Ils ne remplacent pas les contrôles du vrai déploiement ci-dessous.
 
 Après connexion du dépôt `alfredoisasole-tech/mon-miam-miam-projet_integrateur` et publication de la branche E-8 :
 
