@@ -517,7 +517,7 @@ describe('Paiements mobiles simulés — APP-75', () => {
   it('génère un chemin de simulation sans exposer de signature', async () => {
     const provider = new SimulatedPaymentProvider(WEBHOOK_SECRET);
     const result = await provider.startPayment({
-      paymentId: 'pay_test-id', orderId: 'ord_test-id', amountFc: 3000, operator: 'mpesa', phone: PHONE,
+      paymentId: 'pay_test-id', orderId: 'ord_test-id', amountFc: 3000, operator: 'mpesa', phone: PHONE, customerName: 'Étudiant 1',
     });
     assert.equal(result.redirectUrl, '/paiement/simulation/pay_test-id');
     assert.equal(JSON.stringify(result).includes(WEBHOOK_SECRET), false);
