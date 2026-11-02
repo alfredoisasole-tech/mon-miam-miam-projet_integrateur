@@ -4,6 +4,8 @@ Modèle conçu à partir du cahier des charges et des règles de la plateforme.
 
 Vue synthétique des 34 relations, réparties en six vues. Les détails des clés et des cardinalités suivent. Cliquez sur l'image pour l'ouvrir en pleine taille.
 
+Le schéma métier décrit ici comporte 16 entités. Les migrations backend ajoutent aussi deux tables techniques (`order_sequences` pour numéroter les commandes sans collision et `auth_lockouts` pour persister les verrouillages de compte), ainsi que `auth_version` sur les comptes pour révoquer les jetons après réinitialisation du mot de passe ; elles ne modifient pas les 16 entités métier.
+
 [![Modèle de données — 34 relations en six vues](modele-de-donnees.png)](modele-de-donnees.png)
 
 ## 1. Entités et attributs
@@ -97,6 +99,7 @@ Comptes des étudiants et du personnel. L’e-mail (sans distinction de casse) e
 | `referral_code` | TEXT | non |  | UNIQUE |
 | `referred_by` | TEXT | non |  | FK → `users` |
 | `accepted_terms_at` | TEXT | non |  |  |
+| `auth_version` | INTEGER | oui | 0 | Version de sécurité des jetons |
 | `created_at` | TEXT | oui |  |  |
 | `last_login_at` | TEXT | non |  |  |
 
@@ -122,6 +125,7 @@ Administrateurs de la plateforme, hors de tout restaurant.
 | `email` | TEXT | oui |  | UNIQUE |
 | `password_hash` | TEXT | oui |  |  |
 | `status` | TEXT | oui | 'active' |  |
+| `auth_version` | INTEGER | oui | 0 | Version de sécurité des jetons |
 | `created_at` | TEXT | oui |  |  |
 | `last_login_at` | TEXT | non |  |  |
 

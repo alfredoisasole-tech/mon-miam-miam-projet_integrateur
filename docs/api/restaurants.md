@@ -190,7 +190,7 @@
 
 ---
 
-## 4. Promotions d'un restaurant (pas encore implémentée)
+## 4. Promotions d'un restaurant
 
 ### `GET /api/restaurants/:slug/promotions`
 
@@ -239,16 +239,41 @@ Ces règles sont implémentées côté React, pas côté API :
 
 ---
 
-## Tests à écrire en premier (TDD)
+## 6. Administration de la plateforme
 
-Avant d'écrire le code, écrire ces tests dans `backend/tests/api/restaurants.test.ts` :
+Les routes suivantes exigent un jeton d’un compte `platform_admin`.
 
-1. **Liste vide** (aucun restaurant) → 200, `items: []`.
-2. **Liste avec restaurants désactivés** → seuls les actifs sont renvoyés, triés par nom.
-3. **Profil d'un slug inconnu** → 404 `RESTAURANT_NOT_FOUND`.
-4. **Profil d'un slug désactivé** → 404 `RESTAURANT_NOT_FOUND` (même réponse).
-5. **Menu avec plats d'un autre restaurant** → ces plats n'apparaissent pas.
-6. **Menu avec plats épuisés** → ces plats n'apparaissent pas.
-7. **Menu avec catégories vides** → ces catégories ne sont pas renvoyées.
-8. **Promotions hors dates** → ne sont pas renvoyées.
-9. **Promotions désactivées** → ne sont pas renvoyées.
+- `POST /api/platform/restaurants` crée un restaurant et son premier compte administrateur dans une transaction. Corps attendu : `{ "slug", "name", "admin": { "name", "email", "phone", "password" } }`. Les champs visuels sont facultatifs ; les horaires initiaux sont 08 h–22 h, tous les jours.
+- `PATCH /api/platform/restaurants/:slug/status` accepte `{ "status": "active" }` ou `{ "status": "inactive" }`. Les routes publiques masquent ensuite un restaurant inactif.
+
+La liste publique, le profil, le menu, les images et les promotions sont raccordés à SQLite. L’administration des plats est également disponible via les routes du personnel ci-dessous ; la création et la modification des promotions restent à faire.
+
+## 7. Administration du menu
+
+Toutes les routes déduisent le restaurant du compte authentifié ; aucun identifiant de restaurant fourni par le client n'est utilisé pour déterminer le périmètre.
+
+### `GET /api/staff/menu`
+
+Employé, gérant ou administrateur du restaurant. Renvoie les plats non supprimés logiquement, y compris ceux marqués indisponibles, dans l'ordre de leur position.
+
+### `PATCH /api/staff/menu/:id`
+
+Employé, gérant ou administrateur du restaurant. Corps accepté : `{ "isAvailable": false }`, `{ "isDaily": true }` ou les deux champs. Un autre champ est refusé.
+
+### `POST /api/admin/menu`
+
+Administrateur du restaurant uniquement. Corps : `{ "name", "description", "priceFc", "category", "isDaily", "isAvailable" }`. Les catégories permises sont `plat`, `boisson`, `dessert` et `snack`. Le prix est un entier FC positif ou nul.
+
+### `PATCH /api/admin/menu/:id`
+
+Administrateur du restaurant uniquement. Modifie partiellement les mêmes champs que la création.
+
+### `DELETE /api/admin/menu/:id`
+
+Administrateur du restaurant uniquement. Effectue une suppression logique afin de préserver les lignes de commande historiques.
+
+Une ressource appartenant à un autre restaurant répond `404 MENU_ITEM_NOT_FOUND`. Les tests sont dans `backend/tests/menu-admin-api.test.ts`.
+
+## État des tests
+
+Les tests de lecture publique sont dans `backend/tests/restaurants-menu.test.ts`; l’administration et les promotions sont couvertes dans `backend/tests/platform-api.test.ts`.

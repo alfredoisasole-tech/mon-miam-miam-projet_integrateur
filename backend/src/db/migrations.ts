@@ -13,6 +13,31 @@ const schemaPath = new URL('../../../database/schema.sql', import.meta.url);
 // le serveur doit donc être lancé avec le dépôt complet.
 export const migrations: Migration[] = [
   { id: '001_initial', sql: readFileSync(fileURLToPath(schemaPath), 'utf8') },
+  { id: '002_order_sequences', sql: `
+    CREATE TABLE IF NOT EXISTS order_sequences (
+      restaurant_id TEXT NOT NULL REFERENCES restaurants(id),
+      day_key TEXT NOT NULL,
+      next_value INTEGER NOT NULL CHECK (next_value > 0),
+      PRIMARY KEY (restaurant_id, day_key)
+    );
+    INSERT INTO order_sequences (restaurant_id, day_key, next_value)
+    SELECT restaurant_id, substr(order_number, 1, 6), MAX(CAST(substr(order_number, 8) AS INTEGER)) + 1
+    FROM orders
+    WHERE length(order_number) >= 10 AND substr(order_number, 7, 1) = '-'
+      AND substr(order_number, 8) NOT GLOB '*[^0-9]*'
+    GROUP BY restaurant_id, substr(order_number, 1, 6)
+    ON CONFLICT (restaurant_id, day_key) DO UPDATE SET next_value = MAX(next_value, excluded.next_value);
+  ` },
+  { id: '003_auth_lockouts', sql: `
+    CREATE TABLE IF NOT EXISTS auth_lockouts (
+      user_id TEXT PRIMARY KEY REFERENCES users(id),
+      locked_at TEXT NOT NULL
+    );
+  ` },
+  { id: '004_auth_versions', sql: `
+    ALTER TABLE users ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE platform_admins ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0;
+  ` },
 ];
 
 export function migrate(db: Database): void {
