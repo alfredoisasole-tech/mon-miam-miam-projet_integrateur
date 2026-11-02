@@ -109,6 +109,17 @@ describe('Fidélité : sécurité du solde', () => {
     assert.equal(await monde.points('student-1', 'r-alpha'), 15);
   });
 
+  it('ne marque pas « remboursement dû » une commande mobile money de 0 FC annulée par le personnel', async () => {
+    const commande = await monde.commanderOk({ items: PLAT, paymentMethod: 'mobile_money', redeemMeal: true }, 'mobile-zero-00001');
+    assert.equal(commande.totalFc, 0);
+    const annulee = await monde.changerStatut(commande.id, 'cancelled');
+    assert.equal(annulee.status, 200);
+    const resultat = await annulee.json() as { status: string; paymentStatus: string };
+    assert.equal(resultat.status, 'cancelled');
+    assert.notEqual(resultat.paymentStatus, 'refund_due', 'aucun argent n’a été payé : rien à rembourser');
+    assert.equal(await monde.points('student-1', 'r-alpha'), 15, 'les points sont rendus');
+  });
+
   it('permet de réutiliser les points restitués, une seule fois', async () => {
     const annulee = await monde.commanderOk({ items: GROS, redeemMeal: true }, 'reutilisation-0001');
     await monde.annulerParEtudiant(annulee.id);

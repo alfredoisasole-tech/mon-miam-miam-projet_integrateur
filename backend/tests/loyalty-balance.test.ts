@@ -88,6 +88,29 @@ describe('Fidélité : consultation du solde', () => {
     }
   });
 
+  it('montre la restitution des points d’une commande annulée, sans changer le solde', async () => {
+    monde.crediter('points-depart', 'r-alpha', 'student-1', 15, '2027-10-26T00:00:00.000Z', '2026-10-20T08:00:00.000Z');
+    const commande = await monde.commanderOk({ items: [{ menuItemId: 'alpha-big', quantity: 1 }], redeemMeal: true }, 'solde-restitution-1');
+    monde.horloge.instant = '2026-10-26T09:00:00.000Z';
+    assert.equal((await monde.annulerParEtudiant(commande.id)).status, 200);
+    const resultat = await solde('alpha');
+    assert.equal(resultat.availablePoints, 15, 'les points rendus ne sont pas comptés deux fois');
+    assert.deepEqual(resultat.movements.map((mouvement) => [mouvement.kind, mouvement.points]), [['refund', 15], ['redeem', -15], ['earn', 15]]);
+    assert.equal(resultat.movements[0]?.orderId, commande.id);
+    assert.equal(resultat.movements[0]?.createdAt, '2026-10-26T09:00:00.000Z');
+    assert.equal(resultat.movements[0]?.expiresAt, null);
+    assert.equal(resultat.movements.reduce((somme, mouvement) => somme + mouvement.points, 0), 15, 'la somme de l’historique égale le solde');
+  });
+
+  it('ne montre pas de restitution pour une commande non annulée ou sans points utilisés', async () => {
+    monde.crediter('points-depart', 'r-alpha', 'student-1', 15, '2027-10-26T00:00:00.000Z');
+    await monde.commanderOk({ items: [{ menuItemId: 'alpha-big', quantity: 1 }], redeemMeal: true }, 'solde-sans-restit-1');
+    const sansPoints = await monde.commanderOk({ items: [{ menuItemId: 'alpha-dish', quantity: 1 }] }, 'solde-sans-restit-2');
+    assert.equal((await monde.annulerParEtudiant(sansPoints.id)).status, 200);
+    const resultat = await solde('alpha');
+    assert.equal(resultat.movements.some((mouvement) => mouvement.kind === 'refund'), false);
+  });
+
   it('limite l’historique aux 50 mouvements les plus récents', async () => {
     for (let index = 0; index < 55; index += 1) {
       monde.crediter(`lot-${index}`, 'r-alpha', 'student-1', 1, '2027-10-26T00:00:00.000Z', new Date(Date.UTC(2026, 9, 1, 0, index)).toISOString());
