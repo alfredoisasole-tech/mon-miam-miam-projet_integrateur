@@ -246,7 +246,33 @@ Les routes suivantes exigent un jeton d’un compte `platform_admin`.
 - `POST /api/platform/restaurants` crée un restaurant et son premier compte administrateur dans une transaction. Corps attendu : `{ "slug", "name", "admin": { "name", "email", "phone", "password" } }`. Les champs visuels sont facultatifs ; les horaires initiaux sont 08 h–22 h, tous les jours.
 - `PATCH /api/platform/restaurants/:slug/status` accepte `{ "status": "active" }` ou `{ "status": "inactive" }`. Les routes publiques masquent ensuite un restaurant inactif.
 
-La liste publique, le profil, le menu, les images et les promotions sont raccordés à SQLite. La gestion d’écriture des plats et des promotions n’est pas comprise dans ces routes de consultation.
+La liste publique, le profil, le menu, les images et les promotions sont raccordés à SQLite. L’administration des plats est également disponible via les routes du personnel ci-dessous ; la création et la modification des promotions restent à faire.
+
+## 7. Administration du menu
+
+Toutes les routes déduisent le restaurant du compte authentifié ; aucun identifiant de restaurant fourni par le client n'est utilisé pour déterminer le périmètre.
+
+### `GET /api/staff/menu`
+
+Employé, gérant ou administrateur du restaurant. Renvoie les plats non supprimés logiquement, y compris ceux marqués indisponibles, dans l'ordre de leur position.
+
+### `PATCH /api/staff/menu/:id`
+
+Employé, gérant ou administrateur du restaurant. Corps accepté : `{ "isAvailable": false }`, `{ "isDaily": true }` ou les deux champs. Un autre champ est refusé.
+
+### `POST /api/admin/menu`
+
+Administrateur du restaurant uniquement. Corps : `{ "name", "description", "priceFc", "category", "isDaily", "isAvailable" }`. Les catégories permises sont `plat`, `boisson`, `dessert` et `snack`. Le prix est un entier FC positif ou nul.
+
+### `PATCH /api/admin/menu/:id`
+
+Administrateur du restaurant uniquement. Modifie partiellement les mêmes champs que la création.
+
+### `DELETE /api/admin/menu/:id`
+
+Administrateur du restaurant uniquement. Effectue une suppression logique afin de préserver les lignes de commande historiques.
+
+Une ressource appartenant à un autre restaurant répond `404 MENU_ITEM_NOT_FOUND`. Les tests sont dans `backend/tests/menu-admin-api.test.ts`.
 
 ## État des tests
 
