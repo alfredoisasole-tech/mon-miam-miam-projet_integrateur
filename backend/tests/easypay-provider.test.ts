@@ -103,6 +103,35 @@ describe('Adaptateur Easypay : démarrage du paiement', () => {
   }
 });
 
+describe('Adaptateur Easypay : diagnostic des pannes réseau', () => {
+  it('indique le code technique de la panne, sans jamais écrire l’adresse ni les identifiants', async () => {
+    const panne = new Error(`connect ECONNREFUSED https://www.e-com-easypay.com/sandbox/payment/initialization?cid=${CID}&token=${TOKEN}`, { cause: { code: 'ECONNREFUSED' } });
+    const { fetchImpl } = faux([panne]);
+    await assert.rejects(creer(fetchImpl).startPayment(DEMARRAGE), (erreur: unknown) => {
+      assert.ok(erreur instanceof Error);
+      assert.match(erreur.message, /ECONNREFUSED/);
+      for (const secret of [CID, TOKEN, 'e-com-easypay.com', 'https://']) assert.equal(erreur.message.includes(secret), false);
+      return true;
+    });
+  });
+
+  it('distingue le délai dépassé d’une autre panne', async () => {
+    const delai = new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+    const { fetchImpl } = faux([delai as unknown as Error]);
+    await assert.rejects(creer(fetchImpl).startPayment(DEMARRAGE), /délai/);
+  });
+
+  it('ignore un code qui ne ressemble pas à un code technique', async () => {
+    const panne = new Error('x', { cause: { code: 'https://www.e-com-easypay.com/?token=SECRET' } });
+    const { fetchImpl } = faux([panne]);
+    await assert.rejects(creer(fetchImpl).startPayment(DEMARRAGE), (erreur: unknown) => {
+      assert.ok(erreur instanceof Error);
+      assert.equal(erreur.message.includes('SECRET'), false);
+      return true;
+    });
+  });
+});
+
 describe('Adaptateur Easypay : vérification du statut', () => {
   const reponseStatut = (status: string, orderRef = ORDER_REF) => ({
     corps: JSON.stringify({ transaction: { order_ref: orderRef, reference: REFERENCE }, payment: { channel: 'MOBILE MONEY', status, reference: REFERENCE } }),
