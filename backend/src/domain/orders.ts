@@ -148,4 +148,6 @@ export interface OrdersRepository {
 export interface AuthenticatedUser {
   id: string;
   role: string;
+  restaurantId?: string | null;
+  status?: string;
 }
