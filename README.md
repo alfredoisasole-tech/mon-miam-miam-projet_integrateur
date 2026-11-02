@@ -14,6 +14,10 @@ npm test                 # lance les tests
 npm run typecheck        # vérifie les types
 npm run dev              # démarre l'API sur http://localhost:3000/api/health
 
+# Seed facultatif : renseigner SEED_RESTAURANT_ADMIN_PASSWORD, SEED_EMPLOYEE_PASSWORD,
+# SEED_STUDENT_PASSWORD et SEED_PLATFORM_ADMIN_PASSWORD dans l'environnement
+npm run seed
+
 # Site
 cd frontend
 npm install

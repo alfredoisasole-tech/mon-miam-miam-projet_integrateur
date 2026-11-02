@@ -3,7 +3,7 @@ import { api } from '../models/http.ts';
 import { ApiError } from '../models/types.ts';
 
 export type StatsPeriod = 'day' | 'week' | 'month';
-/** Sous-ensemble du contrat Overview du brouillon, à confirmer avec L-11. */
+/** Champs Overview utilisés par E-7, vérifiés avec l’API L-11 (APP-82, PR #43). */
 export interface RestaurantStats {
   period: StatsPeriod;
   salesFc: number;

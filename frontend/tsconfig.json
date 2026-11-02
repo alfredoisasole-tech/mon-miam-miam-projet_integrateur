@@ -15,7 +15,9 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "types": [
-      "vite/client"
+      "vite/client",
+      "vitest/globals",
+      "@testing-library/jest-dom"
     ],
     "allowImportingTsExtensions": true
   },

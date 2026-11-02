@@ -18,6 +18,10 @@ export function createAuthMiddleware(resolveToken: TokenResolver): RequestHandle
         next(new AppError(401, 'UNAUTHORIZED', 'Votre jeton de connexion est invalide.'));
         return;
       }
+      if (user.status && user.status !== 'active') {
+        next(new AppError(403, 'ACCOUNT_DISABLED', 'Ce compte est désactivé.'));
+        return;
+      }
       res.locals['authenticatedUser'] = user;
       next();
     }).catch(next);

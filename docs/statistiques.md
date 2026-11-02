@@ -2,7 +2,7 @@
 
 Responsable : Emmanuel Mboyo. Ticket : [APP-83 — Sous-tâche 18.2](https://judbie2030-45660043.atlassian.net/browse/APP-83). Branche : `feature/ecran-statistiques`, PR vers `dev`.
 
-**Frontend développé et testé ; intégration réelle dépendante de L-11.** Le 2 novembre 2026, `dev` ne raccorde pas encore de contrôleur statistiques et aucune branche contenant « stat » n’a été trouvée. Le plan rattache L-11 aux tickets APP-82 et APP-84, encore à faire dans Jira lors du contrôle. Aucune modification ni réaffectation de ces tâches backend n’est incluse.
+**Compatibilité avec L-11 vérifiée ; fusion de l’API encore nécessaire dans `dev`.** Le 2 novembre 2026, E-7 a été testé avec `dev` au commit `218cb2b` et la [PR #43 — L-11, APP-82](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/43), au commit `59a4a50`. La vérification d’intégration utilise une copie locale qui conserve les imports du paiement et des statistiques dans `backend/src/app.ts`. Ce correctif local ne modifie pas la branche de Lusimafu et n’ajoute pas l’API L-11 dans la PR E-7. La PR #43 doit être intégrée avant de disposer de l’API dans `dev`.
 
 ## Écran et accès
 
@@ -16,7 +16,7 @@ La page affiche :
 - Chargement, erreur avec reprise manuelle, état vide et heure de la dernière mise à jour en `Africa/Kinshasa`.
 - Actualisation automatique toutes les 30 secondes, sans superposer les requêtes d’une même période.
 
-## Contrat provisoire et raccordement
+## Contrat vérifié et raccordement
 
 Le contrôleur `src/controllers/stats.ts` appelle réellement le client HTTP commun :
 
@@ -27,7 +27,7 @@ Authorization: Bearer <jeton de session>
 
 L’API choisit le restaurant à partir du personnel authentifié. Le frontend n’ajoute pas de paramètre permettant de choisir un autre restaurant.
 
-Le sous-ensemble ci-dessous reprend les champs de `Overview` dans le brouillon fourni. **Il doit être confirmé avec l’implémentation L-11 avant validation de l’intégration.** Les champs supplémentaires du brouillon ne sont pas nécessaires à E-7.
+Le sous-ensemble ci-dessous correspond aux champs de `StatsOverview` utilisés par E-7 et vérifiés avec l’implémentation L-11 de la PR #43. Les champs supplémentaires renvoyés par le serveur (`from`, `to`, `orders.byStatus`, `topItems[].revenueFc`) sont compatibles et ne sont pas nécessaires à l’affichage E-7.
 
 ```json
 {
@@ -45,11 +45,24 @@ Un changement de période ou de clé de session/restaurant masque immédiatement
 
 ## Base Git et dépendance E-6
 
-La branche part du dernier `dev` récupéré le 2 novembre. Celui-ci contient E-5 mais pas E-6 : la PR #36 a été fusionnée dans `feature/charte-composants` après la fusion d’E-5. Le commit E-6 déjà livré est donc repris par une fusion locale de `feature/mise-en-page` afin de disposer du layout et de sa navigation. Le diff vers `dev` contient ainsi E-6 et les nouveaux fichiers E-7 ; ce point est signalé à la relecture. La branche distante `dev` n’a pas été fusionnée ou modifiée directement.
+La branche `feature/ecran-statistiques` intègre `dev` au commit `218cb2b`, qui contient désormais E-6 via la PR #44, l’inscription, la connexion et le paiement simulé. Le seul conflit, dans `frontend/src/App.tsx`, est résolu en conservant la version de `dev` et en ajoutant `/staff/overview` sous `RequireRole` pour `manager` et `admin`. Les routes d’accueil, `/menu`, `/login`, `/register` et la page 404 sont conservées. Le diff vers `dev` porte sur E-7 ; la branche de Lusimafu et la branche distante `dev` ne sont pas modifiées par cette mise à jour.
 
 ## Vérifications exécutées le 2 novembre 2026
 
-**85 tests frontend réussis**, dont **16 tests E-7** : chiffres, classement, période, zéro vente, reprise après erreur, rôles autorisés/refusés, intervalle de 30 secondes, nettoyage, isolation des réponses, panne de rafraîchissement, refus d’accès, contrat invalide et requêtes non superposées. Typage TypeScript et build Vite réussis.
+Après intégration de `dev` : **107 tests frontend réussis dans 16 fichiers**, dont **16 tests E-7** et un nouveau contrôle de la route protégée dans l’application complète. Ils couvrent les chiffres, le classement, la période, zéro vente, la reprise après erreur, les rôles autorisés/refusés, l’intervalle de 30 secondes, le nettoyage, l’isolation des réponses, les pannes de rafraîchissement, les refus d’accès, le contrat invalide et les requêtes non superposées. Typage TypeScript et build Vite réussis avec Node.js 24.
+
+La copie d’intégration `dev` + E-7 + L-11 passe également **120 tests backend**, ainsi que le typage backend. Les sources frontend y ont été comparées par empreinte aux fichiers de la branche E-7. Le conflit d’imports de `backend/src/app.ts` a été résolu uniquement dans cette copie de vérification en conservant les deux blocs.
+
+Contrôle HTTP réel supplémentaire : base SQLite temporaire avec données de démonstration, authentification par `/api/auth/login` et commandes terminées avec montants connus. Les jetons et mots de passe temporaires ne sont pas publiés.
+
+| Vérification | Résultat |
+| --- | --- |
+| Bilan administrateur et gérant, `day`, `week`, `month` | 200 ; contrat et chiffres attendus |
+| Autre restaurant | 200 ; ventes isolées de celles du premier restaurant |
+| Bilan employé | 403 |
+| Bilan étudiant | 403 |
+| Sans connexion | 401 |
+| Période `year` | 400 |
 
 L’aperçu a été chargé dans le navigateur et contrôlé par son DOM : à 360 px, document de 345 px sans débordement horizontal et grille sur une colonne ; passage à la semaine (840 000 FC de démonstration) et affichage de l’état vide vérifiés. La capture d’écran du navigateur a échoué : aucun contrôle visuel par capture n’est annoncé comme réussi.
 
@@ -64,6 +77,6 @@ Ouvrir `/stats.html` pour l’aperçu de développement : données fictives expl
 
 ## Conditions avant clôture
 
-1. Intégrer L-11 et confirmer le contrat ci-dessus.
-2. Vérifier avec des comptes gérant et administrateur les chiffres réels, l’isolation entre restaurants, les refus d’accès et les périodes définies côté serveur en heure de Kinshasa.
-3. Faire relire par un autre binôme puis fusionner la PR vers `dev` avec les contrôles requis. La PR reste en brouillon en attendant cette intégration.
+1. Intégrer la PR #43 (L-11) dans `dev`, en conservant les imports du paiement et des statistiques dans `backend/src/app.ts`.
+2. Faire relire E-7 par un autre binôme, vérifier la CI sur la branche mise à jour et fusionner vers `dev` avec les contrôles requis.
+3. Ne pas confondre la compatibilité locale vérifiée avec un déploiement public de l’API : ce déploiement ne fait pas partie de la présente vérification.

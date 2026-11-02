@@ -74,9 +74,12 @@ dans un restaurant ne sont utilisables que dans ce même restaurant.
   au statut « terminée » (servie). Une commande annulée ne rapporte rien,
   et les points utilisés sur une commande annulée sont rendus.
 
-## 6. Parrainage (hors périmètre immédiat, à ajouter plus tard)
+## 6. Parrainage
 
 Chaque étudiant dispose d'un code de parrainage global (valable dans tous
-les restaurants). La récompense est créditée dans le restaurant de la
-première commande qualifiante du filleul (base ≥ 3 000 FC), au prorata
-(base ÷ 3 000, arrondi à l'entier inférieur).
+les restaurants). Quand la première commande du filleul est terminée et
+qualifiante (dépense sur les plats, après remise et hors livraison, d'au
+moins 3 000 FC), la récompense est créditée au parrain dans le restaurant
+de cette commande. Le nombre de points est calculé au prorata
+(base ÷ 3 000, arrondi à l'entier inférieur) et les points expirent après
+12 mois. Une commande annulée ne déclenche pas la récompense.
