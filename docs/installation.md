@@ -129,7 +129,7 @@ Le script crée les tables si nécessaire, puis ajoute :
 
 Les adresses e-mail des comptes sont dans `backend/src/seed.ts` ; les mots de passe sont ceux que vous avez fournis. Le seed est **rejouable** : si les deux restaurants existent déjà, il affiche « Données de démonstration déjà présentes » et ne modifie rien.
 
-**Ne jamais utiliser ce seed en production** : ce sont des comptes de démonstration. Les données réelles (restaurants, menus) doivent être chargées par un processus contrôlé, comme décrit dans [deploiement.md](deploiement.md).
+**Ne jamais utiliser ce seed pour de vraies données** : ce sont des comptes de démonstration. Seule exception : l'hébergement de démonstration sur l'offre gratuite de Render, dont la base repart vide à chaque démarrage et où le seed est rejoué au lancement (voir [deploiement.md](deploiement.md)). Les données réelles (restaurants, menus) doivent être chargées par un processus contrôlé, comme décrit dans [deploiement.md](deploiement.md).
 
 ### Fichiers de test SQL
 
