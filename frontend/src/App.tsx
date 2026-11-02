@@ -1,30 +1,35 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider, RestaurantProvider } from './controllers/session';
-import { RegisterPage } from './views/pages/RegisterPage';
+import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
+import { AuthProvider, RestaurantProvider } from './controllers/session.tsx';
+import { Layout } from './views/components/Layout.tsx';
+import { LoginPage } from './views/pages/LoginPage.tsx';
+import { MenuPage } from './views/pages/MenuPage.tsx';
+import { RegisterPage } from './views/pages/RegisterPage.tsx';
 
 export function App() {
   return (
-    // 1. Les providers doivent englober tout le routeur
     <AuthProvider>
       <RestaurantProvider>
         <BrowserRouter>
           <Routes>
-            {/* Page d'accueil temporaire */}
-            <Route
-              path="/"
-              element={
-                <main style={{ padding: '2rem', textAlign: 'center' }}>
+            <Route element={<Layout />}>
+              <Route index element={
+                <>
                   <h1>Mon Miam Miam</h1>
                   <p>Commandez votre repas dans le restaurant de votre choix.</p>
-                  <a href="/register" style={{ color: '#cfbd97', fontWeight: 'bold' }}>
-                    Aller à l'inscription (Test G-4)
-                  </a>
-                </main>
-              }
-            />
-
-            {/* G-4 : Page d'inscription */}
-            <Route path="/register" element={<RegisterPage />} />
+                  <Link to="/register">Créer un compte étudiant</Link>
+                </>
+              } />
+              <Route path="/menu" element={<MenuPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="*" element={
+                <>
+                  <h1>Page indisponible</h1>
+                  <p>Cette adresse ne correspond pas à une page disponible.</p>
+                  <Link to="/">Revenir à l’accueil</Link>
+                </>
+              } />
+            </Route>
           </Routes>
         </BrowserRouter>
       </RestaurantProvider>
