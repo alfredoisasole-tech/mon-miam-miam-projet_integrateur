@@ -8,6 +8,7 @@ import type {
   Restaurant,
   StudentProfile,
 } from '../domain/orders.ts';
+import type { LoyaltyRepository, LoyaltyRules, PointMovement } from '../domain/loyalty.ts';
 import { AppError } from '../http/errors.ts';
 
 interface RestaurantRow {
@@ -172,7 +173,7 @@ const orderColumns = `o.id, o.user_id, o.restaurant_id, o.idempotency_key, o.ord
   o.delivery_quartier, o.delivery_address, o.delivery_landmark, o.delivery_phone,
   o.note, o.comment, o.rating, o.created_at, o.updated_at, o.completed_at, o.cancelled_at`;
 
-export class SqliteOrdersRepository implements OrdersRepository {
+export class SqliteOrdersRepository implements OrdersRepository, LoyaltyRepository {
   private readonly db: Database;
 
   constructor(db: Database) {
@@ -240,6 +241,37 @@ export class SqliteOrdersRepository implements OrdersRepository {
     return this.db.get<{ loyalty_remainder_fc: number }>(`
       SELECT loyalty_remainder_fc FROM memberships WHERE user_id = ? AND restaurant_id = ?
     `, [userId, restaurantId])?.loyalty_remainder_fc ?? 0;
+  }
+
+  async getLoyaltyRules(restaurantId: string): Promise<LoyaltyRules> {
+    const row = this.db.get<{ spend_per_point_fc: number; points_per_meal: number; free_meal_cap_fc: number; points_validity_months: number }>(`
+      SELECT spend_per_point_fc, points_per_meal, free_meal_cap_fc, points_validity_months
+      FROM restaurant_settings WHERE restaurant_id = ?
+    `, [restaurantId]);
+    return {
+      spendPerPointFc: row?.spend_per_point_fc ?? 3000,
+      pointsForReward: row?.points_per_meal ?? 15,
+      rewardValueFc: row?.free_meal_cap_fc ?? 3000,
+      validityMonths: row?.points_validity_months ?? 12,
+    };
+  }
+
+  async listPointMovements(userId: string, restaurantId: string, limit: number): Promise<PointMovement[]> {
+    return this.db.all<{
+      kind: string; points: number; order_id: string | null; order_number: string | null; created_at: string; expires_at: string | null;
+    }>(`
+      SELECT l.kind, l.points, l.order_id, o.order_number, l.created_at, l.expires_at
+      FROM points_ledger l LEFT JOIN orders o ON o.id = l.order_id AND o.restaurant_id = l.restaurant_id
+      WHERE l.user_id = ? AND l.restaurant_id = ?
+      ORDER BY l.created_at DESC, l.rowid DESC LIMIT ?
+    `, [userId, restaurantId, limit]).map((row) => ({
+      kind: row.kind,
+      points: row.points,
+      orderId: row.order_id,
+      orderNumber: row.order_number,
+      createdAt: row.created_at,
+      expiresAt: row.expires_at,
+    }));
   }
 
   async findOrderByIdempotencyKey(userId: string, key: string): Promise<Order | null> {
