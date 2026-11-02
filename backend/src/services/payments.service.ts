@@ -17,6 +17,10 @@ function validationError(message: string): AppError {
   return new AppError(400, 'VALIDATION_ERROR', message);
 }
 
+function amountMismatchError(): AppError {
+  return new AppError(422, 'AMOUNT_MISMATCH', 'Le montant reçu ne correspond pas au montant attendu de la commande.');
+}
+
 function parseStartInput(value: unknown): { operator: PaymentOperator; phone: string } {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw validationError('Le corps doit contenir un opérateur et un numéro de téléphone.');
@@ -50,7 +54,15 @@ function parseNotification(value: unknown): PaymentNotification {
   if (typeof providerRef !== 'string' || providerRef.trim().length === 0 || providerRef.trim().length > 200) {
     throw validationError('La référence du fournisseur doit être un texte non vide de 200 caractères maximum.');
   }
-  return { paymentId: paymentId.trim(), status: status as PaymentFinalStatus, providerRef: providerRef.trim() };
+  const notification: PaymentNotification = { paymentId: paymentId.trim(), status: status as PaymentFinalStatus, providerRef: providerRef.trim() };
+  const amountFc = body['amountFc'];
+  if (amountFc !== undefined) {
+    if (typeof amountFc !== 'number' || !Number.isSafeInteger(amountFc) || amountFc <= 0) {
+      throw validationError('Le montant doit être un entier positif en FC.');
+    }
+    notification.amountFc = amountFc;
+  }
+  return notification;
 }
 
 export class PaymentsService {
@@ -117,8 +129,12 @@ export class PaymentsService {
       throw new AppError(401, 'INVALID_SIGNATURE', 'La signature du fournisseur est absente ou invalide.');
     }
     const notification = parseNotification(body);
+    if (this.provider.requiresAmountVerification && notification.amountFc === undefined) {
+      throw validationError('Le montant est obligatoire dans la notification de ce fournisseur de paiement.');
+    }
     const result = await this.repository.applyNotification({ ...notification, at: this.now().toISOString() });
     if (result.kind === 'not_found') throw new AppError(404, 'PAYMENT_NOT_FOUND', 'Paiement introuvable.');
+    if (result.kind === 'amount_mismatch') throw amountMismatchError();
     if (result.kind === 'already_finalized') {
       throw new AppError(409, 'PAYMENT_ALREADY_FINALIZED', 'Le paiement a déjà reçu une confirmation différente ou sa commande ne peut plus être modifiée.');
     }
@@ -148,6 +164,7 @@ export class PaymentsService {
       at: this.now().toISOString(),
     });
     if (result.kind === 'not_found') throw new AppError(404, 'PAYMENT_NOT_FOUND', 'Paiement introuvable.');
+    if (result.kind === 'amount_mismatch') throw amountMismatchError();
     if (result.kind === 'already_finalized') {
       throw new AppError(409, 'PAYMENT_ALREADY_FINALIZED', 'Le paiement a déjà reçu une confirmation différente ou sa commande ne peut plus être modifiée.');
     }
