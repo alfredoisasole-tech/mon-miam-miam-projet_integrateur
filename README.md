@@ -26,4 +26,6 @@ npm run dev              # démarre le site sur http://localhost:5173
 npm run build            # vérifie les types et construit la version de production
 ```
 
+Prérequis, variables d'environnement et paramètres : [docs/installation.md](docs/installation.md). Déploiement en ligne : [docs/deploiement.md](docs/deploiement.md).
+
 Les règles de travail (branches, commits, pull requests) sont dans [docs/conventions-git.md](docs/conventions-git.md). L'architecture visée est décrite dans `docs/architecture.md`.
