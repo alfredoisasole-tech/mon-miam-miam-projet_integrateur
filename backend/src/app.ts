@@ -5,15 +5,23 @@ import { cors, securityHeaders } from './http/security.ts';
 import type { Database } from './db/database.ts';
 import { createAuthMiddleware, type TokenResolver } from './http/auth.ts';
 import { registerRestaurantsMenuRoutes } from './controllers/restaurants-menu.controller.ts';
-import { registerOrderRoutes } from './controllers/orders.controller.ts';
+import { registerAuthRoutes } from './controllers/auth.controller.ts';
+import { registerOrderRoutes, registerStaffOrderRoutes } from './controllers/orders.controller.ts';
 import { OrdersService } from './services/orders.service.ts';
 import { SqliteOrdersRepository } from './repositories/sqlite-orders.repo.ts';
+import { AuthService } from './services/auth.service.ts';
+import { registerPlatformRestaurantRoutes } from './controllers/platform-restaurants.controller.ts';
+import { SqlitePromotionsRepository } from './repositories/sqlite-promotions.repo.ts';
+import { PromotionsService } from './services/promotions.service.ts';
+import { registerPromotionRoutes } from './controllers/promotions.controller.ts';
+import { registerMenuAdminRoutes } from './controllers/menu-admin.controller.ts';
 
 export interface AppOptions {
   /** Routes supplémentaires, ajoutées avant la gestion des routes inconnues et des erreurs (utile pour les tests). */
   routes?: (app: Express) => void;
   database?: Database;
   now?: () => Date;
+  sendPasswordResetCode?: (identifier: string, code: string) => Promise<void>;
   /** Résout l’identité du jeton ; l’authentification réelle peut être remplacée sans toucher aux routes. */
   resolveToken?: TokenResolver;
 }
@@ -25,6 +33,7 @@ interface ErreurDeLecture {
 /** Toute erreur de l'API prend la même forme : { error: { code, message, details } }. */
 const gestionnaireDErreurs: ErrorRequestHandler = (erreur: unknown, _req, res, _next) => {
   if (erreur instanceof AppError) {
+    if (erreur.code === 'TOO_MANY_ATTEMPTS') res.setHeader('Retry-After', '900');
     res.status(erreur.status).json({ error: { code: erreur.code, message: erreur.message, details: erreur.details } });
     return;
   }
@@ -55,11 +64,18 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
 
   if (options.database) {
     registerRestaurantsMenuRoutes(app, options.database, { now: options.now });
-    const authenticate = createAuthMiddleware(options.resolveToken ?? (() => null));
+    const auth = new AuthService(options.database, config.jwtSecret, options.now);
+    const authenticate = createAuthMiddleware(options.resolveToken ?? ((token) => auth.authenticate(token)));
+    registerAuthRoutes(app, auth, authenticate, options.sendPasswordResetCode);
+    registerPlatformRestaurantRoutes(app, options.database, authenticate);
+    registerMenuAdminRoutes(app, options.database, authenticate, { now: options.now });
+    const orders = new SqliteOrdersRepository(options.database);
     registerOrderRoutes(app, {
-      service: new OrdersService(new SqliteOrdersRepository(options.database), { now: options.now }),
+      service: new OrdersService(orders, { now: options.now }),
       authenticate,
     });
+    registerStaffOrderRoutes(app, { repository: orders, authenticate, now: options.now });
+    registerPromotionRoutes(app, new PromotionsService(new SqlitePromotionsRepository(options.database), options.now));
   }
   options.routes?.(app);
 
