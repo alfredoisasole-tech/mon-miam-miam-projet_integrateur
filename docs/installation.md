@@ -85,3 +85,54 @@ cd frontend
 npm ci
 npm run dev
 ```
+
+## 5. Préparer la base de données
+
+La base est un fichier SQLite (`DATABASE_PATH`). Aucune installation de serveur de base de données n'est nécessaire.
+
+### Créer les tables
+
+Les tables sont définies dans `database/schema.sql` (migration `001_initial`), puis complétées par des migrations numérotées dans `backend/src/db/migrations.ts`. Il y a deux façons de les créer :
+
+- **Automatiquement** : l'API applique les migrations à chaque démarrage (`npm start` ou `npm run dev`).
+- **Sans démarrer l'API** (préparation d'un serveur, d'un disque neuf) :
+
+```bash
+cd backend
+npm run db:migrate
+```
+
+Ce script crée le dossier et le fichier si besoin, applique les migrations manquantes et affiche le nombre de migrations appliquées. Il peut être rejoué sans danger. Une migration déjà fusionnée ne se modifie jamais : tout changement de la base ajoute une nouvelle migration.
+
+### Initialiser les données de démonstration (facultatif)
+
+Le démarrage ne crée **aucun** restaurant, menu ni compte. Pour disposer de données de test en développement, renseignez les quatre mots de passe `SEED_*` (voir section 2) dans `backend/.env` ou dans l'environnement, puis :
+
+```bash
+cd backend
+npm run seed
+```
+
+Le script crée les tables si nécessaire, puis ajoute :
+
+| Donnée | Contenu |
+|---|---|
+| Restaurants | `zeduc-space` (ZeDuc@Space) et `chez-lea` (Chez Léa) |
+| Menu | 10 plats par restaurant |
+| Comptes | un administrateur par restaurant, un employé, un étudiant (inscrit aux deux restaurants) et un administrateur de la plateforme |
+
+Les adresses e-mail des comptes sont dans `backend/src/seed.ts` ; les mots de passe sont ceux que vous avez fournis. Le seed est **rejouable** : si les deux restaurants existent déjà, il affiche « Données de démonstration déjà présentes » et ne modifie rien.
+
+**Ne jamais utiliser ce seed en production** : ce sont des comptes de démonstration. Les données réelles (restaurants, menus) doivent être chargées par un processus contrôlé, comme décrit dans [deploiement.md](deploiement.md).
+
+### Fichiers de test SQL
+
+`database/donnees-test.sql` contient un jeu de données utilisé uniquement par `node database/verifier.mjs` (contrôle du schéma en mémoire, lancé par la CI). Ses mots de passe sont des empreintes factices inutilisables : ne le chargez pas dans une base réelle.
+
+### Repartir de zéro (développement)
+
+Arrêtez l'API, supprimez le fichier de base, puis relancez `npm run db:migrate` (et `npm run seed`) :
+
+```bash
+rm backend/data/mon-miam-miam.sqlite*
+```
