@@ -456,7 +456,7 @@ export class SqliteOrdersRepository implements OrdersRepository, LoyaltyReposito
           completed_at = CASE WHEN ? = 'completed' THEN ? ELSE completed_at END,
           cancelled_at = CASE WHEN ? = 'cancelled' THEN ? ELSE cancelled_at END,
           payment_status = CASE
-            WHEN ? = 'cancelled' AND payment_method = 'mobile_money' AND payment_status = 'paid' THEN 'refund_due'
+            WHEN ? = 'cancelled' AND payment_method = 'mobile_money' AND payment_status = 'paid' AND total_fc > 0 THEN 'refund_due'
             WHEN ? = 'completed' AND payment_method = 'cash' THEN 'paid'
             ELSE payment_status
           END
