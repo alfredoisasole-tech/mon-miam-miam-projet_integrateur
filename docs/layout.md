@@ -4,11 +4,11 @@ Responsable : Emmanuel Mboyo. Ticket : [APP-101](https://judbie2030-45660043.atl
 
 ## Dépendance et intégration
 
-E-6 utilise les composants et la charte d’[E-5, PR #35](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/35). La branche part donc de `feature/charte-composants`. La PR vise temporairement cette branche pour montrer uniquement E-6. Après fusion d’E-5 dans `dev`, changer sa base vers `dev` et vérifier à nouveau les contrôles avant fusion. Cette dépendance est signalée dans la description de PR ; elle ne vaut pas approbation d’E-5.
+E-6 utilise les composants et la charte d’[E-5, PR #35](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/35), désormais fusionnés dans `dev`. L’ancienne [PR #36](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/36) visait `feature/charte-composants` : elle n’avait donc pas intégré E-6 dans `dev`. La nouvelle PR de `feature/mise-en-page` vise directement `dev`, après intégration de son commit `b623158` le 2 novembre 2026. Le seul conflit, dans `App.tsx`, conserve la mise en page E-6 et les pages d’authentification de Gloire.
 
 `Layout` s’utilise à l’intérieur de `BrowserRouter`, `AuthProvider` et `RestaurantProvider`. Il accepte `children` ou rend l’`Outlet` du routeur. `LayoutView` expose la vue seule pour les aperçus et les tests : `role?`, `loading?`, `restaurant?`, `onLogout`, `children?`.
 
-L’application monte désormais ces fournisseurs et le layout. L’accueil et le menu existant sont raccordés. Les autres destinations sont réservées aux tâches métier de l’équipe ; elles affichent pour l’instant une page indisponible avec retour à l’accueil. E-6 ne simule ni connexion, ni paiement, ni statistiques.
+L’application monte désormais ces fournisseurs et le layout. L’accueil, `/menu`, `/register` et `/login` sont raccordés ; la page de connexion existait dans `dev` sans route correspondante. La page d’inscription conserve son contenu et ses contrôles ; son conteneur devient un `div` pour garder le seul `main` fourni par le layout. Les autres destinations sont réservées aux tâches métier de l’équipe ; elles affichent pour l’instant une page indisponible avec retour à l’accueil. E-6 ne simule ni connexion, ni paiement, ni statistiques.
 
 ## Navigation
 
@@ -36,6 +36,8 @@ Le menu mobile se replie sous 760 px. Son bouton expose `aria-expanded` et `aria
 ## Vérifications
 
 Le 1er novembre 2026 : **69 tests frontend réussis**, dont 11 tests du layout et 2 tests du profil restaurant ; typage TypeScript et build Vite réussis. Vérification dans le navigateur à 1 280 px et 360 px : menu mobile fermé puis ouvert, fermeture par Échap, absence de débordement horizontal, liens plateforme isolés, aucune erreur console dans l’aperçu.
+
+Le 2 novembre 2026, après intégration de `dev` : **15 fichiers de tests, 90 tests réussis**, typage TypeScript et build Vite réussis avec Node.js 24. Les cinq nouveaux contrôles vérifient l’ouverture directe de `/login`, `/register`, `/menu` et d’une adresse inconnue dans le layout commun, ainsi que les liens entre connexion et inscription. Les tests ont été exécutés sur une copie des sources dont les empreintes ont été vérifiées identiques, une dépendance native étant verrouillée par Windows dans le dossier de travail. Relecture demandée à `Gloirenk17` et `bryanbolia` avant fusion.
 
 [Capture ordinateur](layout/desktop.png) · [Capture mobile](layout/mobile.png).
 
