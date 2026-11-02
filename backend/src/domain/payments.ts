@@ -20,9 +20,13 @@ export interface PaymentNotification {
   paymentId: string;
   status: PaymentFinalStatus;
   providerRef: string;
+  /** Montant en FC annoncé par le fournisseur ; s'il est présent, il doit égaler le montant attendu du paiement. */
+  amountFc?: number;
 }
 
 export interface PaymentProvider {
+  /** Un fournisseur réel doit l'indiquer : ses notifications sans montant sont alors refusées. */
+  readonly requiresAmountVerification?: boolean;
   startPayment(input: PaymentProviderStartInput): Promise<{ redirectUrl: string }>;
   verifyNotification(rawBody: Buffer, signature: string | undefined): boolean;
 }
@@ -48,6 +52,7 @@ export type StartPaymentResult =
 export type ApplyPaymentNotificationResult =
   | { kind: 'not_found' }
   | { kind: 'already_finalized' }
+  | { kind: 'amount_mismatch' }
   | { kind: 'applied' | 'replayed'; paymentStatus: PaymentFinalStatus; orderStatus: OrderStatus };
 
 export interface PaymentsRepository {
@@ -64,6 +69,7 @@ export interface PaymentsRepository {
     paymentId: string;
     status: PaymentFinalStatus;
     providerRef: string;
+    amountFc?: number;
     at: string;
   }): Promise<ApplyPaymentNotificationResult>;
   applySimulationNotification(input: {
