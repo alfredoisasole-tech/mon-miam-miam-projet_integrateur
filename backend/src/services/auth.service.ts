@@ -1,13 +1,19 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { Database } from '../db/database.ts';
 import { AppError } from '../http/errors.ts';
 import type { AuthenticatedUser } from '../domain/orders.ts';
+import {
+  hashPassword,
+  verifyPassword,
+  isPasswordStrong,
+  DUMMY_PASSWORD_HASH,
+  PASSWORD_PATTERN,
+} from '../domain/password.ts';
+import { normalizePhone } from '../domain/phone.ts';
+
+export { hashPassword, verifyPassword, isPasswordStrong };
 
 const TOKEN_LIFETIME_SECONDS = 60 * 60 * 8;
-const PASSWORD_PATTERN = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
-const DUMMY_PASSWORD_HASH = 'scrypt$00112233445566778899aabbccddeeff$'
-  + 'b4c99c1a8ed980a70e4d95e37d2c7d148295e6b1a326c6f828bd48a0a13c22c7'
-  + 'fdca1f10b986ff3a01909e46fc6c9e6d3fc9cab59b5e9fb65cf14a5d97e1a60a';
 
 export interface Account {
   id: string;
@@ -25,20 +31,6 @@ interface TokenPayload extends AuthenticatedUser {
   restaurantId: string | null;
   authVersion: number;
   exp: number;
-}
-
-export function hashPassword(password: string): string {
-  const salt = randomBytes(16);
-  const hash = scryptSync(password, salt, 64);
-  return `scrypt$${salt.toString('hex')}$${hash.toString('hex')}`;
-}
-
-function passwordMatches(password: string, encoded: string): boolean {
-  const [algorithm, saltHex, hashHex] = encoded.split('$');
-  if (algorithm !== 'scrypt' || !saltHex || !hashHex || !/^[a-f\d]+$/i.test(saltHex) || !/^[a-f\d]+$/i.test(hashHex)) return false;
-  const expected = Buffer.from(hashHex, 'hex');
-  const actual = scryptSync(password, Buffer.from(saltHex, 'hex'), expected.length);
-  return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
 function publicAccount(account: Account) {
@@ -95,7 +87,8 @@ export class AuthService {
     const body = input as Record<string, unknown>;
     const name = this.requiredText(body['name'], 'name');
     const email = this.requiredText(body['email'], 'email').toLowerCase();
-    const phone = this.requiredText(body['phone'], 'phone');
+    const rawPhone = this.requiredText(body['phone'], 'phone');
+    const phone = normalizePhone(rawPhone) ?? rawPhone;
     const password = body['password'];
     if (typeof password !== 'string' || password.length === 0) {
       throw new AppError(400, 'INVALID_BODY', 'Le champ password est obligatoire.');
@@ -169,7 +162,7 @@ export class AuthService {
       throw new AppError(429, 'TOO_MANY_ATTEMPTS', 'Trop de tentatives ; réinitialisez votre mot de passe pour récupérer le compte.');
     }
     if (keys.some((key) => this.isLimited(key))) throw new AppError(429, 'TOO_MANY_ATTEMPTS', 'Trop de tentatives, réessayez dans 15 minutes.');
-    const validPassword = passwordMatches(password, account ? this.getPasswordHash(account.id) : DUMMY_PASSWORD_HASH);
+    const validPassword = verifyPassword(password, account ? this.getPasswordHash(account.id) : DUMMY_PASSWORD_HASH);
     if (!account || !validPassword) {
       for (const key of keys) this.recordFailure(key);
       const accountLocked = (this.attempts.get(keys[0]!)?.length ?? 0) >= 8;
