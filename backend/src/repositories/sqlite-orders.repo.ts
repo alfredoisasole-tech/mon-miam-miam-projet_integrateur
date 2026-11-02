@@ -8,6 +8,7 @@ import type {
   Restaurant,
   StudentProfile,
 } from '../domain/orders.ts';
+import { AppError } from '../http/errors.ts';
 
 interface RestaurantRow {
   id: string;
@@ -310,7 +311,10 @@ export class SqliteOrdersRepository implements OrdersRepository {
   }
 
   async nextOrderSequence(restaurantId: string, dayKey: string): Promise<number> {
-    return this.nextSequence(restaurantId, dayKey);
+    const row = this.db.get<{ next_value: number }>(`
+      SELECT next_value FROM order_sequences WHERE restaurant_id = ? AND day_key = ?
+    `, [restaurantId, dayKey]);
+    return row?.next_value ?? this.maximumOrderSequence(restaurantId, dayKey);
   }
 
   async createOrder(order: Order): Promise<{ created: boolean; order: Order }> {
@@ -327,7 +331,7 @@ export class SqliteOrdersRepository implements OrdersRepository {
       }
 
       const dayKey = order.orderNumber.split('-')[0] ?? '';
-      const allocatedOrder = { ...order, orderNumber: `${dayKey}-${String(this.nextSequence(order.restaurantId, dayKey)).padStart(3, '0')}` };
+      const allocatedOrder = { ...order, orderNumber: `${dayKey}-${String(this.reserveOrderSequence(order.restaurantId, dayKey)).padStart(3, '0')}` };
       const delivery = allocatedOrder.delivery;
       this.db.run(`INSERT INTO orders (
         id, restaurant_id, user_id, order_number, type, status, payment_method, payment_status,
@@ -359,6 +363,69 @@ export class SqliteOrdersRepository implements OrdersRepository {
     });
   }
 
+  async listRestaurantOrders(restaurantId: string, status?: OrderStatus): Promise<Order[]> {
+    const statusClause = status ? 'AND o.status = ?' : '';
+    const parameters = status ? [restaurantId, status] : [restaurantId];
+    const rows = this.db.all<OrderRow>(`
+      SELECT ${orderColumns}
+      FROM orders o JOIN restaurants r ON r.id = o.restaurant_id
+      WHERE o.restaurant_id = ? ${statusClause}
+      ORDER BY o.created_at, o.id
+    `, parameters);
+    return rows.map((row) => this.loadOrder(row));
+  }
+
+  async updateRestaurantOrderStatus(
+    restaurantId: string,
+    orderId: string,
+    expectedStatus: OrderStatus,
+    actorId: string,
+    status: OrderStatus,
+    at: string,
+  ): Promise<Order | null> {
+    return this.db.transaction(() => {
+      const row = this.db.get<OrderRow>(`
+        SELECT ${orderColumns}
+        FROM orders o JOIN restaurants r ON r.id = o.restaurant_id
+        WHERE o.id = ? AND o.restaurant_id = ?
+      `, [orderId, restaurantId]);
+      if (!row || row.status !== expectedStatus) return null;
+      if (status === 'completed' && row.payment_method === 'mobile_money' && row.payment_status !== 'paid') {
+        throw new AppError(422, 'PAYMENT_NOT_CONFIRMED', 'Le paiement mobile doit être confirmé avant la remise de la commande.');
+      }
+
+      const result = this.db.run(`
+        UPDATE orders SET status = ?, updated_at = ?,
+          completed_at = CASE WHEN ? = 'completed' THEN ? ELSE completed_at END,
+          cancelled_at = CASE WHEN ? = 'cancelled' THEN ? ELSE cancelled_at END,
+          payment_status = CASE
+            WHEN ? = 'cancelled' AND payment_method = 'mobile_money' AND payment_status = 'paid' THEN 'refund_due'
+            WHEN ? = 'completed' AND payment_method = 'cash' THEN 'paid'
+            ELSE payment_status
+          END
+        WHERE id = ? AND restaurant_id = ? AND status = ?
+      `, [status, at, status, at, status, at, status, status, orderId, restaurantId, expectedStatus]);
+      if (!Number(result.changes)) return null;
+
+      this.db.run(
+        'INSERT INTO order_events (id, order_id, status, user_id, created_at) VALUES (?, ?, ?, ?, ?)',
+        [randomUUID(), orderId, status, actorId, at],
+      );
+      if (status === 'completed') {
+        this.awardLoyaltyPoints(row, at);
+        this.awardReferralPoints(row, Math.max(0, row.subtotal_fc - row.discount_fc), at);
+      }
+      if (status === 'cancelled' && row.points_redeemed > 0) this.restoreRedeemedPoints(orderId, row, at);
+
+      const updated = this.db.get<OrderRow>(`
+        SELECT ${orderColumns}
+        FROM orders o JOIN restaurants r ON r.id = o.restaurant_id
+        WHERE o.id = ? AND o.restaurant_id = ?
+      `, [orderId, restaurantId]);
+      return updated ? this.loadOrder(updated) : null;
+    });
+  }
+
   private loadOrder(row: OrderRow): Order {
     const items = this.db.all<OrderItemRow>(`
       SELECT oi.menu_item_id, oi.name, oi.category, oi.unit_price_fc, oi.quantity, oi.line_total_fc
@@ -373,12 +440,28 @@ export class SqliteOrdersRepository implements OrdersRepository {
     return mapOrderRow(row, items, events);
   }
 
-  private nextSequence(restaurantId: string, dayKey: string): number {
+  private maximumOrderSequence(restaurantId: string, dayKey: string): number {
     const row = this.db.get<{ maximum: number | null }>(`
       SELECT MAX(CAST(substr(order_number, ?) AS INTEGER)) AS maximum
       FROM orders WHERE restaurant_id = ? AND order_number LIKE ?
     `, [dayKey.length + 2, restaurantId, `${dayKey}-%`]);
     return (row?.maximum ?? 0) + 1;
+  }
+
+  private reserveOrderSequence(restaurantId: string, dayKey: string): number {
+    this.db.run(`
+      INSERT INTO order_sequences (restaurant_id, day_key, next_value)
+      VALUES (?, ?, ?)
+      ON CONFLICT (restaurant_id, day_key) DO NOTHING
+    `, [restaurantId, dayKey, this.maximumOrderSequence(restaurantId, dayKey)]);
+    const row = this.db.get<{ next_value: number }>(`
+      SELECT next_value FROM order_sequences WHERE restaurant_id = ? AND day_key = ?
+    `, [restaurantId, dayKey]);
+    if (!row) throw new Error('La séquence de commande n’a pas pu être initialisée.');
+    this.db.run(`
+      UPDATE order_sequences SET next_value = ? WHERE restaurant_id = ? AND day_key = ?
+    `, [row.next_value + 1, restaurantId, dayKey]);
+    return row.next_value;
   }
 
   private availablePoints(userId: string, restaurantId: string, at: string): number {
@@ -434,5 +517,76 @@ export class SqliteOrdersRepository implements OrdersRepository {
         order.points_redeemed - restored, order.points_redeemed - restored, orderId,
         'Restitution des points d’une commande annulée.', at]);
     }
+  }
+
+  private awardLoyaltyPoints(order: OrderRow, at: string): void {
+    const settings = this.db.get<{ spend_per_point_fc: number; points_validity_months: number }>(`
+        SELECT spend_per_point_fc, points_validity_months
+        FROM restaurant_settings WHERE restaurant_id = ?
+    `, [order.restaurant_id]);
+    const membership = this.db.get<{ loyalty_remainder_fc: number }>(`
+        SELECT loyalty_remainder_fc FROM memberships WHERE user_id = ? AND restaurant_id = ?
+    `, [order.user_id, order.restaurant_id]);
+    if (!membership) throw new Error('L’adhésion de fidélité de la commande est introuvable.');
+
+    const spendPerPoint = settings?.spend_per_point_fc ?? 3000;
+    const eligibleSpend = Math.max(0, order.subtotal_fc - order.discount_fc);
+    const accumulated = eligibleSpend + membership.loyalty_remainder_fc;
+    const points = Math.floor(accumulated / spendPerPoint);
+    this.db.run(`
+        UPDATE memberships SET loyalty_remainder_fc = ? WHERE user_id = ? AND restaurant_id = ?
+    `, [accumulated % spendPerPoint, order.user_id, order.restaurant_id]);
+    this.db.run('UPDATE orders SET points_earned = ? WHERE id = ? AND restaurant_id = ?', [
+        points, order.id, order.restaurant_id,
+    ]);
+
+    if (points > 0) {
+        const expiresAt = new Date(at);
+        expiresAt.setUTCMonth(expiresAt.getUTCMonth() + (settings?.points_validity_months ?? 12));
+        this.db.run(`
+          INSERT INTO points_ledger (
+            id, restaurant_id, user_id, kind, points, remaining, expires_at, order_id, created_at
+          ) VALUES (?, ?, ?, 'earn', ?, ?, ?, ?, ?)
+        `, [randomUUID(), order.restaurant_id, order.user_id, points, points, expiresAt.toISOString(), order.id, at]);
+    }
+  }
+
+  private awardReferralPoints(order: OrderRow, eligibleSpend: number, at: string): void {
+    if (eligibleSpend < 3000) return;
+    const referred = this.db.get<{ referrer_id: string | null; referral_id: string | null }>(`
+        SELECT u.referred_by AS referrer_id, r.id AS referral_id
+        FROM users u LEFT JOIN referrals r ON r.referee_id = u.id
+        WHERE u.id = ? AND u.role = 'student' AND u.status = 'active'
+    `, [order.user_id]);
+    if (!referred?.referrer_id || referred.referral_id) return;
+    const referrer = this.db.get<{ id: string }>(`
+        SELECT id FROM users WHERE id = ? AND role = 'student' AND status = 'active'
+    `, [referred.referrer_id]);
+    if (!referrer) return;
+
+    const rewardPoints = Math.floor(eligibleSpend / 3000);
+    if (rewardPoints <= 0) return;
+    const settings = this.db.get<{ points_validity_months: number }>(`
+        SELECT points_validity_months FROM restaurant_settings WHERE restaurant_id = ?
+    `, [order.restaurant_id]);
+    const referralId = randomUUID();
+    const expiresAt = new Date(at);
+    expiresAt.setUTCMonth(expiresAt.getUTCMonth() + (settings?.points_validity_months ?? 12));
+    this.db.run(`
+        INSERT INTO memberships (user_id, restaurant_id, created_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT (user_id, restaurant_id) DO NOTHING
+    `, [referrer.id, order.restaurant_id, at]);
+    this.db.run(`
+        INSERT INTO referrals (
+          id, restaurant_id, referrer_id, referee_id, status, reward_points,
+          rewarded_order_id, created_at, rewarded_at
+        ) VALUES (?, ?, ?, ?, 'rewarded', ?, ?, ?, ?)
+    `, [referralId, order.restaurant_id, referrer.id, order.user_id, rewardPoints, order.id, at, at]);
+    this.db.run(`
+        INSERT INTO points_ledger (
+          id, restaurant_id, user_id, kind, points, remaining, expires_at, order_id, referral_id, created_at
+        ) VALUES (?, ?, ?, 'referral', ?, ?, ?, ?, ?, ?)
+    `, [randomUUID(), order.restaurant_id, referrer.id, rewardPoints, rewardPoints, expiresAt.toISOString(), order.id, referralId, at]);
   }
 }
