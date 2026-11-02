@@ -147,6 +147,7 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
     paymentId: string;
     status: PaymentFinalStatus;
     providerRef: string;
+    amountFc?: number;
     at: string;
   }): Promise<ApplyPaymentNotificationResult> {
     return this.db.transaction(() => {
@@ -177,6 +178,7 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
     paymentId: string;
     status: PaymentFinalStatus;
     providerRef: string;
+    amountFc?: number;
     at: string;
   }): ApplyPaymentNotificationResult {
     const payment = this.db.get<PaymentAndOrderRow>(`
@@ -186,6 +188,8 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
       WHERE p.id = ?
     `, [input.paymentId]);
     if (!payment) return { kind: 'not_found' } as const;
+    // Un montant annoncé différent du montant attendu n'est jamais appliqué, même en rejeu d'une confirmation.
+    if (input.amountFc !== undefined && input.amountFc !== payment.amount_fc) return { kind: 'amount_mismatch' } as const;
 
     if (payment.status === input.status) {
       return { kind: 'replayed', paymentStatus: payment.status, orderStatus: payment.order_status } as const;
