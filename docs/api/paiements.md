@@ -85,11 +85,12 @@ Dans la version simulée, `redirectUrl` est un chemin du site, relatif à son or
 {
   "paymentId": "pay_01JAZ8M2Q4",
   "status": "paid",
-  "providerRef": "simulation-001"
+  "providerRef": "simulation-001",
+  "amountFc": 3000
 }
 ```
 
-`status` vaut `paid` ou `failed`. `providerRef` est une référence textuelle non vide fournie avec la notification.
+`status` vaut `paid` ou `failed`. `providerRef` est une référence textuelle non vide fournie avec la notification. `amountFc` est le montant en FC annoncé par le fournisseur : entier strictement positif, facultatif en simulation, **obligatoire pour un fournisseur réel** (voir ci-dessous).
 
 **Traitement :**
 
@@ -115,15 +116,16 @@ Pour un échec, `status` vaut `failed` et `orderStatus` reste `pending`.
 
 | HTTP | Code | Message / cas |
 |---|---|---|
-| 400 | `VALIDATION_ERROR` | La notification doit contenir un identifiant, un statut et une référence valides. |
+| 400 | `VALIDATION_ERROR` | La notification doit contenir un identifiant, un statut et une référence valides ; `amountFc`, s'il est présent, doit être un entier positif ; il est obligatoire pour un fournisseur réel. |
 | 401 | `INVALID_SIGNATURE` | La signature du fournisseur est absente ou invalide. |
 | 404 | `PAYMENT_NOT_FOUND` | Paiement introuvable. |
 | 409 | `PAYMENT_ALREADY_FINALIZED` | Le paiement a déjà reçu une confirmation différente. |
+| 422 | `AMOUNT_MISMATCH` | Le montant reçu ne correspond pas au montant attendu de la commande. |
 | 500 | `INTERNAL_ERROR` | Une erreur interne est survenue. |
 
 Le secret de vérification est configuré côté serveur par variable d’environnement et n’est jamais transmis au site. Aucun identifiant marchand ni secret fournisseur n’est requis pour le mode simulé. L’adaptateur EasyPay devra suivre les mécanismes de signature de sa documentation officielle, après validation de cette documentation.
 
-Avant de confirmer un paiement réel, l’adaptateur EasyPay devra comparer le montant reçu au montant attendu de la commande. La notification simulée ne contient pas de montant.
+**Vérification du montant.** Quand une notification porte `amountFc`, il est comparé au montant attendu du paiement avant toute modification. En cas de différence, la notification est refusée avec `422 AMOUNT_MISMATCH` : ni le paiement ni la commande ne changent, y compris pour le rejeu d'une confirmation, qu'elle annonce `paid` ou `failed`. Un fournisseur dont les notifications portent un montant (adaptateur qui déclare `requiresAmountVerification`) doit toujours le fournir : sans lui, la notification est refusée en `400`. La notification simulée peut s'en passer. Easypay n'annonce pas de montant : sa notification est confirmée par un appel de vérification de statut, voir [easypay.md](easypay.md).
 
 ## 3. Confirmer un paiement dans la simulation
 
@@ -179,3 +181,4 @@ Avant de confirmer un paiement réel, l’adaptateur EasyPay devra comparer le m
 8. Expirer à la demande un paiement après 15 minutes au démarrage d’un nouveau paiement ou d’une annulation ; accepter une confirmation tardive si la commande attend encore, et utiliser `refund_due` si elle a été annulée.
 9. Confirmer un paiement réussi ou échoué par la route de simulation pour le propriétaire, refuser un autre étudiant, vérifier le rejeu et l’isolation entre restaurants, et confirmer le `404` en production.
 10. Isoler les mises à jour par restaurant et refuser l’annulation d’une commande payée.
+11. Vérifier le montant des notifications : conforme confirmé ; différent (inférieur ou supérieur) refusé en `422 AMOUNT_MISMATCH` sans modifier le paiement ni la commande, même en rejeu ; montant invalide refusé en `400` ; absent accepté en simulation et refusé pour un fournisseur réel.
