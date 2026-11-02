@@ -260,11 +260,27 @@ export class SqliteOrdersRepository implements OrdersRepository, LoyaltyReposito
     return this.db.all<{
       kind: string; points: number; order_id: string | null; order_number: string | null; created_at: string; expires_at: string | null;
     }>(`
-      SELECT l.kind, l.points, l.order_id, o.order_number, l.created_at, l.expires_at
-      FROM points_ledger l LEFT JOIN orders o ON o.id = l.order_id AND o.restaurant_id = l.restaurant_id
-      WHERE l.user_id = ? AND l.restaurant_id = ?
-      ORDER BY l.created_at DESC, l.rowid DESC LIMIT ?
-    `, [userId, restaurantId, limit]).map((row) => ({
+      SELECT kind, points, order_id, order_number, created_at, expires_at FROM (
+        SELECT l.kind, l.points, l.order_id, o.order_number, l.created_at, l.expires_at, l.rowid AS position
+        FROM points_ledger l LEFT JOIN orders o ON o.id = l.order_id AND o.restaurant_id = l.restaurant_id
+        WHERE l.user_id = ? AND l.restaurant_id = ?
+        UNION ALL
+        -- Restitution d'une commande annulée : le journal rend les points à leurs lots d'origine sans nouvelle ligne.
+        -- Cette ligne est déduite de la commande pour que l'historique montre le retour des points ; elle n'entre
+        -- jamais dans le calcul du solde. Les restitutions déjà écrites au journal (kind = refund) sont déduites.
+        SELECT 'refund', o.points_redeemed - COALESCE((
+            SELECT SUM(r.points) FROM points_ledger r
+            WHERE r.order_id = o.id AND r.user_id = o.user_id AND r.restaurant_id = o.restaurant_id AND r.kind = 'refund'
+          ), 0), o.id, o.order_number, o.cancelled_at, NULL, 0
+        FROM orders o
+        WHERE o.user_id = ? AND o.restaurant_id = ? AND o.status = 'cancelled' AND o.cancelled_at IS NOT NULL
+          AND o.points_redeemed > COALESCE((
+            SELECT SUM(r.points) FROM points_ledger r
+            WHERE r.order_id = o.id AND r.user_id = o.user_id AND r.restaurant_id = o.restaurant_id AND r.kind = 'refund'
+          ), 0)
+      )
+      ORDER BY created_at DESC, position DESC LIMIT ?
+    `, [userId, restaurantId, userId, restaurantId, limit]).map((row) => ({
       kind: row.kind,
       points: row.points,
       orderId: row.order_id,
