@@ -9,6 +9,7 @@ import type {
   PaymentOperator,
   PaymentProvider,
   PaymentsRepository,
+  ProviderPaymentStatus,
 } from '../domain/payments.ts';
 
 const OPERATORS = new Set<PaymentOperator>(['mpesa', 'orange_money', 'airtel_money', 'africell_money']);
@@ -35,6 +36,15 @@ function parseStartInput(value: unknown): { operator: PaymentOperator; phone: st
     throw validationError('Le numéro de téléphone doit contenir de 8 à 15 chiffres.');
   }
   return { operator: operator as PaymentOperator, phone: phone.trim() };
+}
+
+function readIpnReference(value: unknown): string {
+  const transaction = value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>)['transaction'] : null;
+  const reference = transaction && typeof transaction === 'object' ? (transaction as Record<string, unknown>)['reference'] : null;
+  if (typeof reference !== 'string' || reference.trim().length === 0 || reference.length > 200) {
+    throw validationError('La notification doit indiquer la référence de la transaction.');
+  }
+  return reference.trim();
 }
 
 function parseNotification(value: unknown): PaymentNotification {
@@ -102,13 +112,21 @@ export class PaymentsService {
 
     let redirectUrl: string;
     try {
-      ({ redirectUrl } = await this.provider.startPayment({
-        paymentId: payment.id,
-        orderId: payment.orderId,
-        amountFc: payment.amountFc,
-        operator: payment.operator,
-        phone: payment.phone,
-      }));
+      if (payment.providerReference && this.provider.redirectUrlFor) {
+        // Transaction déjà initialisée chez le fournisseur : on rejoue sa redirection sans en créer une seconde.
+        redirectUrl = this.provider.redirectUrlFor(payment.providerReference);
+      } else {
+        const started = await this.provider.startPayment({
+          paymentId: payment.id,
+          orderId: payment.orderId,
+          amountFc: payment.amountFc,
+          operator: payment.operator,
+          phone: payment.phone,
+          customerName: result.customerName,
+        });
+        redirectUrl = started.redirectUrl;
+        if (started.providerReference) await this.repository.setProviderReference(payment.id, started.providerReference);
+      }
     } catch {
       if (result.created) await this.repository.failPaymentStart(payment.id, this.now().toISOString());
       throw new AppError(502, 'PAYMENT_PROVIDER_UNAVAILABLE', 'Le service de paiement est momentanément indisponible.');
@@ -139,6 +157,41 @@ export class PaymentsService {
       throw new AppError(409, 'PAYMENT_ALREADY_FINALIZED', 'Le paiement a déjà reçu une confirmation différente ou sa commande ne peut plus être modifiée.');
     }
     return { paymentId: notification.paymentId, status: result.paymentStatus, orderStatus: result.orderStatus };
+  }
+
+  /** Vrai quand le fournisseur ne signe pas ses notifications et doit être rappelé pour les confirmer. */
+  get supportsIpn(): boolean {
+    return typeof this.provider.checkPayment === 'function';
+  }
+
+  /**
+   * Notification (IPN) d'un fournisseur qui ne la signe pas, comme Easypay. Son contenu n'est jamais cru :
+   * seule la référence en est lue, puis le fournisseur est rappelé et c'est sa réponse qui confirme ou non.
+   */
+  async receiveIpn(body: unknown): Promise<{ paymentId: string; status: PaymentFinalStatus | 'pending'; orderStatus?: OrderStatus }> {
+    const checkPayment = this.provider.checkPayment?.bind(this.provider);
+    if (!checkPayment) throw new AppError(404, 'NOT_FOUND', 'Route introuvable.');
+    const reference = readIpnReference(body);
+    const payment = await this.repository.findPaymentByProviderReference(reference);
+    if (!payment) throw new AppError(404, 'PAYMENT_NOT_FOUND', 'Paiement introuvable.');
+
+    let status: ProviderPaymentStatus;
+    try {
+      status = await checkPayment({ providerReference: reference, paymentId: payment.id });
+    } catch {
+      throw new AppError(502, 'PAYMENT_PROVIDER_UNAVAILABLE', 'Le service de paiement est momentanément indisponible.');
+    }
+    if (status === 'pending') return { paymentId: payment.id, status: 'pending' };
+
+    const result = await this.repository.applyNotification({
+      paymentId: payment.id, status, providerRef: reference, at: this.now().toISOString(),
+    });
+    if (result.kind === 'not_found') throw new AppError(404, 'PAYMENT_NOT_FOUND', 'Paiement introuvable.');
+    if (result.kind === 'amount_mismatch') throw amountMismatchError();
+    if (result.kind === 'already_finalized') {
+      throw new AppError(409, 'PAYMENT_ALREADY_FINALIZED', 'Le paiement a déjà reçu une confirmation différente ou sa commande ne peut plus être modifiée.');
+    }
+    return { paymentId: payment.id, status: result.paymentStatus, orderStatus: result.orderStatus };
   }
 
   async simulate(userId: string, paymentId: string, body: unknown): Promise<{
