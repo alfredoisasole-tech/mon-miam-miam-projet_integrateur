@@ -4,14 +4,10 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  server: {
-    proxy: {
-      '/api': 'http://localhost:3000',
-    },
-  },
+  server: { port: 5173, proxy: { '/api': 'http://localhost:3000' } },
   test: {
-    globals: true, // ← CRUCIAL : rend expect, describe, it disponibles globalement
+    globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'], // ← CRUCIAL : charge jest-dom avant les tests
+    setupFiles: './src/test/setup.ts', // <--- CETTE LIGNE EST ESSENTIELLE
   },
 });
