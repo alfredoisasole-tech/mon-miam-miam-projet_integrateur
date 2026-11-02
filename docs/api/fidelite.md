@@ -62,9 +62,9 @@ Ce document définit la consultation du solde de fidélité d'un étudiant. Les 
 | `rules` | Règles du restaurant : dépense par point (FC), points pour une remise, valeur de la remise (FC), validité (mois). |
 | `movements` | Les 50 mouvements les plus récents, du plus récent au plus ancien. |
 
-Valeurs de `movements[].kind` : `earn` (gain), `referral` (parrainage), `redeem` (utilisation, points négatifs), `expire`, `adjust`, `refund`. `orderId` et `orderNumber` valent `null` quand le mouvement n'est pas lié à une commande ; `expiresAt` n'est renseigné que pour les points gagnés (`earn`, `referral`). Le détail interne des lots débités n'est jamais exposé.
+Valeurs de `movements[].kind` : `earn` (gain), `referral` (parrainage), `redeem` (utilisation, points négatifs), `expire`, `adjust`, `refund` (restitution des points d'une commande annulée). `orderId` et `orderNumber` valent `null` quand le mouvement n'est pas lié à une commande ; `expiresAt` n'est renseigné que pour les points gagnés (`earn`, `referral`). Le détail interne des lots débités n'est jamais exposé.
 
-Le solde porte sur **tous** les points du restaurant, pas seulement sur les 50 mouvements affichés. Quand une commande est annulée, les points sont rendus à leurs lots d'origine : le solde remonte, sans nouvelle ligne de gain.
+Le solde porte sur **tous** les points du restaurant, pas seulement sur les 50 mouvements affichés. Quand une commande est annulée, les points sont rendus à leurs lots d'origine et le solde remonte. L'historique montre ce retour par une ligne `refund` (points positifs, commande concernée, date d'annulation, `expiresAt` à `null`) déduite de la commande annulée : elle n'est jamais ajoutée au solde, qui reste calculé une seule fois. La somme des points de l'historique complet est égale au solde.
 
 **Erreurs :**
 
