@@ -9,6 +9,8 @@
 
 `frontend/vercel.json` définit Vite, `npm ci`, `npm run build`, la sortie `dist` et la réécriture de `/(.*)` vers `/index.html`. Le projet Vercel doit utiliser **Root Directory : `frontend`** et Node.js 22.18 ou plus récent (22.x ou 24.x). Le fallback SPA suit la [documentation officielle Vercel pour Vite](https://vercel.com/docs/frameworks/frontend/vite#using-vite-to-make-spas).
 
+Réglages enregistrés dans le projet Vercel le 2 novembre 2026 : **Root Directory `frontend`**, **Framework Preset Vite**, **Node.js 24.x**. La connexion GitHub du compte `emmanuelmboyo-dotcom` est également confirmée. Le sélecteur Vercel ne propose pas encore le dépôt du projet, appartenant à `alfredoisasole-tech`. L’autorisation de l’application GitHub Vercel sur ce dépôt doit être obtenue auprès de son propriétaire ; la connexion du dépôt, la publication et le contrôle public restent en attente.
+
 E-8 déploie le frontend uniquement. Le proxy `/api` de Vite fonctionne en développement, pas sur Vercel. Sans backend public et sans réécriture vers Render, les appels API ne fonctionnent pas : un restaurant déjà sélectionné peut afficher une erreur de chargement ; sans sélection, `/menu` invite à choisir un restaurant. Ce comportement ne prouve pas que le backend est déployé. Ne pas définir une URL d’API fictive ni une variable `VITE_API_URL` vide dans Vercel. Le futur raccordement de l’API et des images est décrit dans [la préparation du déploiement](../deploiement.md).
 
 La branche reprend le code E-6 déjà livré pour disposer du routeur et de la page `/menu` (la PR #36 avait été fusionnée dans la branche E-5, pas dans `dev`). E-7 et ses statistiques en brouillon ne sont pas inclus. Les écrans métier non encore développés restent indisponibles.
