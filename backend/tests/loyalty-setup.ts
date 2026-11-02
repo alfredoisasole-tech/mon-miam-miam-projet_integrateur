@@ -19,7 +19,7 @@ export interface CorpsCommande {
   paymentMethod?: string;
   items?: Array<{ menuItemId: string; quantity: number }>;
   delivery?: Record<string, string>;
-  redeemMeal?: boolean;
+  redeemMeal?: boolean | string;
   [cle: string]: unknown;
 }
 
