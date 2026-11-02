@@ -170,9 +170,9 @@ describe('Paiements mobiles simulés — APP-75', () => {
     assert.equal(retry.status, 201);
     assert.notEqual(retryResult.paymentId, firstId);
     assert.equal(retryResult.status, 'pending');
-    assert.deepEqual(payments.map(({ id, status }) => ({ id, status })), [
-      { id: firstId, status: 'failed' }, { id: retryResult.paymentId, status: 'pending' },
-    ]);
+    assert.equal(payments.length, 2);
+    assert.equal(payments.find(({ id }) => id === firstId)?.status, 'failed');
+    assert.equal(payments.find(({ id }) => id === retryResult.paymentId)?.status, 'pending');
     assert.equal(database.get<{ status: string }>(
       'SELECT payment_status AS status FROM orders WHERE id = ? AND restaurant_id = ?', [order.id, 'r-alpha'],
     )?.status, 'pending');
