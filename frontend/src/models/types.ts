@@ -18,3 +18,6 @@ export class ApiError extends Error {
     this.details = details;
   }
 }
+// ...existing code...
+
+export type RegisterPayload = Record<string, unknown>;
