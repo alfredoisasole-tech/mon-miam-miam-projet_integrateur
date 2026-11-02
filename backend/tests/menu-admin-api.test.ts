@@ -63,10 +63,10 @@ describe('API de gestion des menus par restaurant', () => {
       body: JSON.stringify({ isAvailable: false, isDaily: true }),
     });
     assert.equal(update.status, 200);
-    assert.deepEqual(
-      ((await update.json()) as { isAvailable: boolean; isDaily: boolean }),
-      { isAvailable: false, isDaily: true },
-    );
+    const updated = (await update.json()) as { id: string; isAvailable: boolean; isDaily: boolean };
+    assert.equal(updated.id, 'alpha-dish');
+    assert.equal(updated.isAvailable, false);
+    assert.equal(updated.isDaily, true);
 
     const crossRestaurant = await fetch(`${server.base}/api/staff/menu/beta-dish`, {
       method: 'PATCH',
