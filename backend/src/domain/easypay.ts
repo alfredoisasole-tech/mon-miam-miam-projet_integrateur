@@ -36,6 +36,14 @@ function lireJson(texte: string): Record<string, unknown> {
   throw new EasypayError('La réponse d’Easypay est illisible.');
 }
 
+/** Précision sûre d'une panne réseau : « délai dépassé » ou un code technique en majuscules, jamais un message libre. */
+function precisionPanne(erreur: unknown): string {
+  if (erreur instanceof Error && erreur.name === 'TimeoutError') return ' (délai dépassé)';
+  const cause = erreur instanceof Error ? (erreur.cause as { code?: unknown } | undefined) : undefined;
+  const code = cause?.code;
+  return typeof code === 'string' && /^[A-Z][A-Z0-9_]{2,40}$/.test(code) ? ` (code ${code})` : '';
+}
+
 function texte(valeur: unknown): string | null {
   return typeof valeur === 'string' && valeur.trim() !== '' ? valeur : null;
 }
@@ -128,9 +136,10 @@ export class EasypayPaymentProvider implements PaymentProvider {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
       return { status: reponse.status, texte: await reponse.text() };
-    } catch {
+    } catch (erreur) {
       // Le message d'origine peut contenir l'adresse de l'appel, donc le token : il n'est jamais repris.
-      throw new EasypayError('Easypay est injoignable ou a dépassé le délai.');
+      // Seul un code technique de forme stricte (par exemple ECONNREFUSED) ou le délai dépassé est indiqué.
+      throw new EasypayError(`Easypay est injoignable ou a dépassé le délai${precisionPanne(erreur)}.`);
     }
   }
 }
