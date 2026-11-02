@@ -1,7 +1,7 @@
 import type { Express, NextFunction, RequestHandler, Response } from 'express';
 import { AppError } from '../http/errors.ts';
 import { OrdersService } from '../services/orders.service.ts';
-import type { AuthenticatedUser, OrderStatus } from '../domain/orders.ts';
+import type { AuthenticatedUser, Order, OrderStatus } from '../domain/orders.ts';
 import type { SqliteOrdersRepository } from '../repositories/sqlite-orders.repo.ts';
 
 export interface OrderRouteOptions { service: OrdersService; authenticate: RequestHandler }
@@ -92,6 +92,11 @@ const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   cancelled: [],
 };
 
+function staffOrderResponse(order: Order) {
+  const { idempotencyKey: _idempotencyKey, restaurantId: _restaurantId, ...response } = order;
+  return response;
+}
+
 export function registerStaffOrderRoutes(
   app: Express,
   options: { repository: SqliteOrdersRepository; authenticate: RequestHandler; now?: () => Date },
@@ -108,7 +113,7 @@ export function registerStaffOrderRoutes(
         throw new AppError(400, 'VALIDATION_ERROR', 'Le statut de commande est invalide.');
       }
       const orders = await options.repository.listRestaurantOrders(user.restaurantId, status as OrderStatus | undefined);
-      res.status(200).json({ items: orders });
+      res.status(200).json({ items: orders.map(staffOrderResponse) });
     } catch (error) { next(error); }
   });
 
@@ -130,14 +135,14 @@ export function registerStaffOrderRoutes(
       if (!STATUS_TRANSITIONS[existing.status].includes(nextStatus)
         || (nextStatus === 'out_for_delivery' && existing.type !== 'delivery')
         || (nextStatus === 'completed' && existing.type === 'delivery' && existing.status !== 'out_for_delivery')
-        || (nextStatus === 'cancelled' && ['pending', 'paid'].includes(existing.paymentStatus))) {
+        || (nextStatus === 'cancelled' && existing.paymentStatus === 'pending')) {
         throw new AppError(409, 'INVALID_STATUS_TRANSITION', 'Cette transition de statut n’est pas autorisée.');
       }
       const order = await options.repository.updateRestaurantOrderStatus(
         user.restaurantId, orderId, existing.status, user.id, nextStatus, (options.now?.() ?? new Date()).toISOString(),
       );
       if (!order) throw new AppError(409, 'ORDER_CHANGED', 'La commande a été modifiée par une autre requête. Actualisez-la avant de réessayer.');
-      res.status(200).json(order);
+      res.status(200).json(staffOrderResponse(order));
     } catch (error) { next(error); }
   });
 }

@@ -93,8 +93,14 @@ export class AuthService {
     const name = this.requiredText(body['name'], 'name');
     const email = this.requiredText(body['email'], 'email').toLowerCase();
     const phone = this.requiredText(body['phone'], 'phone');
-    const password = this.requiredText(body['password'], 'password');
+    const password = body['password'];
+    if (typeof password !== 'string' || password.length === 0) {
+      throw new AppError(400, 'INVALID_BODY', 'Le champ password est obligatoire.');
+    }
     const slug = this.requiredText(body['restaurant'], 'restaurant');
+    if (body['confirmPassword'] !== undefined && body['confirmPassword'] !== password) {
+      throw new AppError(400, 'INVALID_BODY', 'La confirmation du mot de passe ne correspond pas.');
+    }
     if (name.length < 2 || name.length > 80 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\+243\d{9}$/.test(phone)) {
       throw new AppError(400, 'INVALID_BODY', 'Le nom, l’e-mail ou le téléphone est invalide.');
     }
@@ -113,8 +119,8 @@ export class AuthService {
     const referralCode = this.optionalText(body['referralCode']);
     const ownReferralCode = randomBytes(6).toString('hex').toUpperCase();
     const passwordHash = hashPassword(password);
-    const referrer = referralCode ? this.db.get<{ id: string; restaurant_id: string }>(
-      "SELECT id, restaurant_id FROM users WHERE referral_code = ? AND role = 'student' AND status = 'active'",
+    const referrer = referralCode ? this.db.get<{ id: string }>(
+      "SELECT id FROM users WHERE referral_code = ? AND role = 'student' AND status = 'active'",
       [referralCode],
     ) : undefined;
     this.db.transaction(() => {
@@ -128,15 +134,10 @@ export class AuthService {
       this.db.run(`INSERT INTO users (id, restaurant_id, role, name, email, phone, password_hash, commune, quartier, address, referral_code, accepted_terms_at, created_at, referred_by)
         VALUES (?, ?, 'student', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [id, restaurant.id, name, email, phone, passwordHash,
-        this.optionalText(body['commune']), this.optionalText(body['quartier']), this.optionalText(body['adresse']),
+        this.optionalText(body['commune']), this.optionalText(body['quartier']),
+        this.optionalText(body['deliveryAddress'] ?? body['adresse']),
         ownReferralCode, createdAt, createdAt, referrer?.id ?? null]);
       this.db.run('INSERT INTO memberships (user_id, restaurant_id, created_at) VALUES (?, ?, ?)', [id, restaurant.id, createdAt]);
-      if (referrer) {
-        this.db.run('INSERT INTO memberships (user_id, restaurant_id, created_at) VALUES (?, ?, ?) ON CONFLICT (user_id, restaurant_id) DO NOTHING',
-          [referrer.id, restaurant.id, createdAt]);
-        this.db.run(`INSERT INTO referrals (id, restaurant_id, referrer_id, referee_id, created_at)
-          VALUES (?, ?, ?, ?, ?)`, [`ref_${randomBytes(12).toString('hex')}`, restaurant.id, referrer.id, id, createdAt]);
-      }
     });
     this.attempts.delete(registrationKey);
     const account = this.findAccount(id);
@@ -301,7 +302,9 @@ export class AuthService {
   }
 
   private optionalText(value: unknown): string | null {
-    return typeof value === 'string' && value.trim() ? value.trim() : null;
+    if (value === undefined || value === null) return null;
+    if (typeof value !== 'string') throw new AppError(400, 'INVALID_BODY', 'Un champ texte facultatif est invalide.');
+    return value.trim() || null;
   }
 
   private isLimited(key: string): boolean {
