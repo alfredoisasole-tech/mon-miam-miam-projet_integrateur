@@ -20,9 +20,11 @@ interface MenuDishRow {
   restaurant_slug: string;
 }
 
-function currentStaff(response: Response, next: (error?: unknown) => void, roles: Set<string>): AuthenticatedUser | null {
+type StaffUser = AuthenticatedUser & { restaurantId: string };
+
+function currentStaff(response: Response, next: (error?: unknown) => void, roles: Set<string>): StaffUser | null {
   const user = response.locals['authenticatedUser'] as AuthenticatedUser | undefined;
-  if (user && roles.has(user.role) && user.restaurantId) return user;
+  if (user && roles.has(user.role) && user.restaurantId) return { ...user, restaurantId: user.restaurantId };
   next(new AppError(403, 'FORBIDDEN', 'Cette action est réservée au personnel autorisé de ce restaurant.'));
   return null;
 }
