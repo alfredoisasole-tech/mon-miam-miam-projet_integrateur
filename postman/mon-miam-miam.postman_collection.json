@@ -1,0 +1,404 @@
+{
+  "info": {
+    "_postman_id": "c0bdb42d-9382-4c93-b4dd-4b297a9566a8",
+    "name": "Mon Miam Miam — Collection API Officielle",
+    "description": "Collection de requêtes vérifiées pour l’API de Mon Miam Miam (Jira 20.3 / Fiche D-13). Scénario ordonné : Inscription / Connexion -> Découverte & Menu -> Commande -> Paiement & Simulation -> Suivi Staff -> Administration.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "restaurantSlug", "value": "zeduc-space" },
+    { "key": "studentEmail", "value": "etudiant@monmiam.test" },
+    { "key": "studentPassword", "value": "Etudiant123" },
+    { "key": "staffEmail", "value": "employe@monmiam.test" },
+    { "key": "staffPassword", "value": "Employe123" },
+    { "key": "adminEmail", "value": "admin@zeduc-space.test" },
+    { "key": "adminPassword", "value": "Admin123" },
+    { "key": "platformAdminEmail", "value": "plateforme@monmiam.test" },
+    { "key": "platformAdminPassword", "value": "Plateforme123" },
+    { "key": "studentToken", "value": "" },
+    { "key": "staffToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "platformAdminToken", "value": "" },
+    { "key": "menuItemId", "value": "" },
+    { "key": "orderId", "value": "" },
+    { "key": "paymentId", "value": "" },
+    { "key": "newRestaurantSlug", "value": "restaurant-demo" }
+  ],
+  "item": [
+    {
+      "name": "1. Public",
+      "item": [
+        {
+          "name": "Santé de l’API",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Status is ok', function () { pm.expect(pm.response.json().status).to.eql('ok'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/health" }
+        },
+        {
+          "name": "Liste publique des restaurants",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Items array returned', function () { pm.expect(pm.response.json().items).to.be.an('array'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/restaurants?page=1&pageSize=20" }
+        },
+        {
+          "name": "Profil public du restaurant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Slug matches', function () { pm.expect(pm.response.json().slug).to.eql(pm.variables.get('restaurantSlug')); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/restaurants/{{restaurantSlug}}" }
+        },
+        {
+          "name": "Menu public disponible",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json.categories && json.categories.length > 0 && json.categories[0].items.length > 0) {",
+                  "  pm.collectionVariables.set('menuItemId', json.categories[0].items[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/restaurants/{{restaurantSlug}}/menu" }
+        },
+        {
+          "name": "Promotions actives du restaurant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/restaurants/{{restaurantSlug}}/promotions" }
+        }
+      ]
+    },
+    {
+      "name": "2. Authentification",
+      "item": [
+        {
+          "name": "Connexion étudiant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.token).to.be.a('string');",
+                  "pm.collectionVariables.set('studentToken', json.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Profil connecté (/me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Role is student', function () { pm.expect(pm.response.json().role).to.eql('student'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": "{{baseUrl}}/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Commandes & Paiement",
+      "item": [
+        {
+          "name": "Créer une commande sur place",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "pm.expect(json.id).to.be.a('string');",
+                  "pm.collectionVariables.set('orderId', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "postman-order-key-1001" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restaurant\": \"{{restaurantSlug}}\",\n  \"type\": \"dine_in\",\n  \"paymentMethod\": \"mobile_money\",\n  \"items\": [{ \"menuItemId\": \"{{menuItemId}}\", \"quantity\": 1 }]\n}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "Consulter les détails d’une commande",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Order id matches', function () { pm.expect(pm.response.json().id).to.eql(pm.variables.get('orderId')); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": "{{baseUrl}}/orders/{{orderId}}"
+          }
+        },
+        {
+          "name": "Initier le paiement en ligne de la commande",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 201', function () { pm.expect([200, 201]).to.include(pm.response.code); });",
+                  "const json = pm.response.json();",
+                  "if (json.id) pm.collectionVariables.set('paymentId', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+243815554433\",\n  \"operator\": \"vodacom_mpesa\"\n}"
+            },
+            "url": "{{baseUrl}}/orders/{{orderId}}/pay"
+          }
+        },
+        {
+          "name": "Simuler le succès du paiement (Environnement Dev/Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"outcome\": \"success\"\n}"
+            },
+            "url": "{{baseUrl}}/payments/{{paymentId}}/simulate"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Espace Personnel (Staff)",
+      "item": [
+        {
+          "name": "Connexion employé",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('staffToken', pm.response.json().token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{staffEmail}}\",\n  \"password\": \"{{staffPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Lister les commandes du restaurant (filtrées par son resto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Items array returned', function () { pm.expect(pm.response.json().items).to.be.an('array'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "url": "{{baseUrl}}/staff/orders"
+          }
+        },
+        {
+          "name": "Avancer le statut de commande vers confirmed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staffToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"confirmed\"\n}" },
+            "url": "{{baseUrl}}/staff/orders/{{orderId}}/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Espace Plateforme",
+      "item": [
+        {
+          "name": "Connexion administrateur plateforme",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('platformAdminToken', pm.response.json().token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{platformAdminEmail}}\",\n  \"password\": \"{{platformAdminPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Créer un nouveau restaurant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 or 409', function () { pm.expect([201, 409]).to.include(pm.response.code); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{platformAdminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slug\": \"{{newRestaurantSlug}}\",\n  \"name\": \"Restaurant Démo\",\n  \"admin\": {\n    \"name\": \"Gérant Démo\",\n    \"email\": \"admin-demo@monmiam.test\",\n    \"phone\": \"+243819999999\",\n    \"password\": \"DemoAdmin1\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/platform/restaurants"
+          }
+        }
+      ]
+    }
+  ]
+}
