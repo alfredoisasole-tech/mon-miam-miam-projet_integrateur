@@ -102,13 +102,21 @@ export class PaymentsService {
 
     let redirectUrl: string;
     try {
-      ({ redirectUrl } = await this.provider.startPayment({
-        paymentId: payment.id,
-        orderId: payment.orderId,
-        amountFc: payment.amountFc,
-        operator: payment.operator,
-        phone: payment.phone,
-      }));
+      if (payment.providerReference && this.provider.redirectUrlFor) {
+        // Transaction déjà initialisée chez le fournisseur : on rejoue sa redirection sans en créer une seconde.
+        redirectUrl = this.provider.redirectUrlFor(payment.providerReference);
+      } else {
+        const started = await this.provider.startPayment({
+          paymentId: payment.id,
+          orderId: payment.orderId,
+          amountFc: payment.amountFc,
+          operator: payment.operator,
+          phone: payment.phone,
+          customerName: result.customerName,
+        });
+        redirectUrl = started.redirectUrl;
+        if (started.providerReference) await this.repository.setProviderReference(payment.id, started.providerReference);
+      }
     } catch {
       if (result.created) await this.repository.failPaymentStart(payment.id, this.now().toISOString());
       throw new AppError(502, 'PAYMENT_PROVIDER_UNAVAILABLE', 'Le service de paiement est momentanément indisponible.');
