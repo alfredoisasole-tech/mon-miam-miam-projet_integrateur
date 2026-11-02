@@ -36,10 +36,11 @@
   "name": "Alice Mbuyi",
   "email": "alice@exemple.com",
   "phone": "+243815554433",
+  "deliveryAddress": "12 avenue de la Paix",
   "password": "MotDePasse1",
+  "confirmPassword": "MotDePasse1",
   "commune": "Limete",
   "quartier": "Industriel",
-  "adresse": "12 avenue de la Paix",
   "referralCode": "ALICE2026",
   "acceptTerms": true
 }
@@ -53,7 +54,9 @@
 | `email` | obligatoire, format e-mail valide |
 | `phone` | obligatoire, format `+243XXXXXXXXX` |
 | `password` | obligatoire, ≥ 8 caractères, ≥ 1 majuscule, ≥ 1 chiffre |
-| `commune`, `quartier`, `adresse` | facultatifs, texte libre |
+| `deliveryAddress` | facultatif, adresse de livraison enregistrée au compte |
+| `commune`, `quartier` | facultatifs, texte libre |
+| `confirmPassword` | facultatif pour les clients API ; s'il est fourni, doit correspondre à `password` |
 | `referralCode` | facultatif, texte libre |
 | `acceptTerms` | obligatoire, doit être `true` |
 
@@ -86,7 +89,7 @@
 | 422 | `TERMS_NOT_ACCEPTED` | « Vous devez accepter les conditions d'utilisation » |
 | 429 | `TOO_MANY_ATTEMPTS` | « Trop de tentatives, réessayez dans X minutes » |
 
-**Effet de bord** : crée l'utilisateur, crée son adhésion au restaurant `:slug`, et si `referralCode` est fourni et valide, enregistre le parrainage (récompense créditée au restaurant de la première commande qualifiante du filleul).
+**Effet de bord** : crée l'utilisateur et son adhésion au restaurant `:slug`. Si `referralCode` correspond à un étudiant actif, son identifiant est associé au nouveau compte. La récompense est enregistrée au restaurant de la première commande qualifiante terminée ; une simple inscription ne crée pas encore de transaction de parrainage.
 
 ---
 

@@ -19,6 +19,10 @@ describe('API des comptes', () => {
       VALUES ('restaurant-auth', 'auth-demo', 'Auth Demo', 'Arial', '2026-10-01T00:00:00.000Z')`);
     db.run(`INSERT INTO restaurant_settings (restaurant_id, opening_hours, updated_at)
       VALUES ('restaurant-auth', '{}', '2026-10-01T00:00:00.000Z')`);
+    db.run(`INSERT INTO users (id, restaurant_id, role, name, email, phone, password_hash, referral_code, created_at)
+      VALUES ('referrer-auth', 'restaurant-auth', 'student', 'Parrain', 'referrer@example.test', '+243815554432', 'hash', 'INVITATION1', '2026-10-01T00:00:00.000Z')`);
+    db.run(`INSERT INTO memberships (user_id, restaurant_id, created_at)
+      VALUES ('referrer-auth', 'restaurant-auth', '2026-10-01T00:00:00.000Z')`);
     server = await demarrer(createApp(loadConfig({ NODE_ENV: 'test', JWT_SECRET: 'test-secret-with-more-than-32-characters' }), {
       database: db,
       sendPasswordResetCode: async (_identifier, code) => { resetCode = code; },
@@ -35,16 +39,27 @@ describe('API des comptes', () => {
         name: 'Alice Mbuyi',
         email: 'Alice@exemple.com',
         phone: '+243815554433',
+        deliveryAddress: '12 avenue de la Paix',
         password: 'MotDePasse1',
+        confirmPassword: 'MotDePasse1',
+        referralCode: 'INVITATION1',
         acceptTerms: true,
       }),
     });
     assert.equal(registration.status, 201);
-    const registered = await registration.json() as { token: string; user: { role: string; memberships: unknown[] } };
+    const registered = await registration.json() as {
+      token: string;
+      user: { id: string; role: string; memberships: unknown[] };
+    };
     oldToken = registered.token;
     assert.equal(registered.user.role, 'student');
     assert.equal(registered.user.memberships.length, 1);
-    assert.equal(db.get<{ total: number }>('SELECT COUNT(*) AS total FROM memberships')?.total, 1);
+    assert.equal(db.get<{ total: number }>('SELECT COUNT(*) AS total FROM memberships WHERE user_id = ?', [
+      registered.user.id,
+    ])?.total, 1);
+    assert.equal(db.get<{ address: string }>('SELECT address FROM users WHERE id = ?', [registered.user.id])?.address, '12 avenue de la Paix');
+    assert.equal(db.get<{ referred_by: string }>('SELECT referred_by FROM users WHERE id = ?', [registered.user.id])?.referred_by, 'referrer-auth');
+    assert.equal(db.get<{ total: number }>('SELECT COUNT(*) AS total FROM referrals')?.total, 0);
 
     const login = await fetch(`${server.base}/api/auth/login`, {
       method: 'POST',
