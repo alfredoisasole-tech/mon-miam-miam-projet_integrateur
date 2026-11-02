@@ -42,7 +42,7 @@ La réponse de détail expose :
 
 Les valeurs de statut d’une commande sont `pending`, `confirmed`, `preparing`, `ready`, `out_for_delivery`, `completed` et `cancelled`. Le parcours normal est `pending` → `confirmed` → `preparing` → `ready` → `completed` pour une commande sur place, et `pending` → `confirmed` → `preparing` → `ready` → `out_for_delivery` → `completed` pour une livraison. L’annulation mène à `cancelled`. Le premier événement d’historique est `pending` à la création.
 
-Les valeurs de paiement sont `cash` ou `mobile_money` ; l’état de paiement est `unpaid`, `pending`, `paid`, `failed` ou `refund_due`. Une commande créée en espèces ou en mobile money débute `unpaid`, sauf si son total est nul : dans ce cas, le serveur la marque `paid`, puisqu’aucun paiement n’est dû. Le démarrage mobile money et la confirmation signée sont décrits dans le [contrat d’API des paiements](paiements.md). Seul le serveur confirme le paiement.
+Les valeurs de paiement sont `cash` ou `mobile_money` ; l’état de paiement est `unpaid`, `pending`, `paid`, `failed` ou `refund_due`. Une commande créée en espèces ou en mobile money débute `unpaid`, sauf si son total est nul : dans ce cas, le serveur la marque `paid`, puisqu’aucun paiement n’est dû ; son annulation ne la passe jamais en `refund_due`, rien n’ayant été payé. Le démarrage mobile money et la confirmation signée sont décrits dans le [contrat d’API des paiements](paiements.md). Seul le serveur confirme le paiement.
 
 ## 1. Créer et valider une commande
 
