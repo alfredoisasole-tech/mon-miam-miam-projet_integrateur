@@ -313,10 +313,14 @@ export class SqliteOrdersRepository implements OrdersRepository {
           AND o.restaurant_id IN (SELECT m.restaurant_id FROM memberships m WHERE m.user_id = ?)
       `, [orderId, userId, userId]);
       if (!row) return { kind: 'not_found' } as const;
-      if (row.status !== 'pending' || !['unpaid', 'failed'].includes(row.payment_status)) return { kind: 'cannot_cancel' } as const;
+      // Une commande réglée entièrement avec des points (total de 0 FC) est marquée « payée » sans qu'aucun
+      // paiement n'ait eu lieu : elle reste annulable tant qu'elle est en attente (docs/regles-commande-paiement.md, §4).
+      const nothingPaid = row.total_fc === 0;
+      if (row.status !== 'pending' || (!nothingPaid && !['unpaid', 'failed'].includes(row.payment_status))) return { kind: 'cannot_cancel' } as const;
 
       this.db.run(`UPDATE orders SET status = 'cancelled', cancelled_at = ?, updated_at = ?
-        WHERE id = ? AND user_id = ? AND restaurant_id = ? AND status = 'pending' AND payment_status IN ('unpaid', 'failed')`,
+        WHERE id = ? AND user_id = ? AND restaurant_id = ? AND status = 'pending'
+          AND (payment_status IN ('unpaid', 'failed') OR total_fc = 0)`,
       [at, at, orderId, userId, row.restaurant_id]);
       this.db.run(`INSERT INTO order_events (id, order_id, status, created_at)
         VALUES (?, ?, 'cancelled', ?)`, [randomUUID(), orderId, at]);
