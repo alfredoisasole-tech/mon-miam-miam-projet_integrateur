@@ -1,0 +1,48 @@
+# Blueprint Render de l'API Mon Miam Miam (APP-105).
+# Le site est hébergé séparément sur Vercel (frontend/vercel.json). Ce fichier ne décrit que l'API.
+# Contexte et décisions restantes : docs/deploiement.md.
+#
+# À valider avant utilisation : « render blueprints validate » (CLI Render 2.7 ou plus récent).
+# Ce fichier n'a PAS encore été validé contre le schéma de Render ni déployé.
+services:
+  - type: web
+    name: mon-miam-miam-api
+    runtime: node
+    # Formule payante : l'API stocke sa base SQLite sur un disque persistant, et un service doit rester
+    # actif pour recevoir les notifications de paiement. À confirmer sur la grille tarifaire de Render.
+    plan: starter
+    # Région proposée, la plus proche de Kinshasa parmi celles de Render ; décision de l'équipe.
+    region: frankfurt
+    # Le dépôt entier est nécessaire : les migrations lisent database/schema.sql, hors de backend/.
+    # Ne pas définir rootDir.
+    branch: dev
+    # Le premier déploiement est lancé à la main. Passer à « checksPass » une fois la branche de
+    # production décidée et l'API vérifiée.
+    autoDeployTrigger: "off"
+    buildCommand: npm ci --prefix backend
+    startCommand: npm --prefix backend start
+    healthCheckPath: /api/health
+    # Disque persistant : une seule instance, pas de déploiement sans interruption (limites de Render).
+    # La taille peut augmenter, jamais diminuer : commencer petit.
+    disk:
+      name: mon-miam-miam-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      # Node.js 22.18 ou plus : l'API exécute directement le TypeScript et utilise node:sqlite.
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /var/data/mon-miam-miam.sqlite
+      # Secrets : jamais dans le dépôt. L'API refuse de démarrer en production avec un secret
+      # de moins de 32 caractères ou repris des exemples.
+      - key: JWT_SECRET
+        generateValue: true
+      # Remplacer par le secret de signature fourni par Easypay quand l'adaptateur réel sera en place (APP-107).
+      - key: PAYMENT_WEBHOOK_SECRET
+        generateValue: true
+      # Origine exacte du site Vercel, sans « / » final. À saisir à la création du service.
+      - key: CORS_ORIGINS
+        sync: false
