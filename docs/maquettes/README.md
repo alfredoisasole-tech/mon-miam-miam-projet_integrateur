@@ -202,3 +202,5 @@ Les encadrés sous les dessins décrivent les états à décliner : chargement, 
 - Relecture visuelle des dessins et contrôle des fichiers effectués localement ; les tests applicatifs ne s’appliquent pas à ces seuls documents.
 
 La relecture croisée du binôme B et les contrôles du dépôt restent nécessaires avant la fusion, conformément aux [conventions Git](../conventions-git.md).
+
+**Mise à jour du 3 novembre 2026 :** l'API est déployée sur Render et `frontend/vercel.json` transfère désormais `/api` vers elle (voir [deploiement.md](../deploiement.md)). Le comportement décrit plus haut, sans réécriture vers Render, ne s'applique plus.
