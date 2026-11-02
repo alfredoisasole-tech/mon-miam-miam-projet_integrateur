@@ -125,7 +125,7 @@ Pour un échec, `status` vaut `failed` et `orderStatus` reste `pending`.
 
 Le secret de vérification est configuré côté serveur par variable d’environnement et n’est jamais transmis au site. Aucun identifiant marchand ni secret fournisseur n’est requis pour le mode simulé. L’adaptateur EasyPay devra suivre les mécanismes de signature de sa documentation officielle, après validation de cette documentation.
 
-**Vérification du montant.** Quand une notification porte `amountFc`, il est comparé au montant attendu du paiement avant toute modification. En cas de différence, la notification est refusée avec `422 AMOUNT_MISMATCH` : ni le paiement ni la commande ne changent, y compris pour le rejeu d'une confirmation, qu'elle annonce `paid` ou `failed`. Un fournisseur réel (adaptateur qui déclare `requiresAmountVerification`) doit toujours fournir ce montant : sans lui, la notification est refusée en `400`. La notification simulée peut s'en passer. Voir [easypay.md](easypay.md) pour l'intégration d'Easypay.
+**Vérification du montant.** Quand une notification porte `amountFc`, il est comparé au montant attendu du paiement avant toute modification. En cas de différence, la notification est refusée avec `422 AMOUNT_MISMATCH` : ni le paiement ni la commande ne changent, y compris pour le rejeu d'une confirmation, qu'elle annonce `paid` ou `failed`. Un fournisseur dont les notifications portent un montant (adaptateur qui déclare `requiresAmountVerification`) doit toujours le fournir : sans lui, la notification est refusée en `400`. La notification simulée peut s'en passer. Easypay n'annonce pas de montant : sa notification est confirmée par un appel de vérification de statut, voir [easypay.md](easypay.md).
 
 ## 3. Confirmer un paiement dans la simulation
 

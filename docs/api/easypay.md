@@ -1,75 +1,101 @@
-# Intégration d'Easypay — préparation (APP-103)
+# Intégration d'Easypay (e-COM EasyPay) — préparation (APP-103)
 
-Ce document prépare le remplacement du paiement mobile money **simulé** par l'API réelle d'Easypay. Il dit ce qu'il faut obtenir du fournisseur, ce qui est déjà prêt dans le projet, et dans quel ordre avancer. Le contrat actuel des paiements est dans [paiements.md](paiements.md).
+Ce document prépare le remplacement du paiement mobile money **simulé** par la passerelle réelle e-COM EasyPay. Il résume ce que dit sa documentation, les écarts avec notre modèle, les décisions à prendre et les étapes. Le contrat actuel des paiements est dans [paiements.md](paiements.md).
 
 - **Ticket :** [APP-103](https://judbie2030-45660043.atlassian.net/browse/APP-103) et ses sous-tâches APP-104 à APP-108.
-- **Statut :** en attente de la documentation et d'un accès de test d'Easypay. **Aucune ligne de code spécifique à Easypay n'est écrite** : sans sa documentation, tout nom de champ, d'adresse ou de signature serait inventé.
+- **Source :** documentation publique de l'espace développeur, <https://developper.e-com-easypay.com>, lue le 3 novembre 2026. Elle affiche « dernières mises à jour : 12/10/2021 » et la version 1.3 : **à faire confirmer par e-COM SAS** avant de coder (contact@e-comsas.com, +243 822 717 230).
+- **Statut :** aucun code spécifique à Easypay n'est encore écrit. Le choix de parcours de la section 3 et les accès de test (section 4) sont requis.
 
-## 1. Point de départ
+## 1. Ce que dit la documentation
 
-Le projet attend la documentation d'Easypay depuis le début : l'adaptateur doit venir « après réception et validation de sa documentation » (`backend/src/domain/payments.ts`, [paiements.md](paiements.md)). Une recherche publique du 3 novembre 2026 n'a trouvé aucune documentation d'une API Easypay pour la RDC et le mobile money ; le seul Easypay documenté en ligne est un acteur portugais ([docs.easypay.pt](https://docs.easypay.pt)), qui n'est pas lié à M-Pesa, Orange Money, Airtel Money ni Africell. **Première action : confirmer avec Easypay quel produit et quelle API sont concernés.**
+**Service.** Passerelle de paiement d'e-COM SAS (Kinshasa) : cartes Visa et Mastercard, carte locale PROCARD d'EquityBCDC, et **Mobile Money Airtel Money, Orange Money et Vodacom M-Pesa**. Africell n'est pas cité.
 
-## 2. Ce qu'il faut obtenir d'Easypay
+**Adresses et accès.** Toutes les adresses suivent `https://www.e-com-easypay.com/{MODE}/…`, avec `MODE` valant `sandbox` (développement) ou `v1` (production). Les appels du marchand s'authentifient par deux paramètres dans l'adresse, `cid` (identifiant de corrélation) et `token` (clé publique), disponibles dans le menu « Espace Développeur » de l'espace marchand <https://merchant.e-com-easypay.com>.
 
-À demander par écrit au fournisseur, avec les accès de test (sandbox) :
+| API | Appel | Données | Réponse |
+|---|---|---|---|
+| Initialiser une transaction (avec redirection) | `POST /{MODE}/payment/initialization?cid=…&token=…` | `order_ref` (alphanumérique), `currency` (`CDF` ou `USD`), `amount`, `customer_name`, `description`, `channel`/`channels` (`CREDIT CARD`, `MOBILE MONEY`), `success_url`, `cancel_url`, `error_url`, facultatifs : `customer_email`, `language` (`FR`, `EN`) | `{ "code": 1, "reference": "…" }` ; si `code` vaut 0, `message` décrit l'échec |
+| Rediriger le client | `GET /{MODE}/payment/initialization?reference=…` | la `reference` reçue | page de paiement Easypay |
+| Mobile Money sans redirection | `POST /{MODE}/mobile-money/payment?cid=…&token=…` | `order_ref`, `currency`, `amount`, `customer_phone` (**sans 0 ni indicatif pays**, par exemple `822717230`), `customer_name`, `description`, facultatif `customer_email` ; le client reçoit une demande de confirmation sur son téléphone | `{ "code": 1, "reference": "…" }` |
+| Vérifier le statut | `POST /{MODE}/payment/{reference}/checking-payment` | la `reference` | `200` : `{ "transaction": { "order_ref", "reference" }, "payment": { "channel", "status", "reference" } }` ; `404` si inconnue ; `500` en cas d'erreur |
 
-| # | Question | Pourquoi (ce qui est déjà fixé chez nous) |
+`payment.status` vaut `SUCCESS` (effectuée), `CANCELED` (annulée) ou `DECLINED` (échouée).
+
+**Notification (IPN).** Easypay envoie en `POST` à l'adresse d'IPN que le marchand a **fournie à e-COM SAS** un objet JSON du même format que la vérification de statut (`transaction`, `payment`). La documentation ne mentionne **ni signature, ni en-tête d'authentification, ni montant** dans cette notification, ni de règle de rejeu.
+
+**Bac à sable.** La page <https://e-com-easypay.com/sandbox/payment/test> indique, pour un paiement de test de 1 USD par carte : numéro `4111 1111 1111 1111`, expiration `01/2027`, CVV `111`. Aucun numéro de test Mobile Money n'est documenté.
+
+## 2. Écarts avec notre modèle
+
+| Notre modèle actuel | Easypay | Conséquence |
 |---|---|---|
-| 1 | Documentation officielle de l'API, version, URL de l'environnement de test et de production | Aucun appel réel n'est possible sans elle. |
-| 2 | Authentification des appels du serveur vers Easypay (clé, jeton, identifiant marchand) | Les secrets seront des variables d'environnement, jamais dans le dépôt. |
-| 3 | Démarrage d'un paiement : adresse, champs obligatoires, format du numéro de téléphone, devise (FC) | Nous envoyons `paymentId`, `orderId`, `amountFc` (entier), `operator`, `phone` (`+243…`). |
-| 4 | Parcours côté étudiant : redirection vers une page, ou demande de confirmation envoyée sur le téléphone (USSD) ? | Notre contrat renvoie un `redirectUrl` ; il faudra peut-être l'adapter. |
-| 5 | Opérateurs pris en charge : M-Pesa, Orange Money, Airtel Money, Africell Money | Ce sont les valeurs de `payments.operator`. |
-| 6 | Notifications de résultat (webhook) : adresse à déclarer, format exact du corps, statuts possibles | Nous ne confirmons une commande que sur notification signée, jamais depuis le site. |
-| 7 | **Méthode de signature des notifications** : algorithme, en-tête utilisé, secret, sur quels octets | Aujourd'hui : HMAC-SHA-256 hexadécimal du corps brut dans `X-Payment-Signature`. L'en-tête peut différer. |
-| 8 | Le montant et la devise figurent-ils dans la notification ? | Obligatoire : nous refusons toute notification dont le montant diffère. |
-| 9 | Référence du fournisseur pour chaque transaction, et clé d'idempotence éventuelle | Nous la stockons dans `payments.provider_ref`. |
-| 10 | Rejeu des notifications : combien de fois, à quel rythme, avec quelle garantie d'ordre | Un rejeu identique est sans effet chez nous. |
-| 11 | Expiration d'un paiement non confirmé, et possibilité de vérifier son statut par un appel | Nous considérons un paiement expiré après 15 minutes. |
-| 12 | Remboursement : par API ou manuel ? | Aujourd'hui, `refund_due` signale un remboursement à traiter à la main. |
-| 13 | Adresses IP d'émission des notifications (liste blanche), limites de débit, frais et plafonds par transaction | Pour la sécurité et le dimensionnement. |
-| 14 | Numéros et scénarios de test par opérateur (succès, échec, expiration) | Pour dérouler le plan de la section 5. |
+| Notification signée par HMAC (`X-Payment-Signature`) | Aucune signature documentée | **Ne jamais croire le corps d'une notification.** À chaque IPN, rappeler `checking-payment` avec la référence et ne confirmer que si Easypay répond `SUCCESS`. Si Easypay propose une signature, la demander et l'ajouter. |
+| Montant dans la notification (`amountFc`, contrôle `AMOUNT_MISMATCH`) | Ni la notification ni la vérification de statut ne portent le montant | Le contrôle générique reste valable pour les fournisseurs qui l'annoncent, mais l'adaptateur Easypay ne déclare **pas** `requiresAmountVerification`. Le montant est fixé par notre serveur à l'initialisation ; ne jamais l'accepter d'ailleurs. |
+| Quatre opérateurs : `mpesa`, `orange_money`, `airtel_money`, `africell_money` | Trois opérateurs, et **aucun paramètre d'opérateur** dans l'API | Africell n'est pas pris en charge : à retirer du choix ou à refuser. L'opérateur reste enregistré chez nous mais n'est pas transmis. |
+| Montants en FC entiers | `currency` `CDF` ou `USD`, `amount` numérique | Envoyer `CDF` et le montant en FC. |
+| Téléphone `+243XXXXXXXXX` | `customer_phone` sans 0 ni indicatif pays | `+243822717230` devient `822717230`. |
+| Identifiant de paiement `pay_<uuid>` | `order_ref` alphanumérique | Envoyer l'identifiant sans `_` ni `-`, et retrouver le paiement par la **référence Easypay** enregistrée à l'initialisation (`payments.provider_ref`). |
+| Statuts `paid` et `failed` | `SUCCESS`, `CANCELED`, `DECLINED` | `SUCCESS` devient `paid` ; `DECLINED` et `CANCELED` deviennent `failed` (nouvelle tentative possible). |
+| `redirectUrl` toujours renvoyé au site | La redirection n'existe que dans le parcours « passerelle » | Voir la section 3. |
 
-## 3. Ce qui est déjà prêt dans le projet
+## 3. Décision à prendre : quel parcours de paiement
 
-- **Point d'insertion :** l'interface `PaymentProvider` (`backend/src/domain/payments.ts`) ; `createApp` accepte un fournisseur à injecter, la simulation étant le défaut. L'adaptateur Easypay se branche à cet endroit.
-- **Confirmation côté serveur uniquement :** le site ne marque jamais une commande payée ; la route `POST /api/payments/webhook` vérifie la signature sur les octets exacts du corps.
-- **Montant vérifié :** une notification dont `amountFc` diffère du montant attendu est refusée (`422 AMOUNT_MISMATCH`), et un fournisseur réel doit fournir ce montant (`requiresAmountVerification`). Fait dans APP-106, indépendamment du fournisseur.
+| | A. Passerelle avec redirection | B. Mobile Money direct |
+|---|---|---|
+| Fonctionnement | Le site redirige l'étudiant vers la page Easypay, qui propose carte et Mobile Money, puis le ramène sur `success_url`, `cancel_url` ou `error_url` | Easypay envoie la demande de confirmation sur le téléphone de l'étudiant, sans quitter le site |
+| Contrat `paiements.md` | **Inchangé** : `redirectUrl` devient l'adresse Easypay ; le frontend déjà écrit continue de rediriger | `redirectUrl` disparaît ; le site doit afficher « confirmez sur votre téléphone » et attendre le résultat |
+| Données utilisées | `operator` et `phone` saisis ne servent plus (l'étudiant les ressaisit sur la passerelle) | `phone` est utilisé, `operator` non |
+| À prévoir | Trois adresses de retour vers le site (configuration de l'adresse du site) | Modification du frontend et du contrat |
+
+**Recommandation : A pour commencer** (aucun changement du contrat ni du frontend), B ensuite si l'équipe veut une expérience 100 % mobile money. À trancher avant d'écrire l'adaptateur.
+
+## 4. Ce qu'il reste à obtenir
+
+1. **Identifiants du bac à sable** (`cid` et `token`, mode `sandbox`) puis de production (`v1`), depuis l'espace marchand. Variables d'environnement prévues : `EASYPAY_MODE`, `EASYPAY_CID`, `EASYPAY_TOKEN`. Le `token` passe dans l'adresse des appels : ne jamais écrire une adresse complète dans les journaux.
+2. **Enregistrement de l'adresse d'IPN** auprès d'e-COM SAS : comment la déclarer, y a-t-il une authentification ou une liste d'adresses IP d'émission, et quels rejeux.
+3. **Confirmation de la documentation à jour** (affichée de 2021), et existence éventuelle d'une signature des notifications.
+4. **Numéros de test Mobile Money** par opérateur, et comportement du bac à sable.
+5. Durée de validité d'une transaction non confirmée, `order_ref` : longueur maximale et unicité exigée, frais et plafonds par transaction, Africell.
+6. L'appel `checking-payment` est-il authentifié ? La documentation ne mentionne ni `cid` ni `token` pour lui.
+
+## 5. Ce qui est déjà prêt dans le projet
+
+- **Point d'insertion :** l'interface `PaymentProvider` (`backend/src/domain/payments.ts`) ; `createApp` accepte un fournisseur à injecter, la simulation étant le défaut. Il faudra l'adapter : aujourd'hui `verifyNotification` est synchrone et suppose une signature, alors que la confirmation d'Easypay exige un appel réseau.
+- **Confirmation côté serveur uniquement :** le site ne marque jamais une commande payée.
+- **Contrôle du montant générique** (APP-106) : une notification dont `amountFc` diffère du montant attendu est refusée (`422 AMOUNT_MISMATCH`). Il ne s'applique pas à Easypay, qui n'annonce pas de montant.
 - **Rejeu et contradictions :** un rejeu identique est sans effet ; une notification contradictoire après un état final est refusée (`409`).
 - **Échecs et expirations :** un paiement échoué laisse la commande `pending` et permet une nouvelle tentative ; un paiement expire après 15 minutes ; une confirmation tardive sur une commande déjà annulée passe `paymentStatus` à `refund_due`.
-- **Isolation :** un paiement est lié à sa commande et à son restaurant ; un résultat d'un restaurant ne peut pas régler la commande d'un autre.
+- **Isolation :** un paiement est lié à sa commande et à son restaurant.
 
-## 4. Ce qui reste à faire, dans l'ordre
+## 6. Ce qui reste à faire, dans l'ordre
 
-1. **Obtenir la documentation et l'accès de test** (APP-104). Bloquant, dépendance externe.
-2. **Mettre l'API en ligne** (APP-105) : Easypay doit joindre `POST /api/payments/webhook` en HTTPS. Dépend de la préparation du déploiement (PR #48), de l'autorisation de l'application Vercel sur le dépôt (APP-102) et de Render (voir [deploiement.md](../deploiement.md)).
-3. **Implémenter l'adaptateur** (APP-107), en TDD et sans appel réseau réel dans les tests :
-   - démarrage du paiement et correspondance des champs et des statuts ;
-   - vérification de la signature selon la documentation d'Easypay. Le contrôleur ne lit aujourd'hui que `X-Payment-Signature` : si Easypay utilise un autre en-tête, l'interface devra recevoir les en-têtes ;
-   - lecture de la notification vers `PaymentNotification`, avec `amountFc`, et déclaration de `requiresAmountVerification = true` ;
-   - sélection du fournisseur par la configuration (simulation par défaut ; démarrage refusé en production si le fournisseur réel est choisi sans ses secrets) ;
-   - mise à jour de [paiements.md](paiements.md) (champs, erreurs, éventuel changement du `redirectUrl`).
-4. **Tester en sandbox puis activer** (APP-108), après décision sur le réglage mobile money par restaurant (le schéma ne le stocke pas encore, voir [deploiement.md](../deploiement.md)).
+1. **Accès de test et choix du parcours** (APP-104, section 3 et 4). Bloquant.
+2. **API en ligne** (APP-105) : Easypay doit joindre l'adresse d'IPN en HTTPS. Voir [deploiement.md](../deploiement.md).
+3. **Adaptateur** (APP-107), en TDD avec un client HTTP simulé, sans appel réseau réel dans les tests :
+   - initialisation du paiement selon le parcours choisi, avec les conversions de la section 2 ;
+   - route de réception de l'IPN, qui retrouve le paiement par la référence Easypay, **rappelle `checking-payment`** et ne confirme que sur `SUCCESS` ;
+   - mise à jour de [paiements.md](paiements.md) ;
+   - sélection du fournisseur par la configuration (simulation par défaut ; démarrage refusé en production si Easypay est choisi sans `EASYPAY_CID` et `EASYPAY_TOKEN`).
+4. **Essais en bac à sable puis activation** (APP-108).
 
-## 5. Plan de test en sandbox
+**Hébergement gratuit.** Sur l'offre gratuite de Render, le service s'endort après 15 minutes sans trafic (environ une minute pour se réveiller) et sa base est effacée à chaque redémarrage ([documentation Render](https://render.com/docs/free), lue le 3 novembre 2026). Un paiement initialisé puis une notification reçue après un redémarrage ne retrouveraient plus leur paiement. Convient pour essayer le bac à sable, **pas pour de vrais paiements**.
 
-À dérouler avec les numéros de test de chaque opérateur, sur l'API en ligne :
+## 7. Plan de test en bac à sable
 
 | Scénario | Résultat attendu |
 |---|---|
-| Paiement réussi | Paiement `paid`, commande `confirmed`, un seul événement `confirmed`. |
-| Paiement refusé par l'opérateur | Paiement `failed`, commande `pending`, nouvelle tentative possible. |
-| Étudiant qui ne valide pas (expiration) | Paiement expiré, commande annulable, pas de confirmation tardive indue. |
+| Paiement réussi (`SUCCESS`) | Paiement `paid`, commande `confirmed`, un seul événement `confirmed`. |
+| Paiement refusé (`DECLINED`) ou annulé (`CANCELED`) | Paiement `failed`, commande `pending`, nouvelle tentative possible. |
+| Notification réussie **forgée** (la vérification de statut ne répond pas `SUCCESS`) | Refusée, commande inchangée. |
+| Notification pour une référence inconnue | Aucune commande modifiée. |
 | Même notification reçue plusieurs fois | Aucun effet après la première. |
-| Notification avec un montant différent | Refusée (`422 AMOUNT_MISMATCH`), commande inchangée. |
-| Notification avec une signature fausse ou absente | Refusée (`401 INVALID_SIGNATURE`), commande inchangée. |
-| Notification d'un autre paiement ou d'un autre restaurant | Aucune commande étrangère n'est modifiée. |
+| Étudiant qui ne confirme pas | Paiement expiré, commande annulable. |
 | Confirmation tardive après annulation | `paymentStatus: refund_due`, remboursement à traiter. |
-| Coupure du service Easypay au démarrage | `502 PAYMENT_PROVIDER_UNAVAILABLE`, aucune ligne de paiement bloquée. |
+| Easypay injoignable au démarrage ou à la vérification | `502 PAYMENT_PROVIDER_UNAVAILABLE`, aucune ligne de paiement bloquée, rien n'est confirmé. |
 
-## 6. Sécurité et secrets
+## 8. Sécurité et secrets
 
-- Aucun identifiant marchand, clé ou secret dans le dépôt : variables d'environnement uniquement, déclarées sans valeur dans `backend/.env.example`.
-- Les notifications ne sont jamais crues sur parole : signature vérifiée sur les octets exacts, montant comparé, paiement retrouvé dans notre base.
-- Journaux : ne jamais écrire de secret ni de numéro de téléphone complet.
-- Mise en ligne réelle : décision humaine après le plan de test, avec le réglage mobile money par restaurant tranché.
+- Aucun `cid`, `token` ni secret dans le dépôt : variables d'environnement uniquement, déclarées sans valeur dans `backend/.env.example`.
+- Aucune notification n'est crue sur parole : le paiement est retrouvé dans notre base, puis confirmé par un appel direct à Easypay.
+- Journaux : jamais d'adresse Easypay complète (elle contient le `token`), ni de numéro de téléphone complet.
+- Mise en ligne réelle : décision humaine après le plan de test, sur un hébergement qui conserve sa base.
