@@ -4,7 +4,7 @@ Ce document prépare le remplacement du paiement mobile money **simulé** par la
 
 - **Ticket :** [APP-103](https://judbie2030-45660043.atlassian.net/browse/APP-103) et ses sous-tâches APP-104 à APP-108.
 - **Source :** documentation publique de l'espace développeur, <https://developper.e-com-easypay.com>, lue le 3 novembre 2026. Elle affiche « dernières mises à jour : 12/10/2021 » et la version 1.3 : **à faire confirmer par e-COM SAS** avant de coder (contact@e-comsas.com, +243 822 717 230).
-- **Statut :** aucun code spécifique à Easypay n'est encore écrit. Le choix de parcours de la section 3 et les accès de test (section 4) sont requis.
+- **Statut (3 novembre 2026) :** parcours A retenu (section 3). L'adaptateur, la route de notification et la configuration sont écrits et testés **sans réseau réel** ; l'initialisation a été vérifiée au bac à sable avec les identifiants de l'équipe. Reste à faire : essai de bout en bout d'un paiement réussi, et mise en ligne de l'API (section 6). L'équipe indique qu'il n'y aura **pas de paiements réels**.
 
 ## 1. Ce que dit la documentation
 
@@ -25,6 +25,14 @@ Ce document prépare le remplacement du paiement mobile money **simulé** par la
 
 **Bac à sable.** La page <https://e-com-easypay.com/sandbox/payment/test> indique, pour un paiement de test de 1 USD par carte : numéro `4111 1111 1111 1111`, expiration `01/2027`, CVV `111`. Aucun numéro de test Mobile Money n'est documenté.
 
+**Constats d'essais au bac à sable (3 novembre 2026), absents de la documentation :**
+
+- L'initialisation avec `channels: [{ "channel": "MOBILE MONEY" }]` répond `{ "code": 1, "reference": "…", "provider": "e-COM SAS", "website": "…" }`. La documentation écrit `channel` dans son tableau de paramètres mais `channels` dans ses exemples : c'est **`channels`** qui fonctionne. La référence est une chaîne alphanumérique de 64 caractères (elle peut se terminer par `=`).
+- Une erreur d'authentification revient en **HTTP 200** avec `{ "code": 0, "message": "This credentials parameters (token and cid) are not found" }` : il faut lire `code`, pas seulement le statut HTTP.
+- La vérification de statut d'une transaction **non encore payée** répond **HTTP 500** (`{"message":"An error occured during the operation."}`), indiscernable d'une vraie panne ; une référence inconnue répond 404. Le corps peut commencer par du bruit HTML (avertissement PHP) avant le JSON.
+- Le `token` de l'espace développeur est un jeton signé dont la date d'expiration affichée (avril 2026) est dépassée, et le bac à sable l'a pourtant accepté : à faire confirmer par e-COM SAS pour la production (durée de vie réelle du jeton).
+- L'adresse de notification (« IPN URL (Call-back) ») se règle soi-même dans l'espace marchand ; le champ affiche en exemple une adresse avec un port et un chemin propres à leur plateforme, que nous remplaçons par celle de notre API.
+
 ## 2. Écarts avec notre modèle
 
 | Notre modèle actuel | Easypay | Conséquence |
@@ -34,7 +42,7 @@ Ce document prépare le remplacement du paiement mobile money **simulé** par la
 | Quatre opérateurs : `mpesa`, `orange_money`, `airtel_money`, `africell_money` | Trois opérateurs, et **aucun paramètre d'opérateur** dans l'API | Africell n'est pas pris en charge : à retirer du choix ou à refuser. L'opérateur reste enregistré chez nous mais n'est pas transmis. |
 | Montants en FC entiers | `currency` `CDF` ou `USD`, `amount` numérique | Envoyer `CDF` et le montant en FC. |
 | Téléphone `+243XXXXXXXXX` | `customer_phone` sans 0 ni indicatif pays | `+243822717230` devient `822717230`. |
-| Identifiant de paiement `pay_<uuid>` | `order_ref` alphanumérique | Envoyer l'identifiant sans `_` ni `-`, et retrouver le paiement par la **référence Easypay** enregistrée à l'initialisation (`payments.provider_ref`). |
+| Identifiant de paiement `pay_<uuid>` | `order_ref` alphanumérique | Envoyer l'identifiant sans `_` ni `-`, et retrouver le paiement par la **référence Easypay** enregistrée à l'initialisation (`payments.provider_reference`). |
 | Statuts `paid` et `failed` | `SUCCESS`, `CANCELED`, `DECLINED` | `SUCCESS` devient `paid` ; `DECLINED` et `CANCELED` deviennent `failed` (nouvelle tentative possible). |
 | `redirectUrl` toujours renvoyé au site | La redirection n'existe que dans le parcours « passerelle » | Voir la section 3. |
 
@@ -47,38 +55,35 @@ Ce document prépare le remplacement du paiement mobile money **simulé** par la
 | Données utilisées | `operator` et `phone` saisis ne servent plus (l'étudiant les ressaisit sur la passerelle) | `phone` est utilisé, `operator` non |
 | À prévoir | Trois adresses de retour vers le site (configuration de l'adresse du site) | Modification du frontend et du contrat |
 
-**Recommandation : A pour commencer** (aucun changement du contrat ni du frontend), B ensuite si l'équipe veut une expérience 100 % mobile money. À trancher avant d'écrire l'adaptateur.
+**Décision (3 novembre 2026) : parcours A** (aucun changement du contrat ni du frontend). Le parcours B reste possible plus tard si l'équipe veut une expérience 100 % mobile money.
 
-## 4. Ce qu'il reste à obtenir
+## 4. Ce qu'il reste à obtenir ou à confirmer
 
-1. **Identifiants du bac à sable** (`cid` et `token`, mode `sandbox`) puis de production (`v1`), depuis l'espace marchand. Variables d'environnement prévues : `EASYPAY_MODE`, `EASYPAY_CID`, `EASYPAY_TOKEN`. Le `token` passe dans l'adresse des appels : ne jamais écrire une adresse complète dans les journaux.
-2. **Enregistrement de l'adresse d'IPN** auprès d'e-COM SAS : comment la déclarer, y a-t-il une authentification ou une liste d'adresses IP d'émission, et quels rejeux.
-3. **Confirmation de la documentation à jour** (affichée de 2021), et existence éventuelle d'une signature des notifications.
-4. **Numéros de test Mobile Money** par opérateur, et comportement du bac à sable.
-5. Durée de validité d'une transaction non confirmée, `order_ref` : longueur maximale et unicité exigée, frais et plafonds par transaction, Africell.
-6. L'appel `checking-payment` est-il authentifié ? La documentation ne mentionne ni `cid` ni `token` pour lui.
+Fait : les identifiants du bac à sable sont fournis par l'équipe (variables d'environnement, jamais dans le dépôt) et l'initialisation fonctionne.
 
-## 5. Ce qui est déjà prêt dans le projet
+1. **Identifiants de production** (mode `v1`) : seulement si un jour de vrais paiements sont envisagés. L'équipe indique que non.
+2. **Enregistrement de l'adresse de notification** dans l'espace marchand, une fois l'API en ligne : `https://<adresse-de-l-API>/api/payments/easypay/ipn?key=<EASYPAY_IPN_KEY>`.
+3. **Essai d'un paiement réussi** de bout en bout au bac à sable : ouvrir l'adresse de redirection, payer avec la carte de test, puis vérifier que la notification arrive et que la commande passe à `confirmed`. La forme réelle d'une notification (en-têtes, type de contenu, rejeux) n'a pas pu être observée : à constater pendant cet essai.
+4. À demander à e-COM SAS si le besoin se présente : signature des notifications, numéros de test Mobile Money par opérateur, durée de validité d'une transaction non confirmée, durée de vie réelle du `token`, longueur maximale de `order_ref`, prise en charge d'Africell.
 
-- **Point d'insertion :** l'interface `PaymentProvider` (`backend/src/domain/payments.ts`) ; `createApp` accepte un fournisseur à injecter, la simulation étant le défaut. Il faudra l'adapter : aujourd'hui `verifyNotification` est synchrone et suppose une signature, alors que la confirmation d'Easypay exige un appel réseau.
-- **Confirmation côté serveur uniquement :** le site ne marque jamais une commande payée.
-- **Contrôle du montant générique** (APP-106) : une notification dont `amountFc` diffère du montant attendu est refusée (`422 AMOUNT_MISMATCH`). Il ne s'applique pas à Easypay, qui n'annonce pas de montant.
-- **Rejeu et contradictions :** un rejeu identique est sans effet ; une notification contradictoire après un état final est refusée (`409`).
-- **Échecs et expirations :** un paiement échoué laisse la commande `pending` et permet une nouvelle tentative ; un paiement expire après 15 minutes ; une confirmation tardive sur une commande déjà annulée passe `paymentStatus` à `refund_due`.
-- **Isolation :** un paiement est lié à sa commande et à son restaurant.
+## 5. Ce qui est prêt dans le projet
+
+- **Choix du fournisseur par la configuration :** `PAYMENT_PROVIDER` (`simulation` par défaut, ou `easypay`) ; avec `easypay`, `EASYPAY_CID`, `EASYPAY_TOKEN`, `EASYPAY_IPN_KEY` et `SITE_URL` sont obligatoires (`EASYPAY_MODE` : `sandbox` par défaut, ou `v1`). Voir `backend/.env.example` et [installation.md](../installation.md).
+- **Adaptateur** (`backend/src/domain/easypay.ts`) : initialisation avec redirection sur le canal Mobile Money (devise `CDF`), vérification du statut par appel direct, délai maximal de 10 secondes, aucun identifiant dans les erreurs, tolérance au bruit HTML. Testé avec un faux client HTTP, sans appel réseau réel.
+- **Référence du fournisseur :** colonne `payments.provider_reference` (migration 005, unique) renseignée à l'initialisation ; une relance de la même demande rejoue la redirection sans seconde transaction chez Easypay. `payments.provider_ref` garde son sens (vide tant que rien n'est confirmé), ce qui préserve la détection des confirmations tardives.
+- **Notification** : `POST /api/payments/easypay/ipn?key=…`. Son contenu n'est **jamais cru** : seule la référence est lue, puis Easypay est rappelé et sa réponse décide. Détail dans [paiements.md](paiements.md).
+- **Fermeture des autres chemins :** avec Easypay, la route à signature HMAC et la simulation ne peuvent plus rien confirmer.
+- **Contrôle du montant générique** (APP-106) : il ne s'applique pas à Easypay, qui n'annonce pas de montant ; le montant est fixé par notre serveur à l'initialisation.
+- **Rejeu, échecs, expirations, isolation** : inchangés (rejeu sans effet, contradiction en `409`, paiement échoué → nouvelle tentative, expiration à 15 minutes, `refund_due` pour une confirmation tardive sur commande annulée).
 
 ## 6. Ce qui reste à faire, dans l'ordre
 
-1. **Accès de test et choix du parcours** (APP-104, section 3 et 4). Bloquant.
-2. **API en ligne** (APP-105) : Easypay doit joindre l'adresse d'IPN en HTTPS. Voir [deploiement.md](../deploiement.md).
-3. **Adaptateur** (APP-107), en TDD avec un client HTTP simulé, sans appel réseau réel dans les tests :
-   - initialisation du paiement selon le parcours choisi, avec les conversions de la section 2 ;
-   - route de réception de l'IPN, qui retrouve le paiement par la référence Easypay, **rappelle `checking-payment`** et ne confirme que sur `SUCCESS` ;
-   - mise à jour de [paiements.md](paiements.md) ;
-   - sélection du fournisseur par la configuration (simulation par défaut ; démarrage refusé en production si Easypay est choisi sans `EASYPAY_CID` et `EASYPAY_TOKEN`).
-4. **Essais en bac à sable puis activation** (APP-108).
+1. **Mettre l'API en ligne** (APP-105) : Easypay doit joindre l'adresse de notification en HTTPS. Le Blueprint `render.yaml` est préparé ; voir [deploiement.md](../deploiement.md). Variables à saisir : `PAYMENT_PROVIDER=easypay`, `EASYPAY_MODE=sandbox`, `EASYPAY_CID`, `EASYPAY_TOKEN`, `EASYPAY_IPN_KEY`, `SITE_URL`.
+2. **Déclarer l'adresse de notification** dans l'espace marchand Easypay (section 4, point 2).
+3. **Essai de bout en bout au bac à sable** (APP-108), avec le plan de la section 7.
+4. **Corriger si besoin** l'adaptateur d'après la notification réellement reçue.
 
-**Hébergement gratuit.** Sur l'offre gratuite de Render, le service s'endort après 15 minutes sans trafic (environ une minute pour se réveiller) et sa base est effacée à chaque redémarrage ([documentation Render](https://render.com/docs/free), lue le 3 novembre 2026). Un paiement initialisé puis une notification reçue après un redémarrage ne retrouveraient plus leur paiement. Convient pour essayer le bac à sable, **pas pour de vrais paiements**.
+**Hébergement gratuit.** Sur l'offre gratuite de Render, le service s'endort après 15 minutes sans trafic (environ une minute pour se réveiller) et sa base est effacée à chaque redémarrage ([documentation Render](https://render.com/docs/free), lue le 3 novembre 2026). Une notification reçue après un redémarrage ne retrouverait plus son paiement. Acceptable pour des essais au bac à sable sans paiement réel, comme l'indique l'équipe.
 
 ## 7. Plan de test en bac à sable
 
