@@ -33,9 +33,12 @@ export function registerPlatformRestaurantRoutes(app: Express, db: Database, aut
         || typeof input['password'] !== 'string' || !passwordPattern.test(input['password'])) {
         throw new AppError(400, 'INVALID_BODY', 'Les informations du premier administrateur sont invalides.');
       }
+      const slug: string = body['slug'];
+      const restaurantName: string = body['name'].trim();
+      const adminName: string = input['name'].trim();
       const email = input['email'].toLowerCase();
       const phone = input['phone'];
-      if (db.get('SELECT id FROM restaurants WHERE slug = ?', [body['slug']])) {
+      if (db.get('SELECT id FROM restaurants WHERE slug = ?', [slug])) {
         throw new AppError(409, 'RESTAURANT_SLUG_TAKEN', 'Ce slug de restaurant est déjà utilisé.');
       }
       if (db.get('SELECT id FROM users WHERE lower(email) = lower(?) OR phone = ?', [email, phone])
@@ -51,7 +54,7 @@ export function registerPlatformRestaurantRoutes(app: Express, db: Database, aut
         ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((day) => [day, [{ open: '08:00', close: '22:00' }]]),
       ));
       db.transaction(() => {
-        if (db.get('SELECT id FROM restaurants WHERE slug = ?', [body['slug']])) {
+        if (db.get('SELECT id FROM restaurants WHERE slug = ?', [slug])) {
           throw new AppError(409, 'RESTAURANT_SLUG_TAKEN', 'Ce slug de restaurant est déjà utilisé.');
         }
         if (db.get('SELECT id FROM users WHERE lower(email) = lower(?) OR phone = ?', [email, phone])
@@ -60,18 +63,18 @@ export function registerPlatformRestaurantRoutes(app: Express, db: Database, aut
         }
         db.run(`INSERT INTO restaurants (id, slug, name, tagline, primary_color, secondary_color, font_family, timezone, created_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, 'Africa/Kinshasa', ?)`,
-        [restaurantId, body['slug'], body['name'].trim(), typeof body['slogan'] === 'string' ? body['slogan'].trim() : null,
+        [restaurantId, slug, restaurantName, typeof body['slogan'] === 'string' ? body['slogan'].trim() : null,
           typeof body['primaryColor'] === 'string' ? body['primaryColor'] : '#cfbd97',
           typeof body['secondaryColor'] === 'string' ? body['secondaryColor'] : '#000000',
           typeof body['fontFamily'] === 'string' ? body['fontFamily'] : 'Arial', createdAt]);
         db.run(`INSERT INTO restaurant_settings (restaurant_id, opening_hours, updated_at) VALUES (?, ?, ?)`, [restaurantId, defaultHours, createdAt]);
         db.run(`INSERT INTO users (id, restaurant_id, role, name, email, phone, password_hash, must_change_password, accepted_terms_at, created_at)
           VALUES (?, ?, 'admin', ?, ?, ?, ?, 0, ?, ?)`,
-        [adminId, restaurantId, input['name'].trim(), email, phone, passwordHash, createdAt, createdAt]);
+        [adminId, restaurantId, adminName, email, phone, passwordHash, createdAt, createdAt]);
       });
       res.status(201).json({
-        restaurant: { id: restaurantId, slug: body['slug'], name: body['name'].trim(), status: 'active' },
-        administrator: { id: adminId, name: input['name'].trim(), email, role: 'admin' },
+        restaurant: { id: restaurantId, slug, name: restaurantName, status: 'active' },
+        administrator: { id: adminId, name: adminName, email, role: 'admin' },
       });
     } catch (error) { next(error); }
   });

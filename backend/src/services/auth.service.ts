@@ -54,12 +54,15 @@ function publicAccount(account: Account) {
 
 export class AuthService {
   private readonly attempts = new Map<string, number[]>();
+  private readonly db: Database;
+  private readonly secret: string;
+  private readonly now: () => Date;
 
-  constructor(
-    private readonly db: Database,
-    private readonly secret: string,
-    private readonly now: () => Date = () => new Date(),
-  ) {}
+  constructor(db: Database, secret: string, now: () => Date = () => new Date()) {
+    this.db = db;
+    this.secret = secret;
+    this.now = now;
+  }
 
   authenticate(token: string): AuthenticatedUser | null {
     let payload: TokenPayload;

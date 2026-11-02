@@ -2,7 +2,13 @@ import { AppError } from '../http/errors.ts';
 import type { Promotion, PromotionsRepository } from '../domain/promotions.ts';
 
 export class PromotionsService {
-  constructor(private readonly repository: PromotionsRepository, private readonly now: () => Date = () => new Date()) {}
+  private readonly repository: PromotionsRepository;
+  private readonly now: () => Date;
+
+  constructor(repository: PromotionsRepository, now: () => Date = () => new Date()) {
+    this.repository = repository;
+    this.now = now;
+  }
 
   async listByRestaurantSlug(slug: string): Promise<{ restaurant: string; items: Array<{
     id: string; type: Promotion['kind']; title: string; description: string | null; imageUrl: string | null;

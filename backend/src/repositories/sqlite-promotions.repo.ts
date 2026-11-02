@@ -2,7 +2,11 @@ import type { Database } from '../db/database.ts';
 import type { Promotion, PromotionRestaurant, PromotionsRepository } from '../domain/promotions.ts';
 
 export class SqlitePromotionsRepository implements PromotionsRepository {
-  constructor(private readonly db: Database) {}
+  private readonly db: Database;
+
+  constructor(db: Database) {
+    this.db = db;
+  }
 
   async findRestaurantBySlug(slug: string): Promise<PromotionRestaurant | null> {
     return this.db.get<PromotionRestaurant>('SELECT id, slug, status FROM restaurants WHERE slug = ?', [slug]) ?? null;
