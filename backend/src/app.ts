@@ -3,24 +3,19 @@ import type { Config } from './config.ts';
 import { AppError } from './http/errors.ts';
 import { cors, securityHeaders } from './http/security.ts';
 import type { Database } from './db/database.ts';
+import { createAuthMiddleware, type TokenResolver } from './http/auth.ts';
 import { registerRestaurantsMenuRoutes } from './controllers/restaurants-menu.controller.ts';
-import { registerAuthRoutes } from './controllers/auth.controller.ts';
-import { AuthService } from './services/auth.service.ts';
-import { createAuthMiddleware } from './http/auth.ts';
-import { SqliteOrdersRepository } from './repositories/sqlite-orders.repo.ts';
+import { registerOrderRoutes } from './controllers/orders.controller.ts';
 import { OrdersService } from './services/orders.service.ts';
-import { registerOrderRoutes, registerStaffOrderRoutes } from './controllers/orders.controller.ts';
-import { registerPlatformRestaurantRoutes } from './controllers/platform-restaurants.controller.ts';
-import { SqlitePromotionsRepository } from './repositories/sqlite-promotions.repo.ts';
-import { PromotionsService } from './services/promotions.service.ts';
-import { registerPromotionRoutes } from './controllers/promotions.controller.ts';
+import { SqliteOrdersRepository } from './repositories/sqlite-orders.repo.ts';
 
 export interface AppOptions {
   /** Routes supplémentaires, ajoutées avant la gestion des routes inconnues et des erreurs (utile pour les tests). */
   routes?: (app: Express) => void;
   database?: Database;
   now?: () => Date;
-  sendPasswordResetCode?: (identifier: string, code: string) => Promise<void>;
+  /** Résout l’identité du jeton ; l’authentification réelle peut être remplacée sans toucher aux routes. */
+  resolveToken?: TokenResolver;
 }
 
 interface ErreurDeLecture {
@@ -61,14 +56,11 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
 
   if (options.database) {
     registerRestaurantsMenuRoutes(app, options.database, { now: options.now });
-    const auth = new AuthService(options.database, config.jwtSecret, options.now);
-    const authenticate = createAuthMiddleware((token) => auth.authenticate(token));
-    registerAuthRoutes(app, auth, authenticate, options.sendPasswordResetCode);
-    registerPlatformRestaurantRoutes(app, options.database, authenticate);
-    const orders = new SqliteOrdersRepository(options.database);
-    registerOrderRoutes(app, { service: new OrdersService(orders, { now: options.now }), authenticate });
-    registerStaffOrderRoutes(app, { repository: orders, authenticate, now: options.now });
-    registerPromotionRoutes(app, new PromotionsService(new SqlitePromotionsRepository(options.database), options.now));
+    const authenticate = createAuthMiddleware(options.resolveToken ?? (() => null));
+    registerOrderRoutes(app, {
+      service: new OrdersService(new SqliteOrdersRepository(options.database), { now: options.now }),
+      authenticate,
+    });
   }
   options.routes?.(app);
 

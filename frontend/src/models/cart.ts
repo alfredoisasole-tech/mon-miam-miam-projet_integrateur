@@ -1,6 +1,6 @@
 export interface CartProduct {
   id: string;
-  restaurantId: string;
+  restaurantSlug: string;
   name: string;
   unitPriceFc: number;
 }
@@ -10,7 +10,7 @@ export interface CartLine extends CartProduct {
 }
 
 export interface Cart {
-  restaurantId: string | null;
+  restaurantSlug: string | null;
   lines: CartLine[];
 }
 
@@ -40,7 +40,7 @@ const MAX_CART_LINES = 30;
 function validateProduct(product: CartProduct): void {
   if (
     product.id.trim().length === 0
-    || product.restaurantId.trim().length === 0
+    || product.restaurantSlug.trim().length === 0
     || product.name.trim().length === 0
     || !Number.isSafeInteger(product.unitPriceFc)
     || product.unitPriceFc < 0
@@ -56,7 +56,7 @@ function validateQuantity(quantity: number): void {
 }
 
 export function createEmptyCart(): Cart {
-  return { restaurantId: null, lines: [] };
+  return { restaurantSlug: null, lines: [] };
 }
 
 export function addCartItem(
@@ -68,7 +68,7 @@ export function addCartItem(
   validateProduct(product);
   validateQuantity(quantity);
 
-  const changingRestaurant = cart.restaurantId !== null && cart.restaurantId !== product.restaurantId;
+  const changingRestaurant = cart.restaurantSlug !== null && cart.restaurantSlug !== product.restaurantSlug;
   if (changingRestaurant && cart.lines.length > 0 && !confirmRestaurantChange) {
     return { cart, confirmationRequired: true };
   }
@@ -81,7 +81,7 @@ export function addCartItem(
     }
     return {
       cart: {
-        restaurantId: product.restaurantId,
+        restaurantSlug: product.restaurantSlug,
         lines: baseCart.lines.map((line) => (
           line.id === product.id
             ? { ...product, quantity: line.quantity + quantity }
@@ -98,7 +98,7 @@ export function addCartItem(
 
   return {
     cart: {
-      restaurantId: product.restaurantId,
+      restaurantSlug: product.restaurantSlug,
       lines: [...baseCart.lines, { ...product, quantity }],
     },
     confirmationRequired: false,
