@@ -39,7 +39,7 @@ Références : [répertoire racine et monorepos Render](https://render.com/docs/
 
 L’API renvoie `logoUrl` et `imageUrl` sous forme de chemins relatifs, par exemple `/api/restaurants/alpha/assets/menu-1`. Le client HTTP du site utilise aussi `/api` par défaut. Une règle Vercel peut donc transférer les appels `/api/:path*` vers `https://<service-render>/api/:path*` ; le navigateur garde une URL de même origine pour l’API et les images.
 
-Cette option est recommandée pour conserver les chemins du contrat. L’autre option consiste à faire renvoyer par l’API des URL absolues de Render, ce qui nécessiterait une adresse publique d’API configurée et un ajustement du contrat ou du service. La règle de réécriture n’est pas ajoutée avant validation du domaine Render et du domaine Vercel.
+Cette option est recommandée pour conserver les chemins du contrat. L’autre option consiste à faire renvoyer par l’API des URL absolues de Render, ce qui nécessiterait une adresse publique d’API configurée et un ajustement du contrat ou du service. La règle de réécriture est ajoutée dans `frontend/vercel.json` (3 novembre 2026) : `/api/:path*` est transféré vers `https://mon-miam-miam-api-qqbu.onrender.com/api/:path*`, placée avant le repli vers `index.html`. Si le service Render est recréé, son adresse change et cette règle doit être mise à jour. Sur l'offre gratuite de Render, la première requête après une période d'inactivité peut durer environ une minute (réveil du service).
 
 Vercel documente les réécritures vers des origines externes dans [sa documentation des rewrites](https://vercel.com/docs/routing/rewrites). À la mise en place, tester les requêtes API et les images sur un déploiement Preview ; vérifier aussi la stratégie de cache des réponses réécrites.
 
