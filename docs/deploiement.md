@@ -8,6 +8,7 @@ Le service doit garder la racine du dépôt comme répertoire racine : les migra
 
 - **Pas de disque persistant** sur l'offre gratuite : la base SQLite est recréée vide à chaque redémarrage, mise en veille puis réveil, ou nouveau déploiement. Les comptes et les commandes créés disparaissent, et aucun restaurant n'existe après un redémarrage tant que des données ne sont pas rechargées.
 - **Mise en veille** après une période d'inactivité : la première requête suivante est lente, et une notification de paiement reçue pendant le sommeil peut être manquée.
+- **Comptes de démonstration à chaque démarrage :** une base vide n'a ni restaurant ni compte (même l'administrateur de la plateforme n'existe pas), donc `render.yaml` lance `npm run seed` avant `npm start`. Les mots de passe viennent des variables `SEED_*` saisies dans Render. Ce seed de démonstration est **réservé à cet usage** : il ne doit pas servir à de vraies données (voir [installation.md](installation.md)).
 - Adapté à une **démonstration**, pas à des données réelles. Pour conserver la base, il faudra une formule payante avec disque (voir l'historique de `render.yaml`) ou une base externe, ce qui demande une évolution du code.
 
 Configuration prévue :
@@ -44,7 +45,7 @@ Vercel documente les réécritures vers des origines externes dans [sa documenta
 
 ## Décisions restantes avant la mise en ligne
 
-1. Décider comment la démonstration obtient ses données après chaque redémarrage de l'offre gratuite (par exemple lancer le seed au démarrage, avec ses mots de passe fournis par variables d'environnement), ou passer à une formule avec disque.
+1. ~~Décider comment la démonstration obtient ses données après chaque redémarrage de l'offre gratuite~~ : décidé, le seed de démonstration est rejoué à chaque démarrage (`render.yaml`), avec ses quatre mots de passe saisis dans Render. Le jour où l'API doit conserver ses données, passer à une formule avec disque et retirer le seed du démarrage.
 2. Fournir les données réelles des restaurants et menus, puis convenir du chargement initial, si l'API doit un jour conserver des données.
 3. Renseigner les domaines Vercel et Render, activer la réécriture recommandée et vérifier les images en Preview.
 4. Décider où activer ou désactiver `mobile_money` : le schéma actuel ne stocke pas ce réglage par restaurant, et la route commandes laisse les commandes mobile money à l’état `unpaid`.
