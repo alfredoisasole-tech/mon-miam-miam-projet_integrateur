@@ -1,5 +1,11 @@
 # Zoning et wireframes - Mon Miam Miam
 
+## Maquettes en couleur - E-4
+
+Le dossier [Maquettes et lien Figma](MAQUETTES.md) contient les 32 planches exportées directement de Figma le 1er novembre 2026, après adaptation des plats et boissons et harmonisation Poppins. La copie d’Emmanuel est accessible sans compte : test Chrome Incognito réussi. Judbie est le validateur ; son accord initial du 26 octobre et l’approbation attendue de la version modifiée sont distingués dans [les contrôles E-4](validation-e4.md).
+
+## Wireframes - E-3
+
 Ce dossier présente les parcours prévus pour E-3 : choisir un restaurant, composer une commande, revenir du paiement, traiter les commandes et gérer les restaurants de la plateforme.
 
 - **Responsable :** Emmanuel Mboyo (`emmanuelmboyo-dotcom`).
