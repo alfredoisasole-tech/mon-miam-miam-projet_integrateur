@@ -49,3 +49,21 @@ services:
       # Origine exacte du site Vercel, sans « / » final. À saisir à la création du service.
       - key: CORS_ORIGINS
         sync: false
+      # --- Paiement Easypay (bac à sable). À ne déployer qu'après la fusion de l'adaptateur (APP-107) dans la
+      # branche déployée : une version plus ancienne du code ignore ces variables et reste en simulation, sans erreur.
+      - key: PAYMENT_PROVIDER
+        value: easypay
+      - key: EASYPAY_MODE
+        value: sandbox
+      # Identifiants de l'espace développeur Easypay : à saisir dans Render, jamais dans ce fichier ni dans Git.
+      - key: EASYPAY_CID
+        sync: false
+      - key: EASYPAY_TOKEN
+        sync: false
+      # Clé de l'adresse de notification : Render la génère ; la lire dans le tableau de bord, puis déclarer dans
+      # l'espace marchand Easypay l'adresse https://<adresse-de-l-API>/api/payments/easypay/ipn?key=<cette valeur>.
+      - key: EASYPAY_IPN_KEY
+        generateValue: true
+      # Adresse publique du site Vercel, sans « / » final : adresses de retour après paiement.
+      - key: SITE_URL
+        sync: false
