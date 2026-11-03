@@ -4,7 +4,7 @@ Modèle conçu à partir du cahier des charges et des règles de la plateforme.
 
 Vue synthétique des 34 relations, réparties en six vues. Les détails des clés et des cardinalités suivent. Cliquez sur l'image pour l'ouvrir en pleine taille.
 
-Le schéma métier décrit ici comporte 16 entités. Les migrations backend ajoutent aussi deux tables techniques (`order_sequences` pour numéroter les commandes sans collision et `auth_lockouts` pour persister les verrouillages de compte), ainsi que `auth_version` sur les comptes pour révoquer les jetons après réinitialisation du mot de passe ; elles ne modifient pas les 16 entités métier.
+Le schéma métier décrit ici comporte 16 entités. Les migrations backend ajoutent aussi deux tables techniques (`order_sequences` pour numéroter les commandes sans collision et `auth_lockouts` pour persister les verrouillages de compte), `auth_version` sur les comptes pour révoquer les jetons après réinitialisation du mot de passe, ainsi que `payments.provider_reference` pour rapprocher une notification EasyPay du paiement ; elles ne modifient pas les 16 entités métier.
 
 [![Modèle de données — 34 relations en six vues](modele-de-donnees.png)](modele-de-donnees.png)
 
@@ -257,7 +257,8 @@ Paiements mobiles d’une commande (opérateur, téléphone, montant, statut).
 | `phone` | TEXT | oui |  |  |
 | `amount_fc` | INTEGER | oui |  |  |
 | `status` | TEXT | oui |  |  |
-| `provider_ref` | TEXT | non |  |  |
+| `provider_ref` | TEXT | non |  | Référence interne existante |
+| `provider_reference` | TEXT | non |  | UNIQUE lorsqu’elle est renseignée ; référence renvoyée par le fournisseur (migration `005_payment_provider_reference`) |
 | `created_at` | TEXT | oui |  |  |
 | `updated_at` | TEXT | oui |  |  |
 
