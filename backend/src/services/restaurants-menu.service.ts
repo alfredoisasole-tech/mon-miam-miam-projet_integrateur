@@ -36,6 +36,8 @@ function restaurantCard(row: RestaurantRow, now: Date) {
     slogan: row.tagline,
     logoUrl: row.logo_asset_id ? `/api/restaurants/${encodeURIComponent(row.slug)}/assets/${encodeURIComponent(row.logo_asset_id)}` : null,
     colors: { primary: row.primary_color, secondary: row.secondary_color },
+    fontFamily: row.font_family,
+    defaultMode: row.default_mode,
     isOpenNow: isOpenNow(row, now),
   };
 }
