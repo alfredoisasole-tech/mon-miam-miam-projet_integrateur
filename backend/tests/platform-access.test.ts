@@ -98,6 +98,9 @@ describe('APP-78 — protection de l’administration et restaurant désactivé'
       assert.equal(publicList.status, 200);
       const list = await publicList.json() as { items: Array<{ slug: string }> };
       assert.ok(!list.items.some(item => item.slug === 'zeduc-space'));
+      // Isolation : désactiver un restaurant ne touche pas l'autre restaurant.
+      assert.ok(list.items.some(item => item.slug === 'chez-lea'));
+      assert.equal((await fetch(server.base + '/api/restaurants/chez-lea')).status, 200);
       for (const suffix of ['', '/menu', '/promotions']) {
         assert.equal((await fetch(server.base + '/api/restaurants/zeduc-space' + suffix)).status, 404);
       }
