@@ -27,6 +27,8 @@ import { PaymentsService } from './services/payments.service.ts';
 import { SqlitePaymentsRepository } from './repositories/sqlite-payments.repo.ts';
 import { SimulatedPaymentProvider, type PaymentProvider } from './domain/payments.ts';
 import { EasypayPaymentProvider } from './domain/easypay.ts';
+import { registerClaimsRoutes } from './controllers/claims.controller.ts';
+import { ClaimsService } from './services/claims.service.ts';
 
 export interface AppOptions {
   /** Routes supplémentaires, ajoutées avant la gestion des routes inconnues et des erreurs (utile pour les tests). */
@@ -116,6 +118,7 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
       ),
       authenticate,
     });
+    registerClaimsRoutes(app, new ClaimsService(options.database, options.now), authenticate);
   }
   options.routes?.(app);
 
