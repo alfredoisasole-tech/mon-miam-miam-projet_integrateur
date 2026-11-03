@@ -124,13 +124,16 @@ export class AuthService {
 
     const id = `usr_${randomBytes(12).toString('hex')}`;
     const createdAt = this.now().toISOString();
-    const referralCode = this.optionalText(body['referralCode']);
+    const referralCode = this.optionalText(body['referralCode'])?.toUpperCase() ?? null;
     const ownReferralCode = randomBytes(6).toString('hex').toUpperCase();
     const passwordHash = hashPassword(password);
     const referrer = referralCode ? this.db.get<{ id: string }>(
       "SELECT id FROM users WHERE referral_code = ? AND role = 'student' AND status = 'active'",
       [referralCode],
     ) : undefined;
+    if (referralCode && !referrer) {
+      throw new AppError(422, 'INVALID_REFERRAL_CODE', 'Ce code de parrainage est inconnu. Vérifiez-le auprès de votre ami ou laissez le champ vide.');
+    }
     this.db.transaction(() => {
       if (this.db.get('SELECT id FROM users WHERE lower(email) = lower(?)', [email])
         || this.db.get('SELECT id FROM platform_admins WHERE lower(email) = lower(?)', [email])) {
@@ -269,6 +272,39 @@ export class AuthService {
       this.db.run('DELETE FROM auth_lockouts WHERE user_id = ?', [account.id]);
     });
     return { message: 'Mot de passe réinitialisé. Vous pouvez vous connecter.' };
+  }
+
+  /**
+   * Changement de mot de passe par la personne connectée (obligatoire à la première connexion d'un compte du personnel).
+   * Les anciens jetons deviennent invalides ; un nouveau jeton est renvoyé.
+   */
+  changePassword(userId: string, currentInput: unknown, newInput: unknown): { token: string; user: ReturnType<typeof publicAccount> } {
+    const current = typeof currentInput === 'string' ? currentInput : '';
+    const next = typeof newInput === 'string' ? newInput : '';
+    if (!current || !next) throw new AppError(400, 'INVALID_BODY', 'Le mot de passe actuel et le nouveau mot de passe sont obligatoires.');
+    const key = `change-password:${userId}`;
+    if (this.isLimited(key)) throw new AppError(429, 'TOO_MANY_ATTEMPTS', 'Trop de tentatives, réessayez dans 15 minutes.');
+    const account = this.findAccount(userId);
+    if (!account || account.status !== 'active') throw new AppError(403, 'ACCOUNT_DISABLED', 'Ce compte est désactivé.');
+    if (!verifyPassword(current, this.getPasswordHash(account.id))) {
+      this.recordFailure(key);
+      throw new AppError(401, 'INVALID_CREDENTIALS', 'Le mot de passe actuel est incorrect.');
+    }
+    if (!PASSWORD_PATTERN.test(next)) {
+      throw new AppError(422, 'WEAK_PASSWORD', 'Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.');
+    }
+    if (next === current) throw new AppError(422, 'SAME_PASSWORD', 'Le nouveau mot de passe doit être différent de l’actuel.');
+    const passwordHash = hashPassword(next);
+    if (account.role === 'platform_admin') {
+      this.db.run('UPDATE platform_admins SET password_hash = ?, auth_version = auth_version + 1 WHERE id = ?', [passwordHash, account.id]);
+    } else {
+      this.db.run('UPDATE users SET password_hash = ?, must_change_password = 0, auth_version = auth_version + 1 WHERE id = ?', [passwordHash, account.id]);
+      this.db.run('DELETE FROM auth_lockouts WHERE user_id = ?', [account.id]);
+    }
+    this.attempts.delete(key);
+    const updated = this.findAccount(account.id);
+    if (!updated) throw new Error('Le compte vient d’être modifié mais ne peut pas être relu.');
+    return { token: this.issueToken(updated), user: publicAccount(updated) };
   }
 
   profile(userId: string): ReturnType<typeof publicAccount> {
