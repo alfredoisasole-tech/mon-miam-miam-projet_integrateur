@@ -8,6 +8,7 @@ import type {
   Restaurant,
   StudentProfile,
 } from '../domain/orders.ts';
+import type { LoyaltyRepository, LoyaltyRules, PointMovement } from '../domain/loyalty.ts';
 import { AppError } from '../http/errors.ts';
 
 interface RestaurantRow {
@@ -172,7 +173,7 @@ const orderColumns = `o.id, o.user_id, o.restaurant_id, o.idempotency_key, o.ord
   o.delivery_quartier, o.delivery_address, o.delivery_landmark, o.delivery_phone,
   o.note, o.comment, o.rating, o.created_at, o.updated_at, o.completed_at, o.cancelled_at`;
 
-export class SqliteOrdersRepository implements OrdersRepository {
+export class SqliteOrdersRepository implements OrdersRepository, LoyaltyRepository {
   private readonly db: Database;
 
   constructor(db: Database) {
@@ -242,6 +243,53 @@ export class SqliteOrdersRepository implements OrdersRepository {
     `, [userId, restaurantId])?.loyalty_remainder_fc ?? 0;
   }
 
+  async getLoyaltyRules(restaurantId: string): Promise<LoyaltyRules> {
+    const row = this.db.get<{ spend_per_point_fc: number; points_per_meal: number; free_meal_cap_fc: number; points_validity_months: number }>(`
+      SELECT spend_per_point_fc, points_per_meal, free_meal_cap_fc, points_validity_months
+      FROM restaurant_settings WHERE restaurant_id = ?
+    `, [restaurantId]);
+    return {
+      spendPerPointFc: row?.spend_per_point_fc ?? 3000,
+      pointsForReward: row?.points_per_meal ?? 15,
+      rewardValueFc: row?.free_meal_cap_fc ?? 3000,
+      validityMonths: row?.points_validity_months ?? 12,
+    };
+  }
+
+  async listPointMovements(userId: string, restaurantId: string, limit: number): Promise<PointMovement[]> {
+    return this.db.all<{
+      kind: string; points: number; order_id: string | null; order_number: string | null; created_at: string; expires_at: string | null;
+    }>(`
+      SELECT kind, points, order_id, order_number, created_at, expires_at FROM (
+        SELECT l.kind, l.points, l.order_id, o.order_number, l.created_at, l.expires_at, l.rowid AS position
+        FROM points_ledger l LEFT JOIN orders o ON o.id = l.order_id AND o.restaurant_id = l.restaurant_id
+        WHERE l.user_id = ? AND l.restaurant_id = ?
+        UNION ALL
+        -- Restitution d'une commande annulée : le journal rend les points à leurs lots d'origine sans nouvelle ligne.
+        -- Cette ligne est déduite de la commande pour que l'historique montre le retour des points ; elle n'entre
+        -- jamais dans le calcul du solde. Les restitutions déjà écrites au journal (kind = refund) sont déduites.
+        SELECT 'refund', o.points_redeemed - COALESCE((
+            SELECT SUM(r.points) FROM points_ledger r
+            WHERE r.order_id = o.id AND r.user_id = o.user_id AND r.restaurant_id = o.restaurant_id AND r.kind = 'refund'
+          ), 0), o.id, o.order_number, o.cancelled_at, NULL, 0
+        FROM orders o
+        WHERE o.user_id = ? AND o.restaurant_id = ? AND o.status = 'cancelled' AND o.cancelled_at IS NOT NULL
+          AND o.points_redeemed > COALESCE((
+            SELECT SUM(r.points) FROM points_ledger r
+            WHERE r.order_id = o.id AND r.user_id = o.user_id AND r.restaurant_id = o.restaurant_id AND r.kind = 'refund'
+          ), 0)
+      )
+      ORDER BY created_at DESC, position DESC LIMIT ?
+    `, [userId, restaurantId, userId, restaurantId, limit]).map((row) => ({
+      kind: row.kind,
+      points: row.points,
+      orderId: row.order_id,
+      orderNumber: row.order_number,
+      createdAt: row.created_at,
+      expiresAt: row.expires_at,
+    }));
+  }
+
   async findOrderByIdempotencyKey(userId: string, key: string): Promise<Order | null> {
     const row = this.db.get<OrderRow>(`
       SELECT ${orderColumns}
@@ -285,6 +333,27 @@ export class SqliteOrdersRepository implements OrdersRepository {
     | { kind: 'cancelled'; order: Order }
   > {
     return this.db.transaction(() => {
+      const identity = this.db.get<{ restaurant_id: string }>(`
+        SELECT o.restaurant_id FROM orders o
+        WHERE o.id = ? AND o.user_id = ?
+          AND o.restaurant_id IN (SELECT m.restaurant_id FROM memberships m WHERE m.user_id = ?)
+      `, [orderId, userId, userId]);
+      if (!identity) return { kind: 'not_found' } as const;
+
+      const cutoff = new Date(Date.parse(at) - 15 * 60 * 1000).toISOString();
+      const expired = this.db.run(`UPDATE payments SET status = 'failed', updated_at = ?
+        WHERE order_id = ? AND restaurant_id = ? AND status = 'pending' AND created_at < ?`,
+      [at, orderId, identity.restaurant_id, cutoff]);
+      if (Number(expired.changes) > 0) {
+        const stillPending = this.db.get<{ count: number }>(`SELECT COUNT(*) AS count FROM payments
+          WHERE order_id = ? AND restaurant_id = ? AND status = 'pending'`, [orderId, identity.restaurant_id]);
+        if (stillPending?.count === 0) {
+          this.db.run(`UPDATE orders SET payment_status = 'failed', updated_at = ?
+            WHERE id = ? AND restaurant_id = ? AND status = 'pending' AND payment_status = 'pending'`,
+          [at, orderId, identity.restaurant_id]);
+        }
+      }
+
       const row = this.db.get<OrderRow>(`
         SELECT ${orderColumns}
         FROM orders o JOIN restaurants r ON r.id = o.restaurant_id
@@ -292,10 +361,14 @@ export class SqliteOrdersRepository implements OrdersRepository {
           AND o.restaurant_id IN (SELECT m.restaurant_id FROM memberships m WHERE m.user_id = ?)
       `, [orderId, userId, userId]);
       if (!row) return { kind: 'not_found' } as const;
-      if (row.status !== 'pending' || !['unpaid', 'failed'].includes(row.payment_status)) return { kind: 'cannot_cancel' } as const;
+      // Une commande réglée entièrement avec des points (total de 0 FC) est marquée « payée » sans qu'aucun
+      // paiement n'ait eu lieu : elle reste annulable tant qu'elle est en attente (docs/regles-commande-paiement.md, §4).
+      const nothingPaid = row.total_fc === 0;
+      if (row.status !== 'pending' || (!nothingPaid && !['unpaid', 'failed'].includes(row.payment_status))) return { kind: 'cannot_cancel' } as const;
 
       this.db.run(`UPDATE orders SET status = 'cancelled', cancelled_at = ?, updated_at = ?
-        WHERE id = ? AND user_id = ? AND restaurant_id = ? AND status = 'pending' AND payment_status IN ('unpaid', 'failed')`,
+        WHERE id = ? AND user_id = ? AND restaurant_id = ? AND status = 'pending'
+          AND (payment_status IN ('unpaid', 'failed') OR total_fc = 0)`,
       [at, at, orderId, userId, row.restaurant_id]);
       this.db.run(`INSERT INTO order_events (id, order_id, status, created_at)
         VALUES (?, ?, 'cancelled', ?)`, [randomUUID(), orderId, at]);
@@ -399,7 +472,7 @@ export class SqliteOrdersRepository implements OrdersRepository {
           completed_at = CASE WHEN ? = 'completed' THEN ? ELSE completed_at END,
           cancelled_at = CASE WHEN ? = 'cancelled' THEN ? ELSE cancelled_at END,
           payment_status = CASE
-            WHEN ? = 'cancelled' AND payment_method = 'mobile_money' AND payment_status = 'paid' THEN 'refund_due'
+            WHEN ? = 'cancelled' AND payment_method = 'mobile_money' AND payment_status = 'paid' AND total_fc > 0 THEN 'refund_due'
             WHEN ? = 'completed' AND payment_method = 'cash' THEN 'paid'
             ELSE payment_status
           END

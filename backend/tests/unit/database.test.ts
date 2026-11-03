@@ -11,7 +11,7 @@ test('les migrations peuvent être rejouées sans recréer le schéma', () => {
     assert.equal(db.get<{ total: number }>(
       "SELECT COUNT(*) AS total FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
     )?.total, 19);
-    assert.equal(db.get<{ total: number }>('SELECT COUNT(*) AS total FROM schema_migrations')?.total, 4);
+    assert.equal(db.get<{ total: number }>('SELECT COUNT(*) AS total FROM schema_migrations')?.total, 5);
   } finally {
     db.close();
   }

@@ -81,3 +81,18 @@ Les erreurs respectent le format commun `{ "error": { "code", "message", "detail
 - `401 UNAUTHORIZED` : jeton absent ou invalide.
 - `403 FORBIDDEN` : rôle non autorisé ou compte sans restaurant associé.
 - `400 VALIDATION_ERROR` : période inconnue ou répétée.
+
+## Vérification APP-82 / APP-84 du 3 novembre 2026
+
+L’API de Lusimafu est mise à jour avec `dev` (`d559ba9`) en conservant les imports et routes du paiement, d’Easypay et de la fidélité. Le seul conflit était dans les imports de `backend/src/app.ts`.
+
+`backend/tests/api/stats-access.test.ts` ajoute onze contrôles par HTTP avec de vrais comptes de démonstration, sans remplacement du résolveur de jetons :
+
+- administrateur et gérant : chiffres de leur restaurant sur les trois périodes ; un autre restaurant conserve ses propres chiffres ;
+- paramètres `restaurant`, `restaurantId` et `slug` incapables de modifier le restaurant de la session ;
+- visiteur et jeton invalide refusés en 401 ; étudiant et plateforme refusés en 403, sans exposer les agrégats ;
+- employé limité à la semaine de son restaurant ;
+- falsification du rôle/restaurant d’un jeton et compte désactivé refusés ;
+- période invalide ou répétée refusée ; nouvelle lecture SQLite reflétée dans les chiffres, sans affecter l’autre restaurant.
+
+Validation : **246 tests backend réussis**, dont les quatre tests L-11 et les onze nouveaux tests APP-84, typage TypeScript backend réussi avec Node.js 24. Les tests APP-78 font l’objet d’une PR distincte et ne sont pas inclus dans ce total. La fusion et une relecture de la PR #43 restent nécessaires.
