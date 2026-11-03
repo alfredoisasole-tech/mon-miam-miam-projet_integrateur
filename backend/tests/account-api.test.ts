@@ -143,9 +143,9 @@ describe('[MM-COMPTE] Données personnelles et mot de passe', () => {
 
     const order = db.get<{ total_fc: number; delivery_address: string | null; delivery_phone: string | null; note: string | null; comment: string | null }>(
       'SELECT total_fc, delivery_address, delivery_phone, note, comment FROM orders WHERE id = ?', ['order-etu']);
-    assert.deepEqual(order, { total_fc: 4000, delivery_address: null, delivery_phone: null, note: null, comment: null });
+    assert.deepEqual({ ...order }, { total_fc: 4000, delivery_address: null, delivery_phone: null, note: null, comment: null });
     const claim = db.get<{ subject: string; message: string }>('SELECT subject, message FROM claims WHERE id = ?', ['claim-etu']);
-    assert.deepEqual(claim, { subject: 'Contenu supprimé', message: 'Contenu supprimé' });
+    assert.deepEqual({ ...claim }, { subject: 'Contenu supprimé', message: 'Contenu supprimé' });
     assert.equal(db.get<{ remaining: number }>('SELECT remaining FROM points_ledger WHERE id = ?', ['lot-etu'])?.remaining, 0);
     assert.equal(db.get<{ subject: string }>('SELECT subject FROM claims WHERE id = ?', ['claim-other'])?.subject, 'Question');
 
