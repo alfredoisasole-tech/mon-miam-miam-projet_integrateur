@@ -1,6 +1,6 @@
 # APP-78 — Protection des fonctions d’administration
 
-Vérification du 3 novembre 2026, réalisée par Emmanuel Mboyo sur `dev` au commit `4dc8674`, après intégration des compléments d’authentification et d’isolation.
+Vérification du 3 novembre 2026, réalisée par Emmanuel Mboyo sur `dev` au commit `8f13f78`, après intégration de l’API statistiques et des compléments d’authentification et d’isolation. Le correctif du test JWT de la PR #60 est repris dans la branche pour permettre la validation complète.
 Ticket : [APP-78](https://judbie2030-45660043.atlassian.net/browse/APP-78).
 
 Le test `backend/tests/platform-access.test.ts` utilise une base SQLite en mémoire et de vrais appels HTTP, avec authentification par `/api/auth/login`. Les comptes et mots de passe sont des données de test locales.
@@ -17,4 +17,4 @@ Le test `backend/tests/platform-access.test.ts` utilise une base SQLite en mémo
 
 Les protections existantes satisfont ces contrôles : aucune modification du code métier n’a été nécessaire. La PR ajoute huit tests de non-régression et le présent compte rendu.
 
-Validation avec Node.js 24 : **8 nouveaux tests réussis**, **259 tests backend réussis** au total, typage TypeScript backend réussi et `git diff --check` réussi. Une relecture et la fusion de la PR restent nécessaires pour intégrer ces tests à `dev`.
+Validation avec Node.js 24 : **8 nouveaux tests réussis**, **274 tests backend réussis** au total, typage TypeScript backend réussi et `git diff --check` réussi. Une relecture et la fusion de la PR restent nécessaires pour intégrer ces tests à `dev`.
