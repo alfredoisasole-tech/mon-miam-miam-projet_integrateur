@@ -19,7 +19,7 @@
 - **Messages d'erreur génériques** : « Identifiants incorrects » que le compte n'existe pas OU que le mot de passe soit faux (pour ne pas révéler l'existence d'un compte).
 - Les mots de passe sont hachés avec `scrypt`. Les jetons signés expirent après huit heures et chaque requête vérifie encore le statut et le rôle du compte en base.
 - Une réinitialisation réussie incrémente la version de sécurité du compte et invalide ses jetons existants.
-- Après huit erreurs pour un compte, celui-ci est verrouillé jusqu'à une réinitialisation réussie. Les limites par adresse IP et l'envoi/réinitialisation de codes sont également limités.
+- La connexion et l'inscription limitent les échecs par identifiant et par adresse IP sur une fenêtre de 15 minutes : 5 échecs par identifiant et 30 par IP. Les tentatives d'inscription sont aussi comptées par téléphone. Une réussite ne compte pas comme un échec; elle efface le compteur d'identifiant, pas le compteur agrégé de l'IP. Après cinq erreurs de connexion pour un compte existant, celui-ci reste verrouillé jusqu'à une réinitialisation réussie. Les erreurs de limite répondent `429` avec `Retry-After: 900`.
 
 ---
 
