@@ -17,6 +17,9 @@ import { SqlitePromotionsRepository } from './repositories/sqlite-promotions.rep
 import { PromotionsService } from './services/promotions.service.ts';
 import { registerPromotionRoutes } from './controllers/promotions.controller.ts';
 import { registerMenuAdminRoutes } from './controllers/menu-admin.controller.ts';
+import { statsRepository } from './repositories/stats.repo.ts';
+import { createStatsService } from './services/stats.service.ts';
+import { registerStatsRoutes } from './controllers/stats.controller.ts';
 import { registerPaymentRoutes } from './controllers/payments.controller.ts';
 import { PaymentsService } from './services/payments.service.ts';
 import { SqlitePaymentsRepository } from './repositories/sqlite-payments.repo.ts';
@@ -89,6 +92,7 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
     registerAuthRoutes(app, auth, authenticate, options.sendPasswordResetCode);
     registerPlatformRestaurantRoutes(app, options.database, authenticate);
     registerMenuAdminRoutes(app, options.database, authenticate, { now: options.now });
+    registerStatsRoutes(app, createStatsService(statsRepository(options.database), options.now), authenticate);
     const orders = new SqliteOrdersRepository(options.database);
     registerOrderRoutes(app, {
       service: new OrdersService(orders, { now: options.now }),
