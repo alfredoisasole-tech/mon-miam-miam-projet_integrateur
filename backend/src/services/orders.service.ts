@@ -123,6 +123,28 @@ type PublicOrder = Omit<Order, 'userId' | 'restaurantId' | 'idempotencyKey' | 'i
 };
 type PublicOrderSummary = Omit<PublicOrder, 'events'>;
 
+/**
+ * Point d'accroche pour la fidélité (Jira 13.2 / Fiche D-8 / B-9 par Bryan).
+ * Calcule la remise possible avec les points accumulés dans le restaurant.
+ * Bryan (B-9) remplacera cette fonction par défaut pour appliquer 15 points = 3 000 FC de réduction fixe.
+ */
+export function quoteRedeem(
+  _restaurantId: string,
+  _userId: string,
+  _subtotalFc: number,
+): { discountFc: number; points: number } {
+  return { discountFc: 0, points: 0 };
+}
+
+/**
+ * Point d'accroche pour la fidélité (Jira 14.2 / Fiche D-9 / G-10 par Gloirenk17).
+ * Appelé automatiquement lorsqu'une commande passe au statut « completed »
+ * pour calculer et créditer les points de fidélité au client (3 000 FC = 1 point).
+ */
+export async function onOrderCompleted(order: Order): Promise<void> {
+  // Point d'accroche documenté pour Gloirenk17 (G-10)
+}
+
 function serializeOrder(order: Order): PublicOrder {
   const { userId: _userId, restaurantId: _restaurantId, idempotencyKey: _key, items, ...response } = order;
   return { ...response, items: items.map(({ category: _category, ...item }) => item) };
