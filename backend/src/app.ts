@@ -8,6 +8,8 @@ import { registerRestaurantsMenuRoutes } from './controllers/restaurants-menu.co
 import { registerAuthRoutes } from './controllers/auth.controller.ts';
 import { registerOrderRoutes, registerStaffOrderRoutes } from './controllers/orders.controller.ts';
 import { OrdersService } from './services/orders.service.ts';
+import { registerLoyaltyRoutes } from './controllers/loyalty.controller.ts';
+import { LoyaltyService } from './services/loyalty.service.ts';
 import { SqliteOrdersRepository } from './repositories/sqlite-orders.repo.ts';
 import { AuthService } from './services/auth.service.ts';
 import { registerPlatformRestaurantRoutes } from './controllers/platform-restaurants.controller.ts';
@@ -19,6 +21,7 @@ import { registerPaymentRoutes } from './controllers/payments.controller.ts';
 import { PaymentsService } from './services/payments.service.ts';
 import { SqlitePaymentsRepository } from './repositories/sqlite-payments.repo.ts';
 import { SimulatedPaymentProvider, type PaymentProvider } from './domain/payments.ts';
+import { EasypayPaymentProvider } from './domain/easypay.ts';
 
 export interface AppOptions {
   /** Routes supplémentaires, ajoutées avant la gestion des routes inconnues et des erreurs (utile pour les tests). */
@@ -91,13 +94,17 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
       service: new OrdersService(orders, { now: options.now }),
       authenticate,
     });
+    registerLoyaltyRoutes(app, { service: new LoyaltyService(orders, { now: options.now }), authenticate });
     registerStaffOrderRoutes(app, { repository: orders, authenticate, now: options.now });
     registerPromotionRoutes(app, new PromotionsService(new SqlitePromotionsRepository(options.database), options.now));
     registerPaymentRoutes(app, {
       env: config.env,
+      ipnKey: config.easypay?.ipnKey,
       service: new PaymentsService(
         new SqlitePaymentsRepository(options.database),
-        options.paymentProvider ?? new SimulatedPaymentProvider(config.paymentWebhookSecret),
+        options.paymentProvider ?? (config.easypay
+          ? new EasypayPaymentProvider(config.easypay)
+          : new SimulatedPaymentProvider(config.paymentWebhookSecret)),
         { now: options.now },
       ),
       authenticate,

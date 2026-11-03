@@ -1,5 +1,29 @@
 # Zoning et wireframes - Mon Miam Miam
 
+## Déploiement Vercel — E-8
+
+- Ticket : [APP-102](https://judbie2030-45660043.atlassian.net/browse/APP-102) ; branche `chore/vercel`.
+- Projet existant : `mon-miam-miam` dans le compte `emmanuelmboyo-8365`.
+- Adresse de production existante : [mon-miam-miam-zeta.vercel.app](https://mon-miam-miam-zeta.vercel.app).
+- **État au 2 novembre 2026 : configuration E-8 prête ; nouvelle publication et test public de `/menu` encore à effectuer.** Le déploiement affiché dans Vercel date du 25 octobre et n’est pas présenté comme la version E-8.
+
+`frontend/vercel.json` définit Vite, `npm ci`, `npm run build`, la sortie `dist` et la réécriture de `/(.*)` vers `/index.html`. Le projet Vercel doit utiliser **Root Directory : `frontend`** et Node.js 22.18 ou plus récent (22.x ou 24.x). Le fallback SPA suit la [documentation officielle Vercel pour Vite](https://vercel.com/docs/frameworks/frontend/vite#using-vite-to-make-spas).
+
+Réglages enregistrés dans le projet Vercel le 2 novembre 2026 : **Root Directory `frontend`**, **Framework Preset Vite**, **Node.js 24.x**. La connexion GitHub du compte `emmanuelmboyo-dotcom` est également confirmée. Le sélecteur Vercel ne propose pas encore le dépôt du projet, appartenant à `alfredoisasole-tech`. L’autorisation de l’application GitHub Vercel sur ce dépôt doit être obtenue auprès de son propriétaire ; la connexion du dépôt, la publication et le contrôle public restent en attente.
+
+E-8 déploie le frontend uniquement. Le proxy `/api` de Vite fonctionne en développement, pas sur Vercel. Sans backend public et sans réécriture vers Render, les appels API ne fonctionnent pas : un restaurant déjà sélectionné peut afficher une erreur de chargement ; sans sélection, `/menu` invite à choisir un restaurant. Ce comportement ne prouve pas que le backend est déployé. Ne pas définir une URL d’API fictive ni une variable `VITE_API_URL` vide dans Vercel. Le futur raccordement de l’API et des images est décrit dans [la préparation du déploiement](../deploiement.md).
+
+La branche est mise à jour avec `dev` au commit `218cb2b`, qui contient désormais E-6 via la PR #44. `frontend/src/App.tsx` et `docs/layout.md` sont identiques à `dev` : accueil, `/menu`, `/login`, `/register` et page 404 sont conservés. Le diff E-8 contient uniquement `frontend/vercel.json` et le présent README. E-7 et ses statistiques en brouillon ne sont pas inclus.
+
+Contrôles locaux après mise à jour avec `dev` : **90 tests frontend réussis dans 15 fichiers**, typage TypeScript, build Vite et validation JSON de la configuration réussis avec Node.js 24. Ils ne remplacent pas les contrôles du vrai déploiement ci-dessous.
+
+Après connexion du dépôt `alfredoisasole-tech/mon-miam-miam-projet_integrateur` et publication de la branche E-8 :
+
+1. Vérifier l’état `Ready`, le commit publié et la présence du répertoire racine `frontend`.
+2. Ouvrir le domaine et `/menu` sans session Vercel, puis recharger `/menu` : le serveur doit servir le frontend sans erreur 404.
+3. Vérifier que les fichiers JavaScript, CSS et polices sont servis, et consigner le résultat et la date réelle ici.
+4. Faire relire la PR par un autre binôme avant fusion dans `dev`. La connexion Git et l’accès au dépôt peuvent nécessiter une autorisation de compte ou du propriétaire.
+
 ## Maquettes en couleur - E-4
 
 Le dossier [Maquettes et lien Figma](MAQUETTES.md) contient les 32 planches exportées directement de Figma le 1er novembre 2026, après adaptation des plats et boissons et harmonisation Poppins. La copie d’Emmanuel est accessible sans compte : test Chrome Incognito réussi. Judbie est le validateur ; son accord initial du 26 octobre et l’approbation attendue de la version modifiée sont distingués dans [les contrôles E-4](validation-e4.md).
@@ -178,3 +202,5 @@ Les encadrés sous les dessins décrivent les états à décliner : chargement, 
 - Relecture visuelle des dessins et contrôle des fichiers effectués localement ; les tests applicatifs ne s’appliquent pas à ces seuls documents.
 
 La relecture croisée du binôme B et les contrôles du dépôt restent nécessaires avant la fusion, conformément aux [conventions Git](../conventions-git.md).
+
+**Mise à jour du 3 novembre 2026 :** l'API est déployée sur Render et `frontend/vercel.json` transfère désormais `/api` vers elle (voir [deploiement.md](../deploiement.md)). Le comportement décrit plus haut, sans réécriture vers Render, ne s'applique plus.

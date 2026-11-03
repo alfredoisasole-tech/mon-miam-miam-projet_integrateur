@@ -8,7 +8,7 @@ export const authApi = {
 
   // 👇 AJOUT POUR G-5
   login: (data: { identifier: string; password: string }) =>
-    http.post<{ token: string; user: User }>('/api/auth/login', data),
+    http.post<{ token: string; user: User }>('/auth/login', data),
 
   me: () => http.get<User>('/api/me'),
 };
