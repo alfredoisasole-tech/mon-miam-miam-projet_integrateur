@@ -18,13 +18,15 @@ Le numéro du ticket Jira n’est pas obligatoire dans le nom de la branche. Vou
 
 ## Messages de commit
 
-Écrivez les messages sous la forme `type(zone): message`, avec un verbe à l’infinitif ou un groupe nominal court. Faites un commit par idée ; évitez les messages vagues comme `mise à jour` ou `corrections`. Ajoutez les fichiers un par un avec `git add chemin/du/fichier`, jamais avec `git add -A`. Écrivez les tests avant le code (TDD) lorsque la tâche comporte du code.
+Écrivez les messages sous la forme `type(zone): message`, avec un verbe à l'impératif. Faites un commit par idée ; évitez les messages vagues comme `mise à jour` ou `corrections`. Ajoutez les fichiers un par un avec `git add chemin/du/fichier`, jamais avec `git add -A`. Écrivez les tests avant le code (TDD) lorsque la tâche comporte du code.
 
 Exemples :
 
-- `test(fidelite): tests de la reduction fixe de 3 000 FC`
-- `feat(fidelite): 15 points = 3 000 FC de reduction fixe`
-- `docs(api): contrat v2 (compte unique, restaurants, paiement)`
+- `feat(db): ajoutez la migration initiale et ses contraintes`
+- `feat(personnel): rattachez chaque compte au restaurant du jeton`
+- `test(isolation): vérifiez les accès directs entre restaurants`
+- `fix(auth): limitez les tentatives par identifiant et adresse IP`
+- `docs(db): expliquez la sauvegarde et la restauration SQLite`
 
 Les préfixes courants sont `feat` (fonctionnalité), `fix` (correction), `test` (tests), `docs` (documentation) et `chore` (maintenance).
 
