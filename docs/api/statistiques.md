@@ -95,4 +95,4 @@ L’API de Lusimafu est mise à jour avec `dev` (`4dc8674`) en conservant les im
 - falsification du rôle/restaurant d’un jeton et compte désactivé refusés ;
 - période invalide ou répétée refusée ; nouvelle lecture SQLite reflétée dans les chiffres, sans affecter l’autre restaurant.
 
-Validation : **266 tests backend réussis**, dont les quatre tests L-11 et les onze nouveaux tests APP-84, typage TypeScript backend réussi avec Node.js 24. La falsification est vérifiée avec les jetons JWT actuels. Les tests APP-78 font l’objet d’une PR distincte et ne sont pas inclus dans ce total. La fusion et une relecture de la PR #43 restent nécessaires.
+Validation : **266 tests backend réussis**, dont les quatre tests L-11 et les onze nouveaux tests APP-84, typage TypeScript backend réussi avec Node.js 24. La falsification est vérifiée avec les jetons JWT actuels. Les tests APP-78 font l’objet d’une PR distincte et ne sont pas inclus dans ce total. L’API #43 est fusionnée dans `dev` (`8f13f78`) ; le complément de compatibilité du test JWT est soumis à relecture dans la PR #60.
