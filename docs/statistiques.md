@@ -2,7 +2,7 @@
 
 Responsable : Emmanuel Mboyo. Ticket : [APP-83 — Sous-tâche 18.2](https://judbie2030-45660043.atlassian.net/browse/APP-83). Branche : `feature/ecran-statistiques`, PR vers `dev`.
 
-**Compatibilité avec L-11 vérifiée ; fusion de l’API encore nécessaire dans `dev`.** Le 3 novembre 2026, E-7 est mis à jour avec `dev` au commit `d559ba9` et vérifié avec la [PR #43 — L-11, APP-82](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/43), au commit `2a7ec5e`. La PR #43 intègre désormais les imports et routes du paiement, d’Easypay, de la fidélité et des statistiques ; onze tests APP-84 avec authentification réelle y contrôlent les accès et l’isolation. Le backend n’est pas dupliqué dans la PR E-7 : #43 doit être intégrée pour disposer de l’API dans `dev`.
+**Compatibilité avec L-11 vérifiée ; fusion de l’API encore nécessaire dans `dev`.** Le 3 novembre 2026, E-7 est mis à jour avec `dev` au commit `4dc8674` et vérifié avec la [PR #43 — L-11, APP-82](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/43), au commit `3058888`. La PR #43 intègre désormais les imports et routes du paiement, d’Easypay, de la fidélité, des statistiques et les nouveaux jetons JWT ; onze tests APP-84 avec authentification réelle y contrôlent les accès et l’isolation. Le backend n’est pas dupliqué dans la PR E-7 : #43 doit être intégrée pour disposer de l’API dans `dev`.
 
 ## Écran et accès
 
@@ -68,7 +68,7 @@ L’aperçu a été chargé dans le navigateur et contrôlé par son DOM : à 36
 
 ## Vérification d’intégration du 3 novembre 2026 — APP-83 / APP-26
 
-**117 tests frontend réussis dans 19 fichiers**, typage TypeScript et build Vite réussis avec Node.js 24. La version actuelle de l’API #43 passe **246 tests backend**, dont onze nouveaux contrôles APP-84. La PR APP-78 et ses huit tests restent séparées.
+**117 tests frontend réussis dans 19 fichiers**, typage TypeScript et build Vite réussis avec Node.js 24. La version actuelle de l’API #43 passe **266 tests backend**, dont onze nouveaux contrôles APP-84, après intégration des compléments JWT et d’isolation de #59. La PR APP-78 et ses huit tests restent séparées.
 
 Le parcours réel a révélé deux problèmes de raccordement, corrigés avec des tests de non-régression :
 
