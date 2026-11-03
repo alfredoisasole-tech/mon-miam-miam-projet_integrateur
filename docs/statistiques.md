@@ -2,7 +2,7 @@
 
 Responsable : Emmanuel Mboyo. Ticket : [APP-83 — Sous-tâche 18.2](https://judbie2030-45660043.atlassian.net/browse/APP-83). Branche : `feature/ecran-statistiques`, PR vers `dev`.
 
-**Compatibilité avec L-11 vérifiée ; fusion de l’API encore nécessaire dans `dev`.** Le 3 novembre 2026, E-7 est mis à jour avec `dev` au commit `4dc8674` et vérifié avec la [PR #43 — L-11, APP-82](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/43), au commit `3058888`. La PR #43 intègre désormais les imports et routes du paiement, d’Easypay, de la fidélité, des statistiques et les nouveaux jetons JWT ; onze tests APP-84 avec authentification réelle y contrôlent les accès et l’isolation. Le backend n’est pas dupliqué dans la PR E-7 : #43 doit être intégrée pour disposer de l’API dans `dev`.
+**API L-11 intégrée et écran vérifié.** Le 3 novembre 2026, `dev` (`8f13f78`) contient la [PR #43 — L-11, APP-82](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/43) et les onze contrôles APP-84 avec authentification réelle. La [PR #60](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/60) adapte le test de falsification au format JWT actuel, sans modifier les permissions. Ce petit correctif est repris dans la branche E-7 pour maintenir la validation complète ; il disparaîtra de son diff après fusion de #60. Les routes de paiement, d’Easypay et de fidélité sont conservées.
 
 ## Écran et accès
 
@@ -90,6 +90,6 @@ Ouvrir `/stats.html` pour l’aperçu de développement : données fictives expl
 
 ## Conditions avant clôture
 
-1. Faire relire puis intégrer la PR #43 (L-11 / APP-82 / APP-84) dans `dev` ; son conflit d’imports a été résolu et vérifié.
+1. Faire relire puis intégrer la PR #60 (complément du test JWT APP-84) dans `dev` ; l’API #43 est déjà fusionnée.
 2. Faire relire E-7 par un autre binôme, vérifier la CI sur la branche mise à jour et fusionner vers `dev` avec les contrôles requis.
 3. Ne pas confondre la compatibilité locale vérifiée avec un déploiement public de l’API : ce déploiement ne fait pas partie de la présente vérification.
