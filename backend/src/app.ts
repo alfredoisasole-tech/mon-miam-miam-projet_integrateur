@@ -20,6 +20,8 @@ import { registerMenuAdminRoutes } from './controllers/menu-admin.controller.ts'
 import { statsRepository } from './repositories/stats.repo.ts';
 import { createStatsService } from './services/stats.service.ts';
 import { registerStatsRoutes } from './controllers/stats.controller.ts';
+import { registerStaffAccountRoutes } from './controllers/staff-accounts.controller.ts';
+import { StaffAccountsService } from './services/staff-accounts.service.ts';
 import { registerPaymentRoutes } from './controllers/payments.controller.ts';
 import { PaymentsService } from './services/payments.service.ts';
 import { SqlitePaymentsRepository } from './repositories/sqlite-payments.repo.ts';
@@ -91,6 +93,7 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
     const authenticate = createAuthMiddleware(options.resolveToken ?? ((token) => auth.authenticate(token)));
     registerAuthRoutes(app, auth, authenticate, options.sendPasswordResetCode);
     registerPlatformRestaurantRoutes(app, options.database, authenticate);
+    registerStaffAccountRoutes(app, new StaffAccountsService(options.database, options.now), authenticate);
     registerMenuAdminRoutes(app, options.database, authenticate, { now: options.now });
     registerStatsRoutes(app, createStatsService(statsRepository(options.database), options.now), authenticate);
     const orders = new SqliteOrdersRepository(options.database);
@@ -100,7 +103,7 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
     });
     registerLoyaltyRoutes(app, { service: new LoyaltyService(orders, { now: options.now }), authenticate });
     registerStaffOrderRoutes(app, { repository: orders, authenticate, now: options.now });
-    registerPromotionRoutes(app, new PromotionsService(new SqlitePromotionsRepository(options.database), options.now));
+    registerPromotionRoutes(app, new PromotionsService(new SqlitePromotionsRepository(options.database), options.now), options.database, authenticate, { now: options.now });
     registerPaymentRoutes(app, {
       env: config.env,
       ipnKey: config.easypay?.ipnKey,

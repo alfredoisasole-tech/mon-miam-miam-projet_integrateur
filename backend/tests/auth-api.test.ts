@@ -4,6 +4,7 @@ import { createApp } from '../src/app.ts';
 import { loadConfig } from '../src/config.ts';
 import { Database } from '../src/db/database.ts';
 import { migrate } from '../src/db/migrations.ts';
+import { hashPassword } from '../src/services/auth.service.ts';
 import { demarrer, type Serveur } from './helpers.ts';
 
 describe('API des comptes', () => {
@@ -98,6 +99,42 @@ describe('API des comptes', () => {
     assert.equal(unknown.status, 401);
     assert.equal(wrongPassword.status, 401);
     assert.deepEqual(await unknown.json(), await wrongPassword.json());
+  });
+
+  it('limite l’inscription par identifiant et par IP sans bloquer un autre compte du même réseau', async () => {
+    const requestRegistration = (email: string, phone: string, password: string) => fetch(`${server.base}/api/restaurants/auth-demo/auth/register`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'Test Rate', email, phone, password, acceptTerms: true }),
+    });
+    for (let index = 0; index < 4; index += 1) {
+      const response = await requestRegistration('rate-limited@example.test', `+2438155500${String(index).padStart(2, '0')}`, 'faible123');
+      assert.equal(response.status, 400);
+    }
+    const limited = await requestRegistration('rate-limited@example.test', '+243815550099', 'faible123');
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get('retry-after'), '900');
+
+    const otherAccount = await requestRegistration('other-rate@example.test', '+243815550100', 'MotDePasse1');
+    assert.equal(otherAccount.status, 201);
+  });
+
+  it('bloque après cinq échecs pour un identifiant, mais laisse un autre compte de la même IP se connecter', async () => {
+    for (const [id, email, phone] of [
+      ['rate-user-a', 'rate-user-a@example.test', '+243815551001'],
+      ['rate-user-b', 'rate-user-b@example.test', '+243815551002'],
+    ]) {
+      db.run(`INSERT INTO users (id, restaurant_id, role, name, email, phone, password_hash, created_at)
+        VALUES (?, 'restaurant-auth', 'student', ?, ?, ?, ?, '2026-11-03T00:00:00.000Z')`,
+      [id, id, email, phone, hashPassword('SecurePass1')]);
+    }
+    const attempt = (identifier: string, password: string) => fetch(`${server.base}/api/auth/login`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ identifier, password }),
+    });
+    for (let index = 0; index < 4; index += 1) assert.equal((await attempt('rate-user-a@example.test', 'WrongPass1')).status, 401);
+    const limited = await attempt('rate-user-a@example.test', 'WrongPass1');
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get('retry-after'), '900');
+    assert.equal((await attempt('rate-user-b@example.test', 'SecurePass1')).status, 200);
   });
 
   it('ne compte pas les inscriptions réussies comme des échecs de limitation', async () => {

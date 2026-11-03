@@ -246,7 +246,19 @@ Les routes suivantes exigent un jeton d’un compte `platform_admin`.
 - `POST /api/platform/restaurants` crée un restaurant et son premier compte administrateur dans une transaction. Corps attendu : `{ "slug", "name", "admin": { "name", "email", "phone", "password" } }`. Les champs visuels sont facultatifs ; les horaires initiaux sont 08 h–22 h, tous les jours.
 - `PATCH /api/platform/restaurants/:slug/status` accepte `{ "status": "active" }` ou `{ "status": "inactive" }`. Les routes publiques masquent ensuite un restaurant inactif.
 
-La liste publique, le profil, le menu, les images et les promotions sont raccordés à SQLite. L’administration des plats est également disponible via les routes du personnel ci-dessous ; la création et la modification des promotions restent à faire.
+La liste publique, le profil, le menu, les images et les promotions sont raccordés à SQLite. L’administration des plats et des promotions est disponible via les routes du personnel ci-dessous.
+
+### Gestion des promotions
+
+Les routes `/api/admin/promotions` et `/api/admin/promotions/:id` sont réservées à l’administrateur du restaurant. Le restaurant est toujours déduit du jeton.
+
+- `GET /api/admin/promotions` liste toutes les promotions du restaurant, y compris celles qui sont désactivées ou hors période.
+- `POST /api/admin/promotions` crée une promotion. Champs : `type` (`promotion`, `event` ou `game`), `title`, `startDate`, `endDate`; `description`, `imageAssetId` et `isActive` sont facultatifs. Les dates doivent être ISO 8601 avec fuseau horaire et la fin doit être égale ou postérieure au début.
+- `PATCH /api/admin/promotions/:id` modifie un ou plusieurs de ces champs. La période finale est vérifiée après fusion avec les valeurs existantes.
+- `DELETE /api/admin/promotions/:id` supprime une promotion.
+- Une promotion d’un autre restaurant répond `404 PROMOTION_NOT_FOUND`. Une image doit être une affiche (`poster`) du même restaurant.
+
+Les dates de validité sont inclusives pour la route publique : une promotion active est visible à l’instant exact de son début et de sa fin.
 
 ## 7. Administration du menu
 
@@ -276,4 +288,6 @@ Une ressource appartenant à un autre restaurant répond `404 MENU_ITEM_NOT_FOUN
 
 ## État des tests
 
-Les tests de lecture publique sont dans `backend/tests/restaurants-menu.test.ts`; l’administration et les promotions sont couvertes dans `backend/tests/platform-api.test.ts`.
+Les tests de lecture publique sont dans `backend/tests/restaurants-menu.test.ts`; la gestion des restaurants est couverte dans `backend/tests/platform-api.test.ts` et les promotions dans `backend/tests/promotions-api.test.ts`.
+
+La gestion des comptes du personnel est décrite dans le [contrat dédié](staff-accounts.md) et testée dans `backend/tests/staff-accounts-api.test.ts`.

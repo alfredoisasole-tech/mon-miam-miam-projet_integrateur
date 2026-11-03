@@ -80,11 +80,23 @@ export class AuthService {
     token: string;
     user: ReturnType<typeof publicAccount> & { memberships: Array<{ restaurant: string; since: string }> };
   } {
-    const registrationKey = `register:${ip}`;
-    if (this.isLimited(registrationKey)) throw new AppError(429, 'TOO_MANY_ATTEMPTS', 'Trop de tentatives, réessayez dans 15 minutes.');
-    this.recordFailure(registrationKey);
-    if (!input || typeof input !== 'object' || Array.isArray(input)) throw new AppError(400, 'INVALID_BODY', 'Les données du compte sont invalides.');
-    const body = input as Record<string, unknown>;
+    const bodyInput = input && typeof input === 'object' && !Array.isArray(input) ? input as Record<string, unknown> : null;
+    const emailKey = typeof bodyInput?.['email'] === 'string'
+      ? `register:identifier:${bodyInput['email'].trim().toLowerCase()}` : null;
+    const phoneKey = typeof bodyInput?.['phone'] === 'string'
+      ? `register:phone:${normalizePhone(bodyInput['phone']) ?? bodyInput['phone'].trim()}` : null;
+    const rateLimits = [
+      ...(emailKey ? [{ key: emailKey, limit: 5 }] : []),
+      ...(phoneKey ? [{ key: phoneKey, limit: 5 }] : []),
+      { key: `register:ip:${ip}`, limit: 30 },
+    ];
+    if (rateLimits.some(({ key, limit }) => this.isLimited(key, limit))) {
+      throw new AppError(429, 'TOO_MANY_ATTEMPTS', 'Trop de tentatives, réessayez dans 15 minutes.');
+    }
+
+    try {
+    if (!bodyInput) throw new AppError(400, 'INVALID_BODY', 'Les données du compte sont invalides.');
+    const body = bodyInput;
     const name = this.requiredText(body['name'], 'name');
     const email = this.requiredText(body['email'], 'email').toLowerCase();
     const rawPhone = this.requiredText(body['phone'], 'phone');
@@ -135,9 +147,10 @@ export class AuthService {
         ownReferralCode, createdAt, createdAt, referrer?.id ?? null]);
       this.db.run('INSERT INTO memberships (user_id, restaurant_id, created_at) VALUES (?, ?, ?)', [id, restaurant.id, createdAt]);
     });
-    this.attempts.delete(registrationKey);
     const account = this.findAccount(id);
     if (!account) throw new Error('Le compte vient d’être créé mais ne peut pas être relu.');
+    if (emailKey) this.attempts.delete(emailKey);
+    if (phoneKey) this.attempts.delete(phoneKey);
     return {
       token: this.issueToken(account),
       user: {
@@ -149,24 +162,33 @@ export class AuthService {
         ),
       },
     };
+    } catch (error) {
+      if (error instanceof AppError && error.status >= 400 && error.status < 500 && error.code !== 'TOO_MANY_ATTEMPTS') {
+        for (const { key } of rateLimits) this.recordFailure(key);
+        if (rateLimits.some(({ key, limit }) => this.isLimited(key, limit))) {
+          throw new AppError(429, 'TOO_MANY_ATTEMPTS', 'Trop de tentatives, réessayez dans 15 minutes.');
+        }
+      }
+      throw error;
+    }
   }
 
   login(identifierInput: unknown, passwordInput: unknown, ip: string): { token: string; user: ReturnType<typeof publicAccount> } {
     const identifier = typeof identifierInput === 'string' ? identifierInput.trim().toLowerCase() : '';
     const password = typeof passwordInput === 'string' ? passwordInput : '';
     if (!identifier || !password) throw new AppError(400, 'INVALID_BODY', 'Identifiant ou mot de passe manquant.');
-    const keys = [`identifier:${identifier}`, `ip:${ip}`];
+    const keys = [{ key: `identifier:${identifier}`, limit: 5 }, { key: `ip:${ip}`, limit: 30 }];
     const account = this.findAccountByIdentifier(identifier);
     if (account && account.role !== 'platform_admin'
       && this.db.get('SELECT user_id FROM auth_lockouts WHERE user_id = ?', [account.id])) {
       throw new AppError(429, 'TOO_MANY_ATTEMPTS', 'Trop de tentatives ; réinitialisez votre mot de passe pour récupérer le compte.');
     }
-    if (keys.some((key) => this.isLimited(key))) throw new AppError(429, 'TOO_MANY_ATTEMPTS', 'Trop de tentatives, réessayez dans 15 minutes.');
+    if (keys.some(({ key, limit }) => this.isLimited(key, limit))) throw new AppError(429, 'TOO_MANY_ATTEMPTS', 'Trop de tentatives, réessayez dans 15 minutes.');
     const validPassword = verifyPassword(password, account ? this.getPasswordHash(account.id) : DUMMY_PASSWORD_HASH);
     if (!account || !validPassword) {
-      for (const key of keys) this.recordFailure(key);
-      const accountLocked = (this.attempts.get(keys[0]!)?.length ?? 0) >= 8;
-      if (keys.some((key) => (this.attempts.get(key)?.length ?? 0) >= 8)) {
+      for (const { key } of keys) this.recordFailure(key);
+      const accountLocked = this.isLimited(keys[0]!.key, keys[0]!.limit);
+      if (keys.some(({ key, limit }) => this.isLimited(key, limit))) {
         if (account && account.role !== 'platform_admin' && accountLocked) {
           this.db.run('INSERT INTO auth_lockouts (user_id, locked_at) VALUES (?, ?) ON CONFLICT (user_id) DO NOTHING',
             [account.id, this.now().toISOString()]);
@@ -178,7 +200,7 @@ export class AuthService {
       throw new AppError(401, 'INVALID_CREDENTIALS', 'Identifiants incorrects.');
     }
     if (account.status !== 'active') throw new AppError(403, 'ACCOUNT_DISABLED', 'Ce compte est désactivé.');
-    for (const key of keys) this.attempts.delete(key);
+    this.attempts.delete(keys[0]!.key);
     return { token: this.issueToken(account), user: publicAccount(account) };
   }
 
@@ -303,11 +325,11 @@ export class AuthService {
     return value.trim() || null;
   }
 
-  private isLimited(key: string): boolean {
+  private isLimited(key: string, limit = 8): boolean {
     const cutoff = this.now().getTime() - 15 * 60 * 1000;
     const recent = (this.attempts.get(key) ?? []).filter((time) => time > cutoff);
     this.attempts.set(key, recent);
-    return recent.length >= 8;
+    return recent.length >= limit;
   }
 
   private recordFailure(key: string): void {
