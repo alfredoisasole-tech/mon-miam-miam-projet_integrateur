@@ -31,6 +31,8 @@ import { registerClaimsRoutes } from './controllers/claims.controller.ts';
 import { ClaimsService } from './services/claims.service.ts';
 import { registerCommunityRoutes } from './controllers/community.controller.ts';
 import { CommunityService } from './services/community.service.ts';
+import { registerSettingsRoutes } from './controllers/settings.controller.ts';
+import { SettingsService } from './services/settings.service.ts';
 import { registerAccountRoutes } from './controllers/account.controller.ts';
 import { AccountService } from './services/account.service.ts';
 
@@ -111,7 +113,8 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
     registerStaffOrderRoutes(app, { repository: orders, authenticate, now: options.now });
     registerPromotionRoutes(app, new PromotionsService(new SqlitePromotionsRepository(options.database), options.now), options.database, authenticate, { now: options.now });
     registerCommunityRoutes(app, new CommunityService(options.database, { now: options.now }), authenticate);
-    registerAccountRoutes(app, new AccountService(options.database, { now: options.now }), authenticate);
+    registerSettingsRoutes(app, new SettingsService(options.database, { now: options.now }), authenticate);
+    registerAccountRoutes(app,new AccountService(options.database, { now: options.now }), authenticate);
     registerPaymentRoutes(app, {
       env: config.env,
       ipnKey: config.easypay?.ipnKey,
