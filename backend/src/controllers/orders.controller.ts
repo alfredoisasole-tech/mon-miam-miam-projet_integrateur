@@ -1,6 +1,6 @@
 import type { Express, NextFunction, RequestHandler, Response } from 'express';
 import { AppError } from '../http/errors.ts';
-import { OrdersService } from '../services/orders.service.ts';
+import { OrdersService, onOrderCompleted } from '../services/orders.service.ts';
 import type { AuthenticatedUser, Order, OrderStatus } from '../domain/orders.ts';
 import type { SqliteOrdersRepository } from '../repositories/sqlite-orders.repo.ts';
 
@@ -142,6 +142,9 @@ export function registerStaffOrderRoutes(
         user.restaurantId, orderId, existing.status, user.id, nextStatus, (options.now?.() ?? new Date()).toISOString(),
       );
       if (!order) throw new AppError(409, 'ORDER_CHANGED', 'La commande a été modifiée par une autre requête. Actualisez-la avant de réessayer.');
+      if (nextStatus === 'completed') {
+        void onOrderCompleted(order);
+      }
       res.status(200).json(staffOrderResponse(order));
     } catch (error) { next(error); }
   });
