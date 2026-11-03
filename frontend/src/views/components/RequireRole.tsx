@@ -22,7 +22,7 @@ export const RequireRole = ({
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (!user.role || !allowedRoles.includes(user.role)) {
