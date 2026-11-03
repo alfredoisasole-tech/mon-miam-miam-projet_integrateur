@@ -567,3 +567,11 @@ Aucun correctif structurel ne reste ouvert dans ce modèle. Les décisions des c
 ### Conclusion
 
 Le modèle documentaire couvre 16 entités et 34 relations, intègre les décisions sur les rattachements, la fidélité, les comptes uniques et les clés étrangères d'image et de parrainage. Les règles de calcul et de cohérence entre restaurants ont une méthode de validation définie. Les deux questions sur les récompenses de jeux et les moyens de paiement restent à trancher par l'équipe.
+
+## Validation (L-3)
+
+- **Date :** 3 novembre 2026.
+- **Relecture croisée enregistrée :** Don (`dondedieuamampakandi-source`), approbation GitHub de la PR [#67](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/67), qui modifiait ce modèle.
+- **Vérification :** les données métier des stories 1 à 22 ont été rapprochées des 16 entités, puis les attributs et relations ont été comparés au schéma SQLite et aux migrations. Les stories fonctionnelles disposent de leurs entités ou relations ; les stories d’organisation, d’architecture, de tests, de documentation et de déploiement ne nécessitent pas de nouvelles entités métier.
+- **Correction intégrée :** ajout de `payments.provider_reference`, introduit par la migration `005_payment_provider_reference`, dans l’introduction du modèle et la table `payments`.
+- **Décisions restant à l’équipe :** récompenser les jeux et événements, et distinguer le type de paiement (carte ou mobile money). Ces choix sont signalés comme questions et ne bloquent pas le schéma actuel.
