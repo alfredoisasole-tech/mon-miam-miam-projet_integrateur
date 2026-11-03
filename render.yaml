@@ -1,0 +1,83 @@
+# Blueprint Render de l'API Mon Miam Miam (APP-105).
+# Le site est hébergé séparément sur Vercel (frontend/vercel.json). Ce fichier ne décrit que l'API.
+# Contexte et décisions restantes : docs/deploiement.md.
+#
+# Offre GRATUITE (décision de l'équipe, 3 novembre 2026). Conséquences, à ma connaissance et à vérifier
+# sur la documentation de Render :
+#   - pas de disque persistant : la base SQLite est recréée vide à chaque redémarrage, mise en veille
+#     puis réveil, ou nouveau déploiement. Les comptes et commandes créés disparaissent ;
+#   - le service s'endort après une période d'inactivité : la première requête suivante est lente, et une
+#     notification de paiement reçue pendant le sommeil peut être manquée.
+# Adapté à une démonstration, pas à des données réelles. Pour conserver la base : formule payante + disque
+# (voir l'historique de ce fichier et docs/deploiement.md).
+#
+# À valider avant utilisation : « render blueprints validate » (CLI Render 2.7 ou plus récent).
+# Ce fichier n'a PAS encore été validé contre le schéma de Render ni déployé.
+services:
+  - type: web
+    name: mon-miam-miam-api
+    runtime: node
+    plan: free
+    # Région proposée, la plus proche de Kinshasa parmi celles de Render ; décision de l'équipe.
+    region: frankfurt
+    # Le dépôt entier est nécessaire : les migrations lisent database/schema.sql, hors de backend/.
+    # Ne pas définir rootDir.
+    branch: dev
+    # Le premier déploiement est lancé à la main. Passer à « checksPass » une fois la branche de
+    # production décidée et l'API vérifiée.
+    autoDeployTrigger: "off"
+    buildCommand: npm ci --prefix backend
+    # La base repart vide à chaque démarrage (offre gratuite, sans disque) et une base vide n'a ni restaurant ni
+    # compte : le seed de démonstration est donc rejoué à chaque démarrage (il crée aussi les tables). Sans lui, on ne
+    # pourrait rien créer ni tester. À retirer le jour où l'API conserve sa base.
+    startCommand: npm --prefix backend run seed && npm --prefix backend start
+    healthCheckPath: /api/health
+    envVars:
+      # Node.js 22.18 ou plus : l'API exécute directement le TypeScript et utilise node:sqlite.
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Stockage temporaire (offre gratuite, sans disque) : la base repart vide à chaque démarrage.
+      # Les migrations la recréent automatiquement au lancement ; aucun restaurant ni compte n'existe.
+      - key: DATABASE_PATH
+        value: /tmp/mon-miam-miam.sqlite
+      # Secrets : jamais dans le dépôt. L'API refuse de démarrer en production avec un secret
+      # de moins de 32 caractères ou repris des exemples.
+      - key: JWT_SECRET
+        generateValue: true
+      # Remplacer par le secret de signature fourni par Easypay quand l'adaptateur réel sera en place (APP-107).
+      - key: PAYMENT_WEBHOOK_SECRET
+        generateValue: true
+      # Mots de passe des comptes de démonstration, à choisir et à saisir dans Render (8 caractères minimum, une
+      # majuscule, un chiffre). Comptes créés : administrateurs des restaurants, employé, étudiant, administrateur
+      # de la plateforme (adresses dans backend/src/seed.ts). Jamais dans le dépôt.
+      - key: SEED_RESTAURANT_ADMIN_PASSWORD
+        sync: false
+      - key: SEED_EMPLOYEE_PASSWORD
+        sync: false
+      - key: SEED_STUDENT_PASSWORD
+        sync: false
+      - key: SEED_PLATFORM_ADMIN_PASSWORD
+        sync: false
+      # Origine exacte du site Vercel, sans « / » final. À saisir à la création du service.
+      - key: CORS_ORIGINS
+        sync: false
+      # --- Paiement Easypay (bac à sable). À ne déployer qu'après la fusion de l'adaptateur (APP-107) dans la
+      # branche déployée : une version plus ancienne du code ignore ces variables et reste en simulation, sans erreur.
+      - key: PAYMENT_PROVIDER
+        value: easypay
+      - key: EASYPAY_MODE
+        value: sandbox
+      # Identifiants de l'espace développeur Easypay : à saisir dans Render, jamais dans ce fichier ni dans Git.
+      - key: EASYPAY_CID
+        sync: false
+      - key: EASYPAY_TOKEN
+        sync: false
+      # Clé de l'adresse de notification : Render la génère ; la lire dans le tableau de bord, puis déclarer dans
+      # l'espace marchand Easypay l'adresse https://<adresse-de-l-API>/api/payments/easypay/ipn?key=<cette valeur>.
+      - key: EASYPAY_IPN_KEY
+        generateValue: true
+      # Adresse publique du site Vercel, sans « / » final : adresses de retour après paiement.
+      - key: SITE_URL
+        sync: false

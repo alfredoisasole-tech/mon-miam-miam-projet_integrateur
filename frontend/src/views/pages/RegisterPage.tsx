@@ -39,7 +39,7 @@ export function RegisterPage() {
   const labelClass = "block text-sm font-medium text-gray-700 mt-4";
 
   return (
-    <main className="mm-page mm-auth" style={{ maxWidth: '480px', margin: '2rem auto', padding: '1.5rem' }}>
+    <div className="mm-page mm-auth" style={{ maxWidth: '480px', margin: '2rem auto', padding: '1.5rem' }}>
       <header className="mm-auth__header" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#000' }}>Créez votre compte étudiant</h1>
         <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>
@@ -137,6 +137,6 @@ export function RegisterPage() {
           Déjà inscrit ? <Link to="/login" style={{ color: '#000', fontWeight: 'bold' }}>Se connecter</Link>
         </p>
       </form>
-    </main>
+    </div>
   );
 }
