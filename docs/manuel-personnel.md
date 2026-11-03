@@ -6,7 +6,7 @@ Ce guide concerne l’employé, le gérant et l’administrateur d’un restaura
 
 ## 1. Ce qui est disponible aujourd’hui
 
-L’état ci-dessous correspond au code de `dev`, commit `15e2918`. Un lien affiché dans le menu ne signifie pas toujours que sa page est déjà disponible.
+Ce guide décrit `dev` au commit `15e2918`, complété par le [correctif de raccordement des menus, PR #62](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/62). Les procédures et captures des menus ci-dessous nécessitent ce correctif : **fusionner #62 avant de présenter ces écrans depuis `dev`**. Les fonctions encore absentes sont indiquées explicitement.
 
 | Fonction | Personnes concernées | État dans l’application |
 | --- | --- | --- |
@@ -14,8 +14,9 @@ L’état ci-dessous correspond au code de `dev`, commit `15e2918`. Un lien affi
 | Bilan du restaurant : jour, semaine, mois | Gérant et administrateur du restaurant | Disponible dans **Statistiques** |
 | Statistiques hebdomadaires de l’employé | Employé | Calcul disponible côté serveur ; écran non encore accessible |
 | Consultation et avancement des commandes | Employé, gérant, administrateur du restaurant | Traitement disponible côté serveur ; écran du personnel absent |
-| Marquer un plat épuisé ou comme plat du jour | Employé, gérant, administrateur du restaurant | Traitement et écran préparés ; écran non encore accessible depuis l’application |
-| Ajouter, modifier ou retirer un plat | Administrateur du restaurant | Traitement disponible côté serveur ; écran d’administration non encore accessible |
+| Marquer un plat épuisé ou comme plat du jour | Employé, gérant, administrateur du restaurant | Disponible dans **Menu** après intégration de #62 |
+| Ajouter ou retirer un plat | Administrateur du restaurant | Disponible dans **Menu** après intégration de #62 |
+| Modifier le nom, le prix ou la catégorie d’un plat existant | Administrateur du restaurant | Traitement disponible côté serveur ; formulaire de modification absent |
 | Créer des comptes employés | Gérant et administrateur selon les droits prévus | Fonction non encore disponible |
 | Créer ou modifier des promotions | Administrateur du restaurant selon les droits prévus | Fonction non encore disponible ; les promotions existantes peuvent être consultées publiquement |
 
@@ -36,7 +37,9 @@ Pour quitter votre session, cliquez sur **Déconnexion**. Sur téléphone, ouvre
 
 ### Capture 1 — Connexion
 
-> **À ajouter :** capture de la page de connexion avec un compte de démonstration. Ne montrez pas de mot de passe, de jeton ni de données personnelles réelles. Le résultat attendu est le formulaire avec **Adresse e-mail ou téléphone**, **Mot de passe** et **Se connecter**.
+Formulaire avec l’adresse du compte employé de démonstration, sans mot de passe affiché.
+
+![Connexion avec le compte employé de démonstration](manuel-personnel/connexion.jpg)
 
 ## 3. Employé : commandes et disponibilité des plats
 
@@ -48,9 +51,13 @@ Il n’existe donc pas encore de procédure utilisable dans l’application pour
 
 ### Plat épuisé et plat du jour
 
-Votre rôle autorise le changement de disponibilité et le choix des plats du jour. L’écran préparé contient les colonnes **Disponible** et **Plat du jour**, mais le lien **Menu** du personnel n’ouvre pas encore cet écran.
+1. Cliquez sur **Menu** pour ouvrir `/staff/menu` et l’écran **Gestion rapide du menu (Staff)**.
+2. Repérez le plat dans le tableau.
+3. Décochez **Disponible** pour signaler un plat épuisé ; cochez la case pour le rendre disponible.
+4. Cochez ou décochez **Plat du jour** selon le service prévu.
+5. Chaque changement est enregistré immédiatement. Vérifiez l’absence de message d’erreur ; en cas de doute, rechargez la page pour relire l’état enregistré.
 
-La procédure de modification et sa capture seront ajoutées après son raccordement. L’employé n’a pas le droit de créer, modifier le prix ou supprimer un plat.
+L’employé n’a pas le droit de créer, modifier le prix ou supprimer un plat. Le gérant et l’administrateur peuvent également ouvrir `/staff/menu`. Le lien **Menu** de l’administrateur conduit toutefois directement à sa carte, décrite plus bas. La colonne **Catégorie** du menu rapide affiche actuellement un tiret.
 
 ### Statistiques de l’employé
 
@@ -58,7 +65,9 @@ Votre rôle est limité aux statistiques hebdomadaires de votre restaurant. L’
 
 ### Capture 2 — Menu rapide du personnel
 
-> **Emplacement en attente du raccordement de l’écran.** Avec le compte employé de démonstration, montrer un plat et ses colonnes **Disponible** et **Plat du jour**. Ne pas remplacer cette capture par une maquette ou présenter une page indisponible comme une fonction utilisable.
+Après modification et rechargement avec le compte employé de démonstration, **Pondu** est indisponible et marqué comme plat du jour. Les autres plats restent disponibles.
+
+![Menu rapide du personnel après enregistrement et rechargement](manuel-personnel/menu-personnel.jpg)
 
 ## 4. Gérant : consulter les statistiques
 
@@ -84,9 +93,14 @@ La création et la gestion des employés sont prévues dans les permissions du g
 
 ### Carte du restaurant
 
-L’administrateur possède le droit d’ajouter, de modifier et de retirer les plats de son restaurant. Un écran avec **+ Ajouter un plat**, **Enregistrer** et **Supprimer** est préparé dans le projet, mais le lien **Menu** de l’administrateur ne l’ouvre pas encore.
+1. Avec un compte administrateur du restaurant, cliquez sur **Menu** pour ouvrir `/admin/menu` et **Administration du Menu**.
+2. Cliquez sur **+ Ajouter un plat**.
+3. Renseignez **Nom**, **Description**, **Prix (FC)** et **Catégorie** (`plat`, `boisson`, `dessert` ou `snack`). Le nom doit contenir entre 2 et 80 caractères et le prix doit être un entier supérieur ou égal à zéro.
+4. Choisissez les états **Plat du jour** et **Disponible**, puis cliquez sur **Enregistrer**. Le formulaire se ferme et le nouveau plat apparaît dans la liste après une création réussie.
+5. Pour abandonner la saisie, cliquez sur **Annuler**.
+6. Pour retirer un plat, cliquez sur son bouton **Supprimer**, puis confirmez la demande. Vérifiez qu’il a disparu de la liste et qu’aucune erreur n’est affichée.
 
-Ces opérations ne sont donc pas présentées ici comme une procédure déjà utilisable. Le formulaire de création et la liste des plats devront être vérifiés après ouverture effective de cet écran. La présence d’un traitement côté serveur ne suffit pas à rendre le bouton disponible dans l’application.
+Le formulaire de modification du nom, du prix ou de la catégorie d’un plat existant n’est pas encore disponible. Pour sa disponibilité et son statut de plat du jour, utilisez `/staff/menu`. Un employé ou un gérant ne peut pas ouvrir la carte d’administration.
 
 ### Promotions
 
@@ -100,30 +114,34 @@ L’administrateur d’un restaurant ne crée pas les autres restaurants et ne c
 
 ### Capture 3 — Carte de l’administrateur
 
-> **Emplacement en attente du raccordement de l’écran.** Avec l’administrateur de démonstration du restaurant concerné, montrer la liste des plats et le formulaire **Ajouter un plat**. Ne montrez pas un écran de gestion des promotions tant qu’il n’existe pas.
+Le formulaire de création et la liste existante sont affichés avec le compte administrateur de démonstration. **Riz et haricots** est ici un exemple en cours de saisie ; sa création a ensuite été vérifiée avec l’API locale.
+
+![Carte administrateur et formulaire de création d’un plat](manuel-personnel/menu-administrateur.jpg)
 
 ### Capture 4 — Statistiques, avec données de démonstration
 
 La capture ci-dessous provient du contrôle local du 3 novembre 2026 avec l’API et une base temporaire : **2 500 FC**, **2 commandes**, un panier moyen de **1 250 FC** et **5 portions**. Ces nombres ne représentent pas l’activité réelle d’un restaurant. Le compte utilisé est un administrateur de restaurant de démonstration ; le gérant est autorisé au même écran.
 
-![Statistiques du restaurant avec données de démonstration](statistiques/integration-locale.png)
+![Statistiques du restaurant avec données de démonstration](manuel-personnel/statistiques.jpg)
 
 ## 6. Si une page ne fonctionne pas
 
 | Ce que vous voyez | Que faire |
 | --- | --- |
-| **Page indisponible** après un clic sur Commandes ou Menu du personnel | Consultez le tableau des fonctions disponibles. Ce n’est pas une confirmation d’action. |
+| **Page indisponible** après un clic sur **Commandes** | L’écran des commandes du personnel reste absent. Ce n’est pas une confirmation d’action. |
+| **Page indisponible** après un clic sur **Menu** | Vérifiez que le correctif #62 est intégré dans la version utilisée. |
+| **Impossible de charger le menu** ou erreur après une modification | Vérifiez la connexion et votre rôle ; rechargez pour relire les valeurs enregistrées avant de réessayer. |
 | **Impossible de charger les statistiques** | Réessayez avec **Actualiser**. Si le problème continue, signalez-le à l’équipe. |
 | Message d’accès refusé | Vérifiez le compte utilisé. Un employé ne peut pas ouvrir le bilan global. |
 | Anciennes valeurs avec avertissement | Vérifiez la date affichée ; attendez une actualisation réussie avant d’utiliser ces chiffres. |
 
 ## 7. Compléter les captures et tenir le guide à jour
 
-Quatre emplacements sont identifiés : **connexion**, **menu du personnel**, **carte administrateur**, **statistiques**. Seul le quatrième est illustré ici. Les trois autres restent à compléter, et les captures 2 et 3 exigent d’abord l’ouverture des écrans correspondants.
+Les quatre captures sont présentes : **connexion**, **menu du personnel**, **carte administrateur**, **statistiques**. Elles ont été prises le **3 novembre 2026**, sur une version locale avec le correctif #62, une API réelle et une base de démonstration temporaire. Aucune donnée d’activité réelle n’y figure.
 
 Utilisez uniquement les comptes de démonstration préparés par l’équipe. Le jeu de démonstration fournit notamment `employe@monmiam.test` et `admin@zeduc-space.test` ; leurs mots de passe sont définis lors de sa préparation et ne sont pas publiés dans ce guide. Un compte gérant doit être fourni séparément : le jeu initial n’en crée pas.
 
-Après chaque évolution, vérifiez les liens, les intitulés des boutons et les droits de chaque rôle avant de modifier les procédures. Faites relire le guide par un membre du personnel qui n’a pas développé l’écran. Cette validation utilisateur et les captures manquantes ne sont pas annoncées comme terminées.
+Après chaque évolution, vérifiez les liens, les intitulés des boutons et les droits de chaque rôle avant de modifier les procédures. Faites relire le guide par un membre du personnel qui n’a pas développé l’écran. Cette validation utilisateur reste à obtenir ; les captures ne la remplacent pas.
 
 ### Références pour la relecture du guide
 
