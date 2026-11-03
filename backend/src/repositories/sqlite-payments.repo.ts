@@ -29,6 +29,7 @@ interface PaymentRow {
   amount_fc: number;
   status: PaymentRecordStatus;
   provider_ref: string | null;
+  provider_reference?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +49,7 @@ function mapPayment(row: PaymentRow): PaymentRecord {
     amountFc: row.amount_fc,
     status: row.status,
     providerRef: row.provider_ref,
+    providerReference: row.provider_reference ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -88,12 +90,12 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
 
       if (order.status === 'pending' && order.payment_method === 'mobile_money' && order.payment_status === 'pending') {
         const existing = this.db.get<PaymentRow>(`
-          SELECT id, restaurant_id, order_id, operator, phone, amount_fc, status, provider_ref, created_at, updated_at
+          SELECT id, restaurant_id, order_id, operator, phone, amount_fc, status, provider_ref, provider_reference, created_at, updated_at
           FROM payments
           WHERE order_id = ? AND restaurant_id = ? AND status = 'pending'
           ORDER BY created_at LIMIT 1
         `, [order.id, order.restaurant_id]);
-        if (existing) return { kind: 'pending', created: false, payment: mapPayment(existing) } as const;
+        if (existing) return { kind: 'pending', created: false, payment: mapPayment(existing), customerName: this.customerName(input.userId) } as const;
         return { kind: 'not_payable' } as const;
       }
 
@@ -114,12 +116,31 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
       if (Number(result.changes) !== 1) throw new Error('La commande a changé pendant le démarrage du paiement.');
 
       const payment = this.db.get<PaymentRow>(`
-        SELECT id, restaurant_id, order_id, operator, phone, amount_fc, status, provider_ref, created_at, updated_at
+        SELECT id, restaurant_id, order_id, operator, phone, amount_fc, status, provider_ref, provider_reference, created_at, updated_at
         FROM payments WHERE id = ? AND restaurant_id = ? AND order_id = ?
       `, [input.paymentId, order.restaurant_id, order.id]);
       if (!payment) throw new Error('Le paiement créé est introuvable dans son restaurant.');
-      return { kind: 'pending', created: true, payment: mapPayment(payment) } as const;
+      return { kind: 'pending', created: true, payment: mapPayment(payment), customerName: this.customerName(input.userId) } as const;
     });
+  }
+
+  private customerName(userId: string): string {
+    return this.db.get<{ name: string }>('SELECT name FROM users WHERE id = ?', [userId])?.name ?? 'Client Mon Miam Miam';
+  }
+
+  async setProviderReference(paymentId: string, providerReference: string): Promise<void> {
+    const result = this.db.run(
+      'UPDATE payments SET provider_reference = ? WHERE id = ? AND provider_reference IS NULL',
+      [providerReference, paymentId],
+    );
+    if (Number(result.changes) !== 1) throw new Error('La référence du fournisseur n’a pas pu être enregistrée.');
+  }
+
+  async findPaymentByProviderReference(providerReference: string): Promise<{ id: string; status: PaymentRecordStatus } | null> {
+    return this.db.get<{ id: string; status: PaymentRecordStatus }>(
+      'SELECT id, status FROM payments WHERE provider_reference = ?',
+      [providerReference],
+    ) ?? null;
   }
 
   async failPaymentStart(paymentId: string, at: string): Promise<void> {
@@ -147,6 +168,7 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
     paymentId: string;
     status: PaymentFinalStatus;
     providerRef: string;
+    amountFc?: number;
     at: string;
   }): Promise<ApplyPaymentNotificationResult> {
     return this.db.transaction(() => {
@@ -177,6 +199,7 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
     paymentId: string;
     status: PaymentFinalStatus;
     providerRef: string;
+    amountFc?: number;
     at: string;
   }): ApplyPaymentNotificationResult {
     const payment = this.db.get<PaymentAndOrderRow>(`
@@ -186,6 +209,8 @@ export class SqlitePaymentsRepository implements PaymentsRepository {
       WHERE p.id = ?
     `, [input.paymentId]);
     if (!payment) return { kind: 'not_found' } as const;
+    // Un montant annoncé différent du montant attendu n'est jamais appliqué, même en rejeu d'une confirmation.
+    if (input.amountFc !== undefined && input.amountFc !== payment.amount_fc) return { kind: 'amount_mismatch' } as const;
 
     if (payment.status === input.status) {
       return { kind: 'replayed', paymentStatus: payment.status, orderStatus: payment.order_status } as const;

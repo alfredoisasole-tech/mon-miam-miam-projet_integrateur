@@ -28,8 +28,8 @@ export function usePromotions(slug: string | null) {
     setIsLoading(true);
     setError(null);
 
-    // Endpoint exact du contrat d'API
-    api.get<Promotion[]>(`/api/restaurants/${encodeURIComponent(slug)}/promotions`)
+    // ✅ CORRECTION : On retire le "/api" car http.ts l'ajoute déjà via baseUrl
+    api.get<Promotion[]>(`/restaurants/${encodeURIComponent(slug)}/promotions`)
       .then((res) => {
         if (active) {
           // Filtrer uniquement les promotions actives et dans les dates

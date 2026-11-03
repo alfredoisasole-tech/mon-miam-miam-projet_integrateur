@@ -38,6 +38,12 @@ export const migrations: Migration[] = [
     ALTER TABLE users ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE platform_admins ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0;
   ` },
+  // Référence renvoyée par le fournisseur de paiement à l'initialisation (Easypay) : elle sert à retrouver le
+  // paiement d'une notification. `provider_ref` ne change pas : il reste vide tant que le fournisseur n'a rien confirmé.
+  { id: '005_payment_provider_reference', sql: `
+    ALTER TABLE payments ADD COLUMN provider_reference TEXT;
+    CREATE UNIQUE INDEX idx_payments_provider_reference ON payments (provider_reference) WHERE provider_reference IS NOT NULL;
+  ` },
 ];
 
 export function migrate(db: Database): void {

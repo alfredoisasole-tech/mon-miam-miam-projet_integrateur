@@ -42,7 +42,7 @@ La réponse de détail expose :
 
 Les valeurs de statut d’une commande sont `pending`, `confirmed`, `preparing`, `ready`, `out_for_delivery`, `completed` et `cancelled`. Le parcours normal est `pending` → `confirmed` → `preparing` → `ready` → `completed` pour une commande sur place, et `pending` → `confirmed` → `preparing` → `ready` → `out_for_delivery` → `completed` pour une livraison. L’annulation mène à `cancelled`. Le premier événement d’historique est `pending` à la création.
 
-Les valeurs de paiement sont `cash` ou `mobile_money` ; l’état de paiement est `unpaid`, `pending`, `paid`, `failed` ou `refund_due`. Une commande créée en espèces ou en mobile money débute `unpaid`, sauf si son total est nul : dans ce cas, le serveur la marque `paid`, puisqu’aucun paiement n’est dû. Le démarrage mobile money et la confirmation signée sont décrits dans le [contrat d’API des paiements](paiements.md). Seul le serveur confirme le paiement.
+Les valeurs de paiement sont `cash` ou `mobile_money` ; l’état de paiement est `unpaid`, `pending`, `paid`, `failed` ou `refund_due`. Une commande créée en espèces ou en mobile money débute `unpaid`, sauf si son total est nul : dans ce cas, le serveur la marque `paid`, puisqu’aucun paiement n’est dû ; son annulation ne la passe jamais en `refund_due`, rien n’ayant été payé. Le démarrage mobile money et la confirmation signée sont décrits dans le [contrat d’API des paiements](paiements.md). Seul le serveur confirme le paiement.
 
 ## 1. Créer et valider une commande
 
@@ -319,7 +319,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 
 **Sous-tâche Jira :** 13.3 « Afficher le suivi de commande ».
 
-**Entrée :** identifiant de commande dans le chemin ; aucun corps. L’étudiant peut annuler uniquement si le statut est `pending` et si le paiement est `unpaid` ou `failed`. Un paiement mobile money déjà `pending` ne peut pas être annulé par l’étudiant.
+**Entrée :** identifiant de commande dans le chemin ; aucun corps. L’étudiant peut annuler uniquement si le statut est `pending` et si le paiement est `unpaid` ou `failed`. Un paiement mobile money déjà `pending` ne peut pas être annulé par l’étudiant. Une commande dont le total est de 0 FC parce qu’elle est réglée entièrement avec des points est marquée `paid` dès sa création, mais rien n’a été payé : elle reste annulable tant qu’elle est `pending`, et les points sont rendus.
 
 **Réponse :** `200 OK`, commande complète avec le statut `cancelled`, la date d’annulation et l’événement correspondant. Les points utilisés sont restitués ; une commande annulée ne gagne pas de points.
 
@@ -392,7 +392,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 13. Créer une commande dans plusieurs restaurants et paginer/filtrer la liste de l’étudiant sans exposer les commandes d’un autre étudiant.
 14. Autoriser le propriétaire à lire le détail et répondre `404` pour un identifiant inconnu ou appartenant à un autre étudiant.
 15. Renvoyer les événements du détail avec les statuts et dates UTC dans l’ordre chronologique ; ne pas inclure l’historique dans la liste.
-16. Autoriser l’annulation uniquement en statut `pending` avec paiement `unpaid` ou `failed` ; restituer les points utilisés.
+16. Autoriser l’annulation uniquement en statut `pending` avec paiement `unpaid` ou `failed` (ou total de 0 FC réglé avec des points) ; restituer les points utilisés.
 17. Refuser `redeemMeal` avec `422 INSUFFICIENT_POINTS` si le solde est insuffisant dans le restaurant de la commande.
 18. Initialiser `paymentStatus` à `unpaid` pour cash et mobile money ; seul le serveur peut confirmer le paiement.
 
