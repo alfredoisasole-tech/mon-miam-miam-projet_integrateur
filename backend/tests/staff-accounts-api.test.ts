@@ -14,6 +14,7 @@ describe('API des comptes du personnel', () => {
   let db: Database;
   let server: Serveur;
   let adminToken: string;
+  let adminBToken: string;
   let managerToken: string;
 
   before(async () => {
@@ -33,6 +34,7 @@ describe('API des comptes du personnel', () => {
     [passwordHash, createdAt, passwordHash, createdAt, passwordHash, createdAt]);
     server = await demarrer(createApp(loadConfig({ NODE_ENV: 'test', JWT_SECRET: 'staff-account-test-secret-long-enough' }), { database: db }));
     adminToken = await login('admin-a@example.test');
+    adminBToken = await login('admin-b@example.test');
     managerToken = await login('manager-a@example.test');
   });
 
@@ -111,5 +113,29 @@ describe('API des comptes du personnel', () => {
     assert.equal(disabled.status, 200);
     const denied = await fetch(`${server.base}/api/staff/accounts`, { headers: auth(employeeToken) });
     assert.equal(denied.status, 401);
+  });
+
+  it('déduit le restaurant du jeton et refuse la lecture ou la désactivation directe des comptes d’un autre restaurant', async () => {
+    const createdResponse = await create(adminBToken, 'employee-b@example.test');
+    assert.equal(createdResponse.status, 201);
+    const created = await createdResponse.json() as { account: { id: string } };
+    assert.equal(db.get<{ restaurant_id: string }>(
+      'SELECT restaurant_id FROM users WHERE id = ?', [created.account.id],
+    )?.restaurant_id, 'restaurant-b');
+
+    const listA = await fetch(`${server.base}/api/staff/accounts?restaurantId=restaurant-b`, {
+      headers: auth(adminToken),
+    });
+    assert.equal(listA.status, 200);
+    const accountsA = await listA.json() as Array<{ id: string }>;
+    assert.ok(accountsA.every((account) => account.id !== created.account.id));
+
+    const crossRestaurant = await fetch(`${server.base}/api/staff/accounts/${created.account.id}`, {
+      method: 'PATCH', headers: auth(adminToken), body: JSON.stringify({ status: 'inactive' }),
+    });
+    assert.equal(crossRestaurant.status, 404);
+    assert.equal(db.get<{ status: string }>(
+      'SELECT status FROM users WHERE id = ?', [created.account.id],
+    )?.status, 'active');
   });
 });
