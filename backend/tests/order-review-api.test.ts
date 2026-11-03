@@ -61,7 +61,7 @@ describe('[MM-AVIS] Commentaire après livraison', () => {
     const body = await response.json() as { orderId: string; rating: number; comment: string; commentedAt: string };
     assert.deepEqual({ orderId: body.orderId, rating: body.rating, comment: body.comment, commentedAt: body.commentedAt },
       { orderId: 'done-a', rating: 5, comment: 'Très bon, merci !', commentedAt: NOW.toISOString() });
-    assert.deepEqual(db.get('SELECT rating, comment FROM orders WHERE id = ?', ['done-a']), { rating: 5, comment: 'Très bon, merci !' });
+    assert.deepEqual({ ...db.get('SELECT rating, comment FROM orders WHERE id = ?', ['done-a']) }, { rating: 5, comment: 'Très bon, merci !' });
 
     const again = await review('done-a', 'student-a', { rating: 1, comment: 'Changement d’avis' });
     assert.equal(again.status, 409);
