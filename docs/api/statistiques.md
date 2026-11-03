@@ -84,7 +84,7 @@ Les erreurs respectent le format commun `{ "error": { "code", "message", "detail
 
 ## Vérification APP-82 / APP-84 du 3 novembre 2026
 
-L’API de Lusimafu est mise à jour avec `dev` (`d559ba9`) en conservant les imports et routes du paiement, d’Easypay et de la fidélité. Le seul conflit était dans les imports de `backend/src/app.ts`.
+L’API de Lusimafu est mise à jour avec `dev` (`4dc8674`) en conservant les imports et routes du paiement, d’Easypay et de la fidélité, ainsi que les nouveaux domaines JWT et protections d’isolation. Le seul conflit initial était dans les imports de `backend/src/app.ts`.
 
 `backend/tests/api/stats-access.test.ts` ajoute onze contrôles par HTTP avec de vrais comptes de démonstration, sans remplacement du résolveur de jetons :
 
@@ -95,4 +95,4 @@ L’API de Lusimafu est mise à jour avec `dev` (`d559ba9`) en conservant les im
 - falsification du rôle/restaurant d’un jeton et compte désactivé refusés ;
 - période invalide ou répétée refusée ; nouvelle lecture SQLite reflétée dans les chiffres, sans affecter l’autre restaurant.
 
-Validation : **246 tests backend réussis**, dont les quatre tests L-11 et les onze nouveaux tests APP-84, typage TypeScript backend réussi avec Node.js 24. Les tests APP-78 font l’objet d’une PR distincte et ne sont pas inclus dans ce total. La fusion et une relecture de la PR #43 restent nécessaires.
+Validation : **266 tests backend réussis**, dont les quatre tests L-11 et les onze nouveaux tests APP-84, typage TypeScript backend réussi avec Node.js 24. La falsification est vérifiée avec les jetons JWT actuels. Les tests APP-78 font l’objet d’une PR distincte et ne sont pas inclus dans ce total. La fusion et une relecture de la PR #43 restent nécessaires.
