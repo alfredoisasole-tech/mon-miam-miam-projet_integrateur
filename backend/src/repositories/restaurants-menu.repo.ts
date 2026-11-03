@@ -8,6 +8,8 @@ export interface RestaurantRow {
   logo_asset_id: string | null;
   primary_color: string;
   secondary_color: string;
+  font_family: string;
+  default_mode: string;
   timezone: string;
   settings_id: string | null;
   spend_per_point_fc: number | null;
@@ -36,7 +38,7 @@ export function restaurantsMenuRepository(db: Database) {
     listActive(limit: number, offset: number): RestaurantRow[] {
       return db.all<RestaurantRow>(`
         SELECT r.id, r.slug, r.name, r.tagline, r.logo_asset_id,
-          r.primary_color, r.secondary_color, r.timezone,
+          r.primary_color, r.secondary_color, r.font_family, r.default_mode, r.timezone,
           s.restaurant_id AS settings_id, s.spend_per_point_fc, s.points_per_meal,
           s.free_meal_cap_fc, s.points_validity_months, s.delivery_enabled,
           s.delivery_fee_fc, s.delivery_communes, s.opening_hours
@@ -55,7 +57,7 @@ export function restaurantsMenuRepository(db: Database) {
     findActiveBySlug(slug: string): RestaurantRow | undefined {
       return db.get<RestaurantRow>(`
         SELECT r.id, r.slug, r.name, r.tagline, r.logo_asset_id,
-          r.primary_color, r.secondary_color, r.timezone,
+          r.primary_color, r.secondary_color, r.font_family, r.default_mode, r.timezone,
           s.restaurant_id AS settings_id, s.spend_per_point_fc, s.points_per_meal,
           s.free_meal_cap_fc, s.points_validity_months, s.delivery_enabled,
           s.delivery_fee_fc, s.delivery_communes, s.opening_hours
