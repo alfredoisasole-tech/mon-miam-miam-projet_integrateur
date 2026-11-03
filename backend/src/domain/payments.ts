@@ -14,16 +14,32 @@ export interface PaymentProviderStartInput extends PaymentStartInput {
   paymentId: string;
   orderId: string;
   amountFc: number;
+  /** Nom du client, affiché sur la page de paiement du fournisseur. */
+  customerName: string;
 }
+
+/** État d'un paiement d'après le fournisseur : « pending » tant qu'il n'a rien confirmé. */
+export type ProviderPaymentStatus = 'paid' | 'failed' | 'pending';
 
 export interface PaymentNotification {
   paymentId: string;
   status: PaymentFinalStatus;
   providerRef: string;
+  /** Montant en FC annoncé par le fournisseur ; s'il est présent, il doit égaler le montant attendu du paiement. */
+  amountFc?: number;
 }
 
 export interface PaymentProvider {
-  startPayment(input: PaymentProviderStartInput): Promise<{ redirectUrl: string }>;
+  /** Un fournisseur réel doit l'indiquer : ses notifications sans montant sont alors refusées. */
+  readonly requiresAmountVerification?: boolean;
+  startPayment(input: PaymentProviderStartInput): Promise<{ redirectUrl: string; providerReference?: string }>;
+  /** Adresse de redirection d'un paiement déjà initialisé chez le fournisseur, sans nouvel appel. */
+  redirectUrlFor?(providerReference: string): string;
+  /**
+   * Interroge le fournisseur sur l'état d'un paiement. Présent quand ses notifications ne sont pas signées :
+   * elles ne sont alors jamais crues, seule cette réponse confirme un paiement.
+   */
+  checkPayment?(input: { providerReference: string; paymentId: string }): Promise<ProviderPaymentStatus>;
   verifyNotification(rawBody: Buffer, signature: string | undefined): boolean;
 }
 
@@ -36,6 +52,8 @@ export interface PaymentRecord {
   amountFc: number;
   status: PaymentRecordStatus;
   providerRef: string | null;
+  /** Référence renvoyée par le fournisseur à l'initialisation (vide en simulation). */
+  providerReference: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -43,11 +61,12 @@ export interface PaymentRecord {
 export type StartPaymentResult =
   | { kind: 'not_found' }
   | { kind: 'not_payable' }
-  | { kind: 'pending'; created: boolean; payment: PaymentRecord };
+  | { kind: 'pending'; created: boolean; payment: PaymentRecord; customerName: string };
 
 export type ApplyPaymentNotificationResult =
   | { kind: 'not_found' }
   | { kind: 'already_finalized' }
+  | { kind: 'amount_mismatch' }
   | { kind: 'applied' | 'replayed'; paymentStatus: PaymentFinalStatus; orderStatus: OrderStatus };
 
 export interface PaymentsRepository {
@@ -60,10 +79,14 @@ export interface PaymentsRepository {
     at: string;
   }): Promise<StartPaymentResult>;
   failPaymentStart(paymentId: string, at: string): Promise<void>;
+  /** Enregistre la référence du fournisseur ; elle est unique et ne s'écrit qu'une fois. */
+  setProviderReference(paymentId: string, providerReference: string): Promise<void>;
+  findPaymentByProviderReference(providerReference: string): Promise<{ id: string; status: PaymentRecordStatus } | null>;
   applyNotification(input: {
     paymentId: string;
     status: PaymentFinalStatus;
     providerRef: string;
+    amountFc?: number;
     at: string;
   }): Promise<ApplyPaymentNotificationResult>;
   applySimulationNotification(input: {

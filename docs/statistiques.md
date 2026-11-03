@@ -2,7 +2,7 @@
 
 Responsable : Emmanuel Mboyo. Ticket : [APP-83 — Sous-tâche 18.2](https://judbie2030-45660043.atlassian.net/browse/APP-83). Branche : `feature/ecran-statistiques`, PR vers `dev`.
 
-**Compatibilité avec L-11 vérifiée ; fusion de l’API encore nécessaire dans `dev`.** Le 2 novembre 2026, E-7 a été testé avec `dev` au commit `218cb2b` et la [PR #43 — L-11, APP-82](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/43), au commit `59a4a50`. La vérification d’intégration utilise une copie locale qui conserve les imports du paiement et des statistiques dans `backend/src/app.ts`. Ce correctif local ne modifie pas la branche de Lusimafu et n’ajoute pas l’API L-11 dans la PR E-7. La PR #43 doit être intégrée avant de disposer de l’API dans `dev`.
+**Compatibilité avec L-11 vérifiée ; fusion de l’API encore nécessaire dans `dev`.** Le 3 novembre 2026, E-7 est mis à jour avec `dev` au commit `d559ba9` et vérifié avec la [PR #43 — L-11, APP-82](https://github.com/alfredoisasole-tech/mon-miam-miam-projet_integrateur/pull/43), au commit `2a7ec5e`. La PR #43 intègre désormais les imports et routes du paiement, d’Easypay, de la fidélité et des statistiques ; onze tests APP-84 avec authentification réelle y contrôlent les accès et l’isolation. Le backend n’est pas dupliqué dans la PR E-7 : #43 doit être intégrée pour disposer de l’API dans `dev`.
 
 ## Écran et accès
 
@@ -66,6 +66,19 @@ Contrôle HTTP réel supplémentaire : base SQLite temporaire avec données de d
 
 L’aperçu a été chargé dans le navigateur et contrôlé par son DOM : à 360 px, document de 345 px sans débordement horizontal et grille sur une colonne ; passage à la semaine (840 000 FC de démonstration) et affichage de l’état vide vérifiés. La capture d’écran du navigateur a échoué : aucun contrôle visuel par capture n’est annoncé comme réussi.
 
+## Vérification d’intégration du 3 novembre 2026 — APP-83 / APP-26
+
+**117 tests frontend réussis dans 19 fichiers**, typage TypeScript et build Vite réussis avec Node.js 24. La version actuelle de l’API #43 passe **246 tests backend**, dont onze nouveaux contrôles APP-84. La PR APP-78 et ses huit tests restent séparées.
+
+Le parcours réel a révélé deux problèmes de raccordement, corrigés avec des tests de non-régression :
+
+- la connexion ajoutait `/api` deux fois ; elle appelle désormais `/api/auth/login` via le client commun ;
+- le garde d’accès transmet désormais la destination au format attendu par la page de connexion, pour revenir directement à `/staff/overview` après authentification.
+
+Contrôle dans le navigateur avec l’API réelle #43 et une SQLite temporaire : visiteur redirigé vers la connexion, connexion d’un administrateur de démonstration, retour aux statistiques, affichage de 2 500 FC, deux commandes terminées, panier moyen de 1 250 FC et cinq portions. Les périodes Semaine et Mois affichent également les valeurs calculées par le serveur. Aucun avertissement ou erreur console lors du contrôle final. Les données sont fictives et réservées à cette vérification locale ; aucun compte ni secret de production n’est utilisé.
+
+![Écran statistiques raccordé à l’API locale avec données de démonstration](statistiques/integration-locale.png)
+
 ```sh
 cd frontend
 npm test
@@ -77,6 +90,6 @@ Ouvrir `/stats.html` pour l’aperçu de développement : données fictives expl
 
 ## Conditions avant clôture
 
-1. Intégrer la PR #43 (L-11) dans `dev`, en conservant les imports du paiement et des statistiques dans `backend/src/app.ts`.
+1. Faire relire puis intégrer la PR #43 (L-11 / APP-82 / APP-84) dans `dev` ; son conflit d’imports a été résolu et vérifié.
 2. Faire relire E-7 par un autre binôme, vérifier la CI sur la branche mise à jour et fusionner vers `dev` avec les contrôles requis.
 3. Ne pas confondre la compatibilité locale vérifiée avec un déploiement public de l’API : ce déploiement ne fait pas partie de la présente vérification.
