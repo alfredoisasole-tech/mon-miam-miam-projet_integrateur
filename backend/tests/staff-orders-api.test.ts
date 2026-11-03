@@ -84,7 +84,7 @@ describe('API du personnel pour les commandes', () => {
 
   it('isole la liste et les transitions au restaurant du compte, sans exposer la clé idempotente', async () => {
     const order = await createOrder();
-    const alphaList = await fetch(`${server.base}/api/staff/orders`, {
+    const alphaList = await fetch(`${server.base}/api/staff/orders?restaurant=beta&restaurantId=restaurant-beta`, {
       headers: { authorization: 'Bearer alpha-staff-token' },
     });
     const betaList = await fetch(`${server.base}/api/staff/orders`, {
