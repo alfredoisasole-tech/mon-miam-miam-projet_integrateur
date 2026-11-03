@@ -27,6 +27,9 @@ import { PaymentsService } from './services/payments.service.ts';
 import { SqlitePaymentsRepository } from './repositories/sqlite-payments.repo.ts';
 import { SimulatedPaymentProvider, type PaymentProvider } from './domain/payments.ts';
 import { EasypayPaymentProvider } from './domain/easypay.ts';
+import { registerClaimRoutes } from './controllers/claims.controller.ts';
+import { ClaimsService } from './services/claims.service.ts';
+import { SqliteClaimsRepository } from './repositories/sqlite-claims.repo.ts';
 
 export interface AppOptions {
   /** Routes supplémentaires, ajoutées avant la gestion des routes inconnues et des erreurs (utile pour les tests). */
@@ -104,6 +107,7 @@ export function createApp(config: Config, options: AppOptions = {}): Express {
     registerLoyaltyRoutes(app, { service: new LoyaltyService(orders, { now: options.now }), authenticate });
     registerStaffOrderRoutes(app, { repository: orders, authenticate, now: options.now });
     registerPromotionRoutes(app, new PromotionsService(new SqlitePromotionsRepository(options.database), options.now), options.database, authenticate, { now: options.now });
+    registerClaimRoutes(app, new ClaimsService(new SqliteClaimsRepository(options.database), { now: options.now }), authenticate);
     registerPaymentRoutes(app, {
       env: config.env,
       ipnKey: config.easypay?.ipnKey,
