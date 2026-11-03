@@ -115,8 +115,9 @@ describe('APP-84 — statistiques isolées avec authentification réelle', () =>
 
   it('rejette un jeton dont le rôle et le restaurant ont été falsifiés sans signature valide', async () => {
     const parts = tokens.employee!.split('.');
-    const payload = JSON.parse(Buffer.from(parts[0]!, 'base64url').toString()) as Record<string, unknown>;
-    parts[0] = Buffer.from(JSON.stringify({ ...payload, role: 'admin', restaurantId: 'demo-restaurant-lea' })).toString('base64url');
+    const payloadIndex = parts.length - 2;
+    const payload = JSON.parse(Buffer.from(parts[payloadIndex]!, 'base64url').toString()) as Record<string, unknown>;
+    parts[payloadIndex] = Buffer.from(JSON.stringify({ ...payload, role: 'admin', restaurantId: 'demo-restaurant-lea' })).toString('base64url');
     assert.equal((await get('overview?period=day', parts.join('.'))).status, 401);
   });
 
