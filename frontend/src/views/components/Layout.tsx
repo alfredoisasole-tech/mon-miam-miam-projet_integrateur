@@ -112,7 +112,8 @@ export function LayoutView({ role, loading = false, restaurant, onLogout, cartCo
 export function Layout({ children }: { children?: ReactNode }) {
   const { user, loading, logout } = useAuth();
   const { slug } = useRestaurant();
-  const { restaurant, error } = useRestaurantProfile(user?.role === 'platform_admin' ? null : slug);
+  // Le personnel voit la charte de son restaurant ; un étudiant, celle du restaurant qu'il consulte.
+  const { restaurant, error } = useRestaurantProfile(user?.role === 'platform_admin' ? null : (user?.restaurant?.slug ?? slug));
   const navigate = useNavigate();
   const { count } = useCart();
   return <LayoutView role={user?.role} loading={loading} restaurant={restaurant} cartCount={count} onLogout={() => { logout(); navigate('/', { replace: true }); }}>

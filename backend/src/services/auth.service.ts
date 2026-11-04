@@ -44,6 +44,8 @@ function publicAccount(account: Account) {
   };
 }
 
+type PublicProfile = ReturnType<typeof publicAccount> & { restaurant: { slug: string; name: string } | null };
+
 export class AuthService {
   private readonly attempts = new Map<string, number[]>();
   private readonly db: Database;
@@ -176,7 +178,7 @@ export class AuthService {
     }
   }
 
-  login(identifierInput: unknown, passwordInput: unknown, ip: string): { token: string; user: ReturnType<typeof publicAccount> } {
+  login(identifierInput: unknown, passwordInput: unknown, ip: string): { token: string; user: PublicProfile } {
     const identifier = typeof identifierInput === 'string' ? identifierInput.trim().toLowerCase() : '';
     const password = typeof passwordInput === 'string' ? passwordInput : '';
     if (!identifier || !password) throw new AppError(400, 'INVALID_BODY', 'Identifiant ou mot de passe manquant.');
@@ -204,7 +206,7 @@ export class AuthService {
     }
     if (account.status !== 'active') throw new AppError(403, 'ACCOUNT_DISABLED', 'Ce compte est désactivé.');
     this.attempts.delete(keys[0]!.key);
-    return { token: this.issueToken(account), user: publicAccount(account) };
+    return { token: this.issueToken(account), user: this.withRestaurant(account) };
   }
 
   async forgotPassword(
@@ -278,7 +280,7 @@ export class AuthService {
    * Changement de mot de passe par la personne connectée (obligatoire à la première connexion d'un compte du personnel).
    * Les anciens jetons deviennent invalides ; un nouveau jeton est renvoyé.
    */
-  changePassword(userId: string, currentInput: unknown, newInput: unknown): { token: string; user: ReturnType<typeof publicAccount> } {
+  changePassword(userId: string, currentInput: unknown, newInput: unknown): { token: string; user: PublicProfile } {
     const current = typeof currentInput === 'string' ? currentInput : '';
     const next = typeof newInput === 'string' ? newInput : '';
     if (!current || !next) throw new AppError(400, 'INVALID_BODY', 'Le mot de passe actuel et le nouveau mot de passe sont obligatoires.');
@@ -304,13 +306,22 @@ export class AuthService {
     this.attempts.delete(key);
     const updated = this.findAccount(account.id);
     if (!updated) throw new Error('Le compte vient d’être modifié mais ne peut pas être relu.');
-    return { token: this.issueToken(updated), user: publicAccount(updated) };
+    return { token: this.issueToken(updated), user: this.withRestaurant(updated) };
   }
 
-  profile(userId: string): ReturnType<typeof publicAccount> {
+  profile(userId: string): PublicProfile {
     const account = this.findAccount(userId);
     if (!account || account.status !== 'active') throw new AppError(403, 'ACCOUNT_DISABLED', 'Ce compte est désactivé.');
-    return publicAccount(account);
+    return this.withRestaurant(account);
+  }
+
+  /** Le personnel d'un restaurant reçoit son restaurant (le site en déduit la charte graphique) ; étudiants et plateforme, non. */
+  private withRestaurant(account: Account): PublicProfile {
+    const staff = account.role === 'employee' || account.role === 'manager' || account.role === 'admin';
+    const restaurant = staff && account.restaurantId
+      ? this.db.get<{ slug: string; name: string }>('SELECT slug, name FROM restaurants WHERE id = ?', [account.restaurantId]) ?? null
+      : null;
+    return { ...publicAccount(account), restaurant };
   }
 
   private issueToken(account: Account): string {
