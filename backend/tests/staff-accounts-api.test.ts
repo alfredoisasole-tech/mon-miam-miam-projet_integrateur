@@ -115,6 +115,109 @@ describe('API des comptes du personnel', () => {
     assert.equal(denied.status, 401);
   });
 
+  describe('modification d’un compte du personnel', () => {
+    async function made(email: string, role = 'employee') {
+      const response = await create(adminToken, email, role);
+      assert.equal(response.status, 201);
+      return await response.json() as { account: { id: string; email: string; phone: string }; temporaryPassword: string };
+    }
+    const patch = (token: string, id: string, body: unknown) => fetch(`${server.base}/api/staff/accounts/${id}`, {
+      method: 'PATCH', headers: auth(token), body: JSON.stringify(body),
+    });
+
+    it('modifie le nom, le téléphone et le rôle, puis renvoie le compte à jour', async () => {
+      const created = await made('edit-me@example.test');
+      const response = await patch(adminToken, created.account.id, { name: 'Nouveau Nom', phone: '0821234567', role: 'manager' });
+      assert.equal(response.status, 200);
+      const body = await response.json() as { account: Record<string, unknown> };
+      assert.equal(body.account['name'], 'Nouveau Nom');
+      assert.equal(body.account['phone'], '+243821234567');
+      assert.equal(body.account['role'], 'manager');
+      assert.equal(body.account['email'], created.account.email, 'l’e-mail, identifiant de connexion, ne change pas');
+      assert.ok(!('passwordHash' in body.account));
+      assert.equal(db.get<{ name: string }>('SELECT name FROM users WHERE id = ?', [created.account.id])?.name, 'Nouveau Nom');
+    });
+
+    it('accepte une modification partielle', async () => {
+      const created = await made('partial@example.test');
+      const response = await patch(adminToken, created.account.id, { name: 'Seulement Le Nom' });
+      assert.equal(response.status, 200);
+      assert.equal(db.get<{ role: string; phone: string }>('SELECT role, phone FROM users WHERE id = ?', [created.account.id])?.role, 'employee');
+    });
+
+    it('révoque les jetons quand le rôle ou le téléphone change, mais pas quand seul le nom change', async () => {
+      const created = await made('revoke@example.test');
+      const token = await login(created.account.email, created.temporaryPassword);
+      // Un employé n'a pas accès à cette liste : 403 tant que son jeton est valide, 401 une fois révoqué.
+      const probe = () => fetch(`${server.base}/api/staff/accounts`, { headers: auth(token) }).then(r => r.status);
+      assert.equal(await probe(), 403);
+      await patch(adminToken, created.account.id, { name: 'Autre Nom' });
+      assert.equal(await probe(), 403, 'un simple changement de nom garde la session');
+      await patch(adminToken, created.account.id, { role: 'manager' });
+      assert.equal(await probe(), 401, 'un changement de rôle oblige à se reconnecter');
+    });
+
+    it('réactive un compte désactivé, qui peut de nouveau se connecter', async () => {
+      const created = await made('reactivate@example.test');
+      assert.equal((await patch(adminToken, created.account.id, { status: 'inactive' })).status, 200);
+      const blocked = await fetch(`${server.base}/api/auth/login`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ identifier: created.account.email, password: created.temporaryPassword }),
+      });
+      assert.notEqual(blocked.status, 200);
+      const reactivated = await patch(adminToken, created.account.id, { status: 'active' });
+      assert.equal(reactivated.status, 200);
+      assert.equal(((await reactivated.json()) as { account: { status: string } }).account.status, 'active');
+      await login(created.account.email, created.temporaryPassword);
+    });
+
+    it('refuse un téléphone déjà utilisé par un autre compte', async () => {
+      const first = await made('phone-1@example.test');
+      const second = await made('phone-2@example.test');
+      const response = await patch(adminToken, second.account.id, { phone: first.account.phone });
+      assert.equal(response.status, 409);
+      assert.equal(((await response.json()) as { error: { code: string } }).error.code, 'ACCOUNT_TAKEN');
+    });
+
+    it('accepte de rejouer son propre numéro', async () => {
+      const created = await made('same-phone@example.test');
+      assert.equal((await patch(adminToken, created.account.id, { phone: created.account.phone })).status, 200);
+    });
+
+    it('refuse les champs interdits, les valeurs invalides, les corps vides et le rôle administrateur', async () => {
+      const created = await made('invalid@example.test');
+      for (const body of [{}, { email: 'autre@example.test' }, { restaurantId: 'restaurant-b' }, { name: 'A' }, { phone: '12' },
+        { role: 'admin' }, { role: 'student' }, { status: 'deleted' }, { name: 'Ok Nom', status: 'inactive' }, [], 'x']) {
+        const response = await patch(adminToken, created.account.id, body);
+        assert.equal(response.status, 400, JSON.stringify(body));
+      }
+    });
+
+    it('interdit à un administrateur de modifier son propre rôle ou son propre état', async () => {
+      assert.equal((await patch(adminToken, 'admin-a', { role: 'employee' })).status, 400);
+      assert.equal((await patch(adminToken, 'admin-a', { status: 'inactive' })).status, 400);
+      assert.equal((await patch(adminToken, 'admin-a', { name: 'Admin A Renommé' })).status, 200, 'son nom reste modifiable');
+    });
+
+    it('ne modifie ni les comptes d’un autre restaurant ni les comptes non personnels', async () => {
+      const created = await made('scope@example.test');
+      assert.equal((await patch(adminBToken, created.account.id, { name: 'Intrus Total' })).status, 404);
+      assert.equal(db.get<{ name: string }>('SELECT name FROM users WHERE id = ?', [created.account.id])?.name, 'Compte Test');
+      db.run(`INSERT INTO users (id, restaurant_id, role, name, email, phone, password_hash, created_at)
+        VALUES ('student-scope', 'restaurant-a', 'student', 'Étudiant', 'student-scope@example.test', '+243810009999', 'x', '2026-11-03T08:00:00.000Z')`);
+      assert.equal((await patch(adminToken, 'student-scope', { name: 'Hors Personnel' })).status, 404);
+    });
+
+    it('est réservé à l’administrateur du restaurant', async () => {
+      const created = await made('forbidden@example.test');
+      assert.equal((await patch(managerToken, created.account.id, { name: 'Gérant Interdit' })).status, 403);
+      const anonymous = await fetch(`${server.base}/api/staff/accounts/${created.account.id}`, {
+        method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Sans Jeton' }),
+      });
+      assert.equal(anonymous.status, 401);
+    });
+  });
+
   it('déduit le restaurant du jeton et refuse la lecture ou la désactivation directe des comptes d’un autre restaurant', async () => {
     const createdResponse = await create(adminBToken, 'employee-b@example.test');
     assert.equal(createdResponse.status, 201);
