@@ -7,6 +7,8 @@ import type { RestaurantBrand } from '../../controllers/useRestaurantProfile.ts'
 import type { User } from '../../models/types.ts';
 import { assetUrl } from '../../models/http.ts';
 import { Alert, Spinner } from './ui.tsx';
+import { CookieBanner } from './CookieBanner.tsx';
+import { LEGAL_LINKS } from '../pages/LegalPage.tsx';
 import './layout.css';
 
 const publicLinks = [['/', 'Accueil'], ['/login', 'Connexion'], ['/register', 'Inscription']];
@@ -79,7 +81,14 @@ export function LayoutView({ role, loading = false, restaurant, onLogout, childr
       </>}
     </header>
     <main id="main-content" className="content shell-content" tabIndex={-1}>{children ?? <Outlet />}</main>
-    <footer className="shell-footer">© {new Date().getFullYear()} Mon Miam Miam · Vos repas sur le campus</footer>
+    <footer className="shell-footer">
+      <nav className="footer-links" aria-label="Informations légales">
+        {role && !platform && <Link to="/profile">Mon profil</Link>}
+        {LEGAL_LINKS.map(([key, to, label]) => <Link key={key} to={to}>{label}</Link>)}
+      </nav>
+      © {new Date().getFullYear()} Mon Miam Miam · Vos repas sur le campus
+    </footer>
+    <CookieBanner />
   </div>;
 }
 
