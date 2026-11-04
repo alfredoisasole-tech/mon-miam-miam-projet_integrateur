@@ -40,6 +40,7 @@ function toBase64(file: File): Promise<string> {
 export const settingsApi = {
   get: () => api.get<Settings>('/admin/settings'),
   update: (patch: SettingsPatch) => api.patch<Settings>('/admin/settings', patch),
-  uploadLogo: async (file: File) =>
-    api.post<{ id: string; url: string }>('/admin/assets', { kind: 'logo', data: await toBase64(file) }),
+  uploadAsset: async (kind: 'logo' | 'poster' | 'menu', file: File) =>
+    api.post<{ id: string; url: string }>('/admin/assets', { kind, data: await toBase64(file) }),
+  uploadLogo: (file: File) => settingsApi.uploadAsset('logo', file),
 };

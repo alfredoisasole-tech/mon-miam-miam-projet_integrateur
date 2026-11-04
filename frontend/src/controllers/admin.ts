@@ -28,6 +28,7 @@ export interface PromotionInput {
   description?: string;
   startDate: string;
   endDate: string;
+  imageAssetId?: string;
 }
 
 export interface PlatformRestaurant {

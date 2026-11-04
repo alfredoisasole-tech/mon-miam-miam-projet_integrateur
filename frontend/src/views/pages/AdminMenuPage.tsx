@@ -3,6 +3,7 @@ import { useAuth } from '../../controllers/session';
 import { adminMenuApi, type CreateDishPayload } from '../../controllers/adminMenu';
 import { RequireRole } from '../components/RequireRole';
 import type { MenuDish } from '../../controllers/useMenu';
+import { MAX_LOGO_BYTES, settingsApi } from '../../controllers/settings';
 
 const CATEGORIES: Array<CreateDishPayload['category']> = ['plat', 'boisson', 'dessert', 'snack'];
 
@@ -54,6 +55,19 @@ export const AdminMenuPage: React.FC = () => {
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  const handlePhoto = async (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > MAX_LOGO_BYTES) { setError('La photo dépasse 512 Ko.'); return; }
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { setError('La photo doit être une image PNG, JPEG ou WebP.'); return; }
+    setError(null);
+    try {
+      const asset = await settingsApi.uploadAsset('menu', file);
+      setFormData((previous) => ({ ...previous, imageAssetId: asset.id }));
+    } catch (err: any) {
+      setError(err?.message || 'Envoi de la photo impossible.');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,6 +193,17 @@ export const AdminMenuPage: React.FC = () => {
                 />
                 Disponible
               </label>
+            </div>
+
+            <div>
+              <label htmlFor="dish-photo">Photo</label>
+              <input
+                id="dish-photo"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => void handlePhoto(e.target.files?.[0])}
+              />
+              <small>PNG, JPEG ou WebP, 512 Ko au plus</small>
             </div>
 
             <button type="submit" disabled={formLoading} data-testid="submit-btn">
