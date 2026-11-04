@@ -21,6 +21,18 @@ export function StatsView({ period, onPeriodChange, state, onRefresh }: {
         <Card title="Commandes"><p className="stat-value">{data.orders.total}</p><p className="muted">{data.orders.completed} terminées · {data.orders.active} en cours · {data.orders.cancelled} annulées</p></Card>
         <Card title="Panier moyen"><p className="stat-value">{formatPrice(Math.round(data.averageOrderFc))}</p><p className="muted">Montant moyen en FC</p></Card>
       </div>
+      {(data.loyalty || data.referrals) && <div className="stats-summary">
+        {data.loyalty && <section className="card" aria-label="Fidélité">
+          <h2>Fidélité</h2>
+          <p className="stat-value">{data.loyalty.members} {data.loyalty.members === 1 ? 'client inscrit' : 'clients inscrits'}</p>
+          <p className="muted">{data.loyalty.pointsEarned} points gagnés · {data.loyalty.pointsRedeemed} points utilisés</p>
+        </section>}
+        {data.referrals && <section className="card" aria-label="Parrainage">
+          <h2>Parrainage</h2>
+          <p className="stat-value">{data.referrals.rewarded} {data.referrals.rewarded === 1 ? 'parrainage récompensé' : 'parrainages récompensés'}</p>
+          <p className="muted">{data.referrals.pointsGranted} points offerts · {data.referrals.pending} {data.referrals.pending === 1 ? 'filleul en attente' : 'filleuls en attente'}</p>
+        </section>}
+      </div>}
       <Card title="Plats les plus vendus">
         {items.length === 0 ? <Empty>Aucune vente sur cette période.</Empty> : <ol className="stats-ranking">
           {items.map((item, index) => <li key={`${item.name}-${index}`}>

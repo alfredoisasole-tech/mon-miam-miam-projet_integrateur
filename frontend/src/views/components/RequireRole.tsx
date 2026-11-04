@@ -25,6 +25,11 @@ export const RequireRole = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Mot de passe temporaire : la seule page accessible est le profil, où l'on change son mot de passe.
+  if (user.mustChangePassword && location.pathname !== '/profile') {
+    return <Navigate to="/profile" replace />;
+  }
+
   if (!user.role || !allowedRoles.includes(user.role)) {
     if (fallback) {
       return <>{fallback}</>;

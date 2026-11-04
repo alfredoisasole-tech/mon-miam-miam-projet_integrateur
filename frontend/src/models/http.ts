@@ -2,6 +2,11 @@ import { ApiError } from "./types.ts";
 
 const baseUrl = (import.meta.env.VITE_API_URL ?? "/api").replace(/\/+$/, "");
 
+/** Adresse absolue d'une image publiée par l'API (« /api/... » devient l'adresse réelle du serveur). */
+export function assetUrl(path: string): string {
+  return path.startsWith("/api/") ? `${baseUrl}${path.slice(4)}` : path;
+}
+
 type Methode = "GET" | "POST" | "PATCH" | "DELETE";
 
 interface Options {
@@ -83,5 +88,5 @@ export const api = {
   patch: <T>(chemin: string, corps?: unknown) =>
     requete<T>(chemin, { methode: "PATCH", corps }),
 
-  delete: <T>(chemin: string) => requete<T>(chemin, { methode: "DELETE" }),
+  delete: <T>(chemin: string, corps?: unknown) => requete<T>(chemin, { methode: "DELETE", corps }),
 };

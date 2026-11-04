@@ -78,6 +78,9 @@ export const LoginPage: React.FC = () => {
 
         <footer className="login-footer">
           <p>
+            <Link to="/forgot-password">Mot de passe oublié ?</Link>
+          </p>
+          <p>
             Pas encore de compte ? <Link to="/register">Créer un compte</Link>
           </p>
         </footer>

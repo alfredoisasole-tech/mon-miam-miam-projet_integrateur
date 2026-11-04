@@ -18,9 +18,7 @@ export class LoyaltyService {
   async balance(userId: string, slug: string): Promise<LoyaltyBalance> {
     const restaurant = await this.repository.findRestaurantBySlug(slug);
     if (!restaurant) throw new AppError(404, 'NOT_FOUND', 'Restaurant introuvable.');
-    if (!(await this.repository.hasRestaurantMembership(userId, restaurant.id))) {
-      throw new AppError(403, 'FORBIDDEN', 'Vous n’êtes pas inscrit à ce restaurant.');
-    }
+    // Un étudiant qui n'a pas encore commandé ici n'a pas d'adhésion : son solde est simplement de 0 point.
     const at = (this.options.now?.() ?? new Date()).toISOString();
     const [rules, availablePoints, remainderFc, movements] = await Promise.all([
       this.repository.getLoyaltyRules(restaurant.id),

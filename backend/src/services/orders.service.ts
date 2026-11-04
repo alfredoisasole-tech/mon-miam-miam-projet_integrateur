@@ -171,7 +171,6 @@ export class OrdersService {
     }
     if (!restaurant) throw new AppError(404, 'NOT_FOUND', 'Restaurant introuvable.');
     if (restaurant.status !== 'active') throw new AppError(404, 'RESTAURANT_INACTIVE', 'Ce restaurant n’accepte pas de commandes.');
-    if (!(await this.repository.hasRestaurantMembership(userId, restaurant.id))) throw new AppError(403, 'FORBIDDEN', 'Vous n’êtes pas inscrit à ce restaurant.');
     const now = this.options.now?.() ?? new Date();
     if (!isRestaurantOpenAt(restaurant, now)) throw new AppError(422, 'RESTAURANT_CLOSED', 'Le restaurant est fermé au moment de la commande.');
     if (input.arrivalTime) {

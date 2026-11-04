@@ -24,6 +24,10 @@ export interface StatsOverview {
   salesFc: number;
   averageOrderFc: number;
   topItems: Array<{ name: string; quantity: number; revenueFc: number }>;
+  /** Utilisation du programme de fidélité : points de la période, membres au total. */
+  loyalty: { members: number; pointsEarned: number; pointsRedeemed: number };
+  /** Parrainages récompensés pendant la période et filleuls qui n'ont pas encore commandé. */
+  referrals: { rewarded: number; pointsGranted: number; pending: number };
 }
 
 export interface WeeklyStats {
@@ -103,6 +107,8 @@ export function createStatsService(repository: StatsRepository, now: () => Date 
         salesFc: totals.salesFc,
         averageOrderFc: totals.orders > 0 ? Math.floor(totals.salesFc / totals.orders) : 0,
         topItems: repository.topItems(restaurantId, range, 5),
+        loyalty: { members: repository.memberCount(restaurantId), ...repository.loyaltyTotals(restaurantId, range) },
+        referrals: { ...repository.referralTotals(restaurantId, range), pending: repository.pendingReferees(restaurantId) },
       };
     },
 
