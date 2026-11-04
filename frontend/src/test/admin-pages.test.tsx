@@ -11,7 +11,7 @@ import * as session from '../controllers/session.tsx';
 vi.mock('../controllers/admin.ts', async importOriginal => ({
   ...(await importOriginal<typeof import('../controllers/admin.ts')>()),
   adminApi: {
-    listStaff: vi.fn(), createStaff: vi.fn(), deactivateStaff: vi.fn(), reactivateStaff: vi.fn(), updateStaff: vi.fn(),
+    listStaff: vi.fn(), createStaff: vi.fn(), deactivateStaff: vi.fn(), reactivateStaff: vi.fn(), updateStaff: vi.fn(), resetStaffPassword: vi.fn(),
     listPromotions: vi.fn(), createPromotion: vi.fn(), updatePromotion: vi.fn(), deletePromotion: vi.fn(),
     listRestaurants: vi.fn(), createRestaurant: vi.fn(), setRestaurantStatus: vi.fn(),
   },
@@ -19,7 +19,7 @@ vi.mock('../controllers/admin.ts', async importOriginal => ({
 vi.mock('../controllers/session.tsx', () => ({ useAuth: vi.fn() }));
 const api = vi.mocked(adminApi);
 const asRole = (role: 'manager' | 'admin') =>
-  vi.mocked(session.useAuth).mockReturnValue({ user: { id: 'me', name: 'Moi', role }, loading: false, login: vi.fn(), logout: vi.fn() });
+  vi.mocked(session.useAuth).mockReturnValue({ user: { id: 'me', name: 'Moi', role }, loading: false, login: vi.fn(), logout: vi.fn(), updateUser: vi.fn() });
 const staff = (over = {}) => ({ id: 's1', name: 'Chef Paul', email: 'paul@example.test', phone: '+243810000001', role: 'employee' as const,
   status: 'active', mustChangePassword: false, createdAt: '2026-10-01T00:00:00Z', ...over });
 beforeEach(() => { vi.clearAllMocks(); });
@@ -159,6 +159,61 @@ describe('Comptes du personnel', () => {
       expect(within(form).queryByLabelText('Rôle')).toBeNull();
       expect(screen.queryByRole('button', { name: 'Réactiver Moi' })).toBeNull();
     });
+  });
+});
+
+describe('Mot de passe oublié du personnel', () => {
+  const team = () => [
+    staff({ id: 'e1', name: 'Employé Un', role: 'employee' as const }),
+    staff({ id: 'g1', name: 'Gérant Un', role: 'manager' as const }),
+    staff({ id: 'a1', name: 'Autre Admin', role: 'admin' as const }),
+    staff({ id: 'e2', name: 'Employé Désactivé', role: 'employee' as const, status: 'inactive' }),
+    staff({ id: 'me', name: 'Moi', role: 'manager' as const }),
+  ];
+  const open = async (role: 'manager' | 'admin') => {
+    asRole(role);
+    api.listStaff.mockResolvedValue(team());
+    render(<MemoryRouter><StaffAccountsPage /></MemoryRouter>);
+    await screen.findByText('Employé Un');
+  };
+
+  it('un gérant peut réinitialiser les employés actifs, mais pas les gérants, les administrateurs ni son propre compte', async () => {
+    await open('manager');
+    expect(screen.getByRole('button', { name: 'Nouveau mot de passe pour Employé Un' })).toBeInTheDocument();
+    for (const name of ['Gérant Un', 'Autre Admin', 'Employé Désactivé', 'Moi']) {
+      expect(screen.queryByRole('button', { name: `Nouveau mot de passe pour ${name}` })).toBeNull();
+    }
+  });
+
+  it('un administrateur peut réinitialiser les employés et les gérants, pas les administrateurs', async () => {
+    await open('admin');
+    expect(screen.getByRole('button', { name: 'Nouveau mot de passe pour Employé Un' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Nouveau mot de passe pour Gérant Un' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Nouveau mot de passe pour Autre Admin' })).toBeNull();
+  });
+
+  it('demande une confirmation puis montre le mot de passe temporaire une seule fois', async () => {
+    await open('manager');
+    api.resetStaffPassword.mockResolvedValue({ account: staff({ id: 'e1' }), temporaryPassword: 'MmTemporaire9' });
+    await userEvent.click(screen.getByRole('button', { name: 'Nouveau mot de passe pour Employé Un' }));
+    expect(api.resetStaffPassword).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Non' }));
+    expect(api.resetStaffPassword).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Nouveau mot de passe pour Employé Un' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Oui, générer' }));
+    await waitFor(() => expect(api.resetStaffPassword).toHaveBeenCalledWith('e1'));
+    const notice = await screen.findByText(/Nouveau mot de passe temporaire pour Employé Un/);
+    expect(notice).toHaveTextContent('MmTemporaire9');
+    expect(notice).toHaveTextContent('ne sera plus affiché');
+  });
+
+  it('affiche l’erreur du serveur sans montrer de mot de passe', async () => {
+    await open('admin');
+    api.resetStaffPassword.mockRejectedValue(new Error('Vous ne pouvez pas réinitialiser le mot de passe de ce compte.'));
+    await userEvent.click(screen.getByRole('button', { name: 'Nouveau mot de passe pour Gérant Un' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Oui, générer' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Vous ne pouvez pas réinitialiser');
+    expect(screen.queryByText(/mot de passe temporaire pour/)).toBeNull();
   });
 });
 

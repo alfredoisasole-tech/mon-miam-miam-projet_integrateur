@@ -74,7 +74,7 @@ describe('Promotions et événements sur la page du menu', () => {
 
 describe('Envoi d’images par l’administrateur', () => {
   beforeEach(() => {
-    vi.spyOn(session, 'useAuth').mockReturnValue({ user: { id: 'a', name: 'Admin', role: 'admin' }, loading: false, login: vi.fn(), logout: vi.fn() });
+    vi.spyOn(session, 'useAuth').mockReturnValue({ user: { id: 'a', name: 'Admin', role: 'admin' }, loading: false, login: vi.fn(), logout: vi.fn(), updateUser: vi.fn() });
   });
   it('joint une affiche à une promotion', async () => {
     vi.mocked(adminApi.listPromotions).mockResolvedValue([]);

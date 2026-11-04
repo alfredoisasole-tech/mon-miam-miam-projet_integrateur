@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../controllers/cart.tsx';
 import { useAuth } from '../../controllers/session.tsx';
@@ -9,13 +9,8 @@ import { PaymentChoice, type PaymentMethod } from '../components/PaymentChoice.t
 import { PaymentDetails, isValidPaymentPhone, normalizePaymentPhone } from '../components/PaymentDetails.tsx';
 import { paymentApi, type PaymentOperator } from '../../controllers/payment.ts';
 import { useLoyalty } from '../../controllers/loyalty.ts';
+import { KINSHASA_COMMUNES } from '../../models/communes.ts';
 
-const KINSHASA_COMMUNES = [
-  'Bandalungwa', 'Barumbu', 'Bumbu', 'Gombe', 'Kalamu', 'Kasa-Vubu', 'Kimbanseke',
-  'Kinshasa', 'Kintambo', 'Kisenso', 'Lemba', 'Limete', 'Lingwala', 'Makala',
-  'Maluku', 'Masina', 'Matete', 'Mont-Ngafula', "N'djili", "N'sele", 'Ngaba',
-  'Ngaliema', 'Ngiri-Ngiri', 'Selembao',
-];
 
 export const CartPage: React.FC = () => {
   const { cart, totalFc, updateProductQuantity, removeProduct, clearCart } = useCart();
@@ -27,6 +22,11 @@ export const CartPage: React.FC = () => {
   const [commune, setCommune] = useState('Gombe');
   const [address, setAddress] = useState('');
   const [landmark, setLandmark] = useState('');
+  // Adresse habituelle du profil : proposée par défaut, modifiable à chaque commande.
+  useEffect(() => {
+    if (user?.commune) setCommune(user.commune);
+    if (user?.address) setAddress(user.address);
+  }, [user?.commune, user?.address]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [redeemPoints, setRedeemPoints] = useState(false);
   const [note, setNote] = useState('');
@@ -376,13 +376,26 @@ export const CartPage: React.FC = () => {
                     ))}
                   </select>
 
+                  <label htmlFor="delivery-address" style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+                    Adresse
+                  </label>
+                  <input
+                    id="delivery-address"
+                    type="text"
+                    placeholder="Rue, numéro, quartier"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid var(--mm-line)', marginBottom: '0.75rem' }}
+                    data-testid="input-address"
+                  />
+
                   <label htmlFor="delivery-landmark" style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
-                    Repère ou adresse
+                    Repère connu
                   </label>
                   <input
                     id="delivery-landmark"
                     type="text"
-                    placeholder="Bâtiment, chambre ou repère connu"
+                    placeholder="Bâtiment, chambre ou lieu connu"
                     value={landmark}
                     onChange={(e) => setLandmark(e.target.value)}
                     style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid var(--mm-line)' }}

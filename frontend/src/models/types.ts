@@ -4,6 +4,12 @@ export interface User {
   role?: "student" | "employee" | "manager" | "admin" | "platform_admin";
   /** Vrai pour un compte du personnel créé avec un mot de passe temporaire. */
   mustChangePassword?: boolean;
+  email?: string;
+  phone?: string;
+  /** Adresse habituelle de livraison (étudiants). */
+  commune?: string | null;
+  quartier?: string | null;
+  address?: string | null;
   /** Restaurant du personnel (null pour un étudiant ou la plateforme) : sert à appliquer sa charte graphique. */
   restaurant?: { slug: string; name: string } | null;
 }

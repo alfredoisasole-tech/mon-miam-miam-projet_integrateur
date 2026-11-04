@@ -93,6 +93,8 @@ Cliquez sur **Équipe** (`/staff/accounts`) puis remplissez **Nom**, **E-mail**,
 
 Le compte reçoit un **mot de passe temporaire** affiché **une seule fois** : transmettez-le à la personne. À sa première connexion, elle est dirigée vers **Mon profil** et doit choisir un nouveau mot de passe avant d’utiliser le reste du site. Seul l’administrateur peut **modifier** un compte (nom, téléphone, rôle employé ou gérant ; l’e-mail ne change pas), le **désactiver** (confirmation demandée) ou le **réactiver**. Changer le rôle ou le téléphone oblige la personne à se reconnecter ; un administrateur ne peut modifier ni son propre rôle ni son propre état.
 
+**Mot de passe oublié.** Quand une personne a tout oublié (aucun SMS ni e-mail n'est envoyé), cliquez sur **Mot de passe oublié** à côté de son nom, puis **Oui, générer** : un nouveau mot de passe temporaire s'affiche **une seule fois**, à lui transmettre. Elle devra le changer dès sa connexion et ses anciennes sessions sont fermées. Le gérant réinitialise les employés ; l'administrateur, les employés et les gérants (jamais un administrateur, ni son propre compte : utilisez **Mon profil**). Chacun peut aussi modifier son nom et son numéro depuis **Mon profil**.
+
 ## 5. Administrateur du restaurant : carte, promotions et statistiques
 
 ### Carte du restaurant
@@ -112,7 +114,7 @@ Cliquez sur **Promotions** (`/admin/promotions`). Choisissez le **Type** (promot
 
 ### Statistiques et employés
 
-L’administrateur du restaurant peut utiliser le bilan décrit dans la section **Gérant : consulter les statistiques**. Il voit uniquement les données de son restaurant. Il crée, modifie, désactive et réactive aussi les comptes du personnel depuis **Équipe**.
+L’administrateur du restaurant peut utiliser le bilan décrit dans la section **Gérant : consulter les statistiques**. Il voit uniquement les données de son restaurant. Il crée, modifie, désactive et réactive aussi les comptes du personnel depuis **Équipe**, et redonne un mot de passe temporaire à qui l'a oublié.
 
 L’administrateur d’un restaurant ne crée pas les autres restaurants et ne change pas leur statut : ces opérations appartiennent à l’administration de la plateforme.
 

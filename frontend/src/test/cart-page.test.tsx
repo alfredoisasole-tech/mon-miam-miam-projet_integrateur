@@ -80,6 +80,23 @@ describe('CartPage (G-8 · feat(panier): panier d\'un seul restaurant et changem
     render(<AuthProvider><CartProvider><MemoryRouter><CartPage /></MemoryRouter></CartProvider></AuthProvider>);
   };
 
+  it('préremplit la livraison avec l’adresse habituelle du profil, modifiable à chaque commande', async () => {
+    localStorage.setItem('mmm_cart', JSON.stringify({ restaurantSlug: 'zeduc-space', lines: [
+      { id: 'dish-1', name: 'Poulet DG', restaurantSlug: 'zeduc-space', unitPriceFc: 7000, quantity: 1 },
+    ] }));
+    localStorage.setItem('mmm_token', 'fake-token');
+    vi.spyOn(api, 'get').mockImplementation(async (path: string) => (path === '/me'
+      ? { id: 'student-1', name: 'Alex', email: 'alex@example.com', role: 'student', commune: 'Limete', address: '12 avenue du Marché' }
+      : loyalty(0)) as never);
+    render(<AuthProvider><CartProvider><MemoryRouter><CartPage /></MemoryRouter></CartProvider></AuthProvider>);
+    fireEvent.click(await screen.findByLabelText(/Livraison/));
+    expect(await screen.findByTestId('select-commune')).toHaveValue('Limete');
+    const address = screen.getByLabelText('Adresse');
+    expect(address).toHaveValue('12 avenue du Marché');
+    fireEvent.change(address, { target: { value: 'Chez un ami, rue 5' } });
+    expect(address).toHaveValue('Chez un ami, rue 5');
+  });
+
   it('propose la réduction fidélité avec les règles du restaurant quand les points suffisent', async () => {
     mountWithLoyalty(20);
     expect(await screen.findByTestId('checkbox-loyalty-discount')).toBeInTheDocument();
