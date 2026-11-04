@@ -24,6 +24,7 @@ import { StaffClaimsPage } from './views/pages/StaffClaimsPage.tsx';
 import { CommunityPage } from './views/pages/CommunityPage.tsx';
 import { StaffAccountsPage } from './views/pages/StaffAccountsPage.tsx';
 import { AdminPromotionsPage } from './views/pages/AdminPromotionsPage.tsx';
+import { SimulatedPaymentPage } from './views/pages/SimulatedPaymentPage.tsx';
 import { PlatformPage } from './views/pages/PlatformPage.tsx';
 
 /** Anciennes adresses sans restaurant : on reprend le dernier restaurant visité, sinon on choisit un restaurant. */
@@ -53,6 +54,7 @@ export function App() {
                 {['menu', 'cart', 'loyalty', 'community', 'claims'].map(page => (
                   <Route key={page} path={`/${page}`} element={<LegacyRestaurantPath page={page} />} />
                 ))}
+                <Route path="/paiement/simulation/:paymentId" element={<RequireRole allowedRoles={['student']}><SimulatedPaymentPage /></RequireRole>} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
