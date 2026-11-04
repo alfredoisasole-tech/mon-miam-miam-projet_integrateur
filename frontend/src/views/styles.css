@@ -107,6 +107,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { background
 :where(a, button, input, select, textarea, [tabindex]):focus-visible { outline: 3px solid var(--mm-accent); outline-offset: 3px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 .btn-primary { background: var(--mm-brand); color: var(--mm-on-brand); border-color: var(--mm-accent); }
+.btn-danger { background: var(--mm-danger-bg); color: var(--mm-danger); border-color: var(--mm-danger); }
 .btn-dark { background: var(--mm-header-bg); color: var(--mm-on-header); border-color: var(--mm-header-bg); }
 .muted { color: var(--mm-muted); }
 .content { width: min(100%, 1120px); margin-inline: auto; padding: clamp(1rem, 4vw, 2rem); }

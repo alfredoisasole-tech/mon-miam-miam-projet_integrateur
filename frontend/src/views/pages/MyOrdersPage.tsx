@@ -1,94 +1,112 @@
-import React from 'react';
-import { useMyOrders, type Order } from '../../controllers/orders';
-import { RequireRole } from '../components/RequireRole';
+import { useCallback, useEffect, useState } from 'react';
+import { STATUS_LABEL, canCancel, isActive, ordersApi } from '../../controllers/orders.ts';
+import type { Order, OrderDetail } from '../../controllers/orders.ts';
+import { formatPrice } from '../../models/format.ts';
+import { Alert, Badge, Empty, Spinner } from '../components/ui.tsx';
 
-// Fonction utilitaire pour formater la date
-const formatDate = (isoDate: string) => {
-  return new Date(isoDate).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : 'Une erreur est survenue.');
+const dateTime = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const badgeKind = (status: Order['status']) => (status === 'completed' ? 'success' : status === 'cancelled' ? 'error' : 'info');
 
-// Fonction utilitaire pour traduire le statut
-const getStatusLabel = (status: Order['status']) => {
-  const labels: Record<Order['status'], string> = {
-    pending: 'En attente',
-    preparing: 'En préparation',
-    ready: 'Prête à récupérer',
-    delivered: 'Livrée',
-    cancelled: 'Annulée',
-  };
-  return labels[status];
-};
+function ReviewForm({ order, onDone }: { order: Order; onDone: (rating: number, comment: string) => void }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  async function send() {
+    setError(null);
+    try { await ordersApi.review(order.id, rating, comment.trim()); onDone(rating, comment.trim()); }
+    catch (e) { setError(messageOf(e)); }
+  }
+  return <div className="review-form">
+    <Alert>{error}</Alert>
+    <fieldset>
+      <legend>Que pensez-vous de cette commande ?</legend>
+      {[1, 2, 3, 4, 5].map(value => <label key={value} className="rating-choice">
+        <input type="radio" name={`rating-${order.id}`} aria-label={`${value} sur 5`} checked={rating === value} onChange={() => setRating(value)} /> {value} ★
+      </label>)}
+    </fieldset>
+    <label className="field-label" htmlFor={`comment-${order.id}`}>Commentaire (facultatif)</label>
+    <textarea id={`comment-${order.id}`} rows={2} maxLength={500} value={comment} onChange={e => setComment(e.target.value)} />
+    <button type="button" className="btn btn-primary" disabled={rating === 0} onClick={() => void send()}>Envoyer mon avis</button>
+  </div>;
+}
 
-// Fonction utilitaire pour la couleur du statut
-const getStatusColor = (status: Order['status']) => {
-  const colors: Record<Order['status'], string> = {
-    pending: '#f59e0b', // orange
-    preparing: '#3b82f6', // bleu
-    ready: '#10b981', // vert
-    delivered: '#6b7280', // gris
-    cancelled: '#ef4444', // rouge
-  };
-  return colors[status];
-};
+function OrderCard({ order, onChanged }: { order: Order; onChanged: (order: Order) => void }) {
+  const [detail, setDetail] = useState<OrderDetail | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [thanks, setThanks] = useState(false);
 
-export const MyOrdersPage: React.FC = () => {
-  const { data: orders, isLoading, error } = useMyOrders();
+  async function track() {
+    setError(null);
+    try { setDetail(await ordersApi.get(order.id)); } catch (e) { setError(messageOf(e)); }
+  }
+  async function cancel() {
+    setError(null);
+    try { const updated = await ordersApi.cancel(order.id); setDetail(updated); setConfirming(false); onChanged(updated); }
+    catch (e) { setError(messageOf(e)); setConfirming(false); }
+  }
 
-  return (
-    <RequireRole allowedRoles={['student']}>
-      <div className="my-orders-page" data-testid="my-orders-page">
-        <h2>Mes Commandes</h2>
+  return <article className="card order-card" aria-label={`Commande ${order.orderNumber}`}>
+    <header className="order-header">
+      <strong>{order.restaurant.name}</strong>
+      <Badge kind={badgeKind(order.status)}>{STATUS_LABEL[order.status]}</Badge>
+    </header>
+    <p className="muted">N° {order.orderNumber} · {dateTime(order.createdAt)} · {order.type === 'delivery' ? 'Livraison' : 'Sur place'}</p>
+    <ul className="order-items">
+      {order.items.map(item => <li key={item.menuItemId}>{item.quantity} × {item.name}</li>)}
+    </ul>
+    <p>Total : <strong>{formatPrice(order.totalFc)}</strong>{order.pointsEarned > 0 && <span className="muted"> · +{order.pointsEarned} points</span>}</p>
+    <Alert>{error}</Alert>
 
-        {isLoading && <p>Chargement de vos commandes...</p>}
-        
-        {error && <p role="alert" data-testid="error-message">{error}</p>}
+    {detail && <ol className="order-events" aria-label="Historique de la commande">
+      {detail.events.map(event => <li key={`${event.status}-${event.at}`}>{STATUS_LABEL[event.status]} <span className="muted">· {dateTime(event.at)}</span></li>)}
+    </ol>}
 
-        {!isLoading && !error && orders.length === 0 && (
-          <p data-testid="no-orders">Vous n'avez pas encore passé de commande.</p>
-        )}
+    <div className="order-actions">
+      <button type="button" className="btn" onClick={() => void track()}>Suivre la commande</button>
+      {canCancel(order) && !confirming && <button type="button" className="btn" onClick={() => setConfirming(true)}>Annuler la commande</button>}
+      {confirming && <>
+        <span>Annuler cette commande ?</span>
+        <button type="button" className="btn btn-danger" onClick={() => void cancel()}>Oui, annuler</button>
+        <button type="button" className="btn" onClick={() => setConfirming(false)}>Non</button>
+      </>}
+    </div>
 
-        {!isLoading && !error && orders.length > 0 && (
-          <ul className="orders-list" data-testid="orders-list">
-            {orders.map((order) => (
-              <li key={order.id} className="order-card" data-testid={`order-${order.id}`}>
-                <div className="order-header">
-                  <span className="order-restaurant">{order.restaurantName}</span>
-                  <span 
-                    className="order-status" 
-                    style={{ color: getStatusColor(order.status), fontWeight: 'bold' }}
-                    data-testid={`status-${order.id}`}
-                  >
-                    {getStatusLabel(order.status)}
-                  </span>
-                </div>
-                
-                <div className="order-date">
-                  Commandé le {formatDate(order.createdAt)}
-                </div>
+    {order.status === 'completed' && (thanks
+      ? <Alert kind="success">Merci pour votre avis !</Alert>
+      : order.rating !== null
+        ? <p className="muted">Votre avis : {order.rating} ★ sur 5{order.comment ? ` — ${order.comment}` : ''}</p>
+        : <ReviewForm order={order} onDone={(rating, comment) => { setThanks(true); onChanged({ ...order, rating, comment: comment || null }); }} />)}
+  </article>;
+}
 
-                <ul className="order-items">
-                  {order.items.map((item) => (
-                    <li key={item.id} className="order-item">
-                      {item.quantity}x {item.name} 
-                      <span className="item-price">{item.unitPriceFc} FC</span>
-                    </li>
-                  ))}
-                </ul>
+export function MyOrdersPage() {
+  const [orders, setOrders] = useState<Order[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-                <div className="order-total">
-                  <strong>Total : {order.totalFc} FC</strong>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </RequireRole>
-  );
-};
+  const load = useCallback(() => {
+    ordersApi.list()
+      .then(page => { setOrders(page.items); setError(null); })
+      .catch(() => { setError('Impossible de charger vos commandes.'); setOrders(previous => previous ?? []); });
+  }, []);
+  useEffect(load, [load]);
+  const hasActive = orders?.some(isActive) ?? false;
+  useEffect(() => {
+    if (!hasActive) return;
+    const timer = window.setInterval(load, 15000);
+    return () => window.clearInterval(timer);
+  }, [hasActive, load]);
+
+  function replace(updated: Order) {
+    setOrders(previous => previous?.map(order => (order.id === updated.id ? { ...order, ...updated } : order)) ?? null);
+  }
+
+  return <section className="my-orders-page">
+    <h1>Mes commandes</h1>
+    <Alert>{error}</Alert>
+    {orders === null ? <Spinner label="Chargement de vos commandes…" /> : orders.length === 0 && !error
+      ? <Empty>Vous n’avez pas encore passé de commande.</Empty>
+      : orders.map(order => <OrderCard key={order.id} order={order} onChanged={replace} />)}
+  </section>;
+}
