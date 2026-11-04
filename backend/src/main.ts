@@ -10,7 +10,14 @@ try {
   mkdirSync(dirname(config.databasePath), { recursive: true });
   const database = new Database(config.databasePath);
   migrate(database);
-  const app = createApp(config, { database });
+  // Hors production, sans service d'envoi réel, le code de réinitialisation est écrit dans les journaux du serveur.
+  // En production, tant qu'aucun service d'envoi n'est branché, la route répond que l'envoi est indisponible.
+  const sendPasswordResetCode = config.env === 'production'
+    ? undefined
+    : async (identifier: string, code: string): Promise<void> => {
+      console.log(`[réinitialisation] code pour ${identifier} : ${code}`);
+    };
+  const app = createApp(config, { database, sendPasswordResetCode });
   const server = app.listen(config.port, '0.0.0.0', () => {
     console.log(`[${new Date().toISOString()}] Mon Miam Miam : API prête sur le port ${config.port} (${config.env}).`);
   });
