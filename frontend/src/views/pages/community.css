@@ -1,0 +1,10 @@
+.referral-code { font-size: 1.6rem; font-weight: 700; letter-spacing: .08em; overflow-wrap: anywhere; }
+.referee-list { list-style: none; padding: 0; display: grid; gap: .5rem; }
+.referee-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; padding: .6rem .8rem; border: 1px solid var(--mm-line); border-radius: 8px; background: var(--mm-surface); }
+.period-switch { display: flex; gap: .5rem; margin: 1rem 0; flex-wrap: wrap; }
+.is-me { background: var(--mm-info-bg); }
+.games-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+.game-options { display: grid; gap: .5rem; margin: .75rem 0; }
+.memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin: .75rem 0; }
+.memory-card { aspect-ratio: 1; min-width: 44px; padding: 0; font-size: 1.5rem; display: grid; place-items: center; }
+.memory-card[aria-pressed='true'] { background: var(--mm-brand); color: var(--mm-on-brand); }
