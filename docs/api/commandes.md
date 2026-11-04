@@ -100,7 +100,7 @@ Pour une livraison, remplacer `arrivalTime` par un objet `delivery` :
 
 | Champ | Règle |
 |---|---|
-| `restaurant` | Facultatif ; slug d’un restaurant actif auquel l’étudiant est adhérent. S’il est absent, le restaurant d’origine de l’étudiant est utilisé. |
+| `restaurant` | Obligatoire ; slug d’un restaurant actif. Absent : `422 RESTAURANT_REQUIRED`. L’adhésion à ce restaurant est créée à la première commande. |
 | `type` | Obligatoire ; `dine_in` ou `delivery`. |
 | `arrivalTime` | Facultatif pour `dine_in`. S’il est fourni, date ISO 8601 valide, non passée, au plus 12 heures à l’avance et dans les horaires d’ouverture. À omettre pour `delivery`. |
 | `delivery` | Obligatoire pour `delivery`. `commune` doit être l’une des 24 communes reconnues de Kinshasa et desservie par le restaurant. Fournir au moins un `landmark` ou une `address`. `phone` est facultatif ; par défaut, le téléphone du compte étudiant est utilisé. `quartier` est facultatif. |
@@ -189,7 +189,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 
 **Sous-tâche Jira :** 13.3 « Afficher le suivi de commande ».
 
-**Entrée :** aucun corps. Paramètres facultatifs `status`, `page` et `pageSize`. `page` commence à 1 ; `pageSize` vaut 20 par défaut et est limité à 100. Le filtre `status` accepte les statuts de commande connus. La liste est triée de la plus récente à la plus ancienne et comprend les commandes de l’étudiant dans tous les restaurants, pas seulement le restaurant d’origine.
+**Entrée :** aucun corps. Paramètres facultatifs `status`, `page` et `pageSize`. `page` commence à 1 ; `pageSize` vaut 20 par défaut et est limité à 100. Le filtre `status` accepte les statuts de commande connus. La liste est triée de la plus récente à la plus ancienne et comprend les commandes de l’étudiant dans tous les restaurants, quel que soit le restaurant.
 
 **Réponse :** `200 OK`, page de commandes de l’étudiant. Les lignes de liste ne contiennent pas l’historique ; celui-ci est renvoyé par le détail.
 
@@ -379,7 +379,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 
 1. Accepter `dine_in` sans `arrivalTime` ; lorsqu’il est fourni, refuser les heures passées, au-delà de 12 heures ou hors horaires.
 2. Créer une commande de livraison avec commune desservie et adresse ou repère ; utiliser le téléphone du compte s’il n’est pas fourni.
-3. Sans `restaurant`, utiliser le restaurant d’origine ; avec un slug valide, commander dans le restaurant choisi.
+3. Sans `restaurant`, refuser (`422 RESTAURANT_REQUIRED`) ; avec un slug valide, commander dans le restaurant choisi.
 4. Vérifier les quantités 1 et 20 ; refuser 0, 21, un nombre non entier, un panier vide, plus de 30 lignes ou plus de 20 exemplaires cumulés d’un plat.
 5. Recalculer prix, réduction, frais et total depuis les données serveur.
 6. Refuser un plat inconnu ou rattaché à un autre restaurant avec `422 ITEM_NOT_FOUND`.

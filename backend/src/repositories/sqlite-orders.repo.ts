@@ -181,12 +181,10 @@ export class SqliteOrdersRepository implements OrdersRepository, LoyaltyReposito
   }
 
   async findStudent(userId: string): Promise<StudentProfile | null> {
-    const row = this.db.get<{ id: string; restaurant_id: string; phone: string; loyalty_remainder_fc: number }>(`
-      SELECT u.id, u.restaurant_id, u.phone, m.loyalty_remainder_fc
-      FROM users u JOIN memberships m ON m.user_id = u.id AND m.restaurant_id = u.restaurant_id
-      WHERE u.id = ? AND u.role = 'student' AND u.status = 'active' AND m.restaurant_id = u.restaurant_id
+    const row = this.db.get<{ id: string; phone: string }>(`
+      SELECT id, phone FROM users WHERE id = ? AND role = 'student' AND status = 'active'
     `, [userId]);
-    return row ? { id: row.id, restaurantId: row.restaurant_id, phone: row.phone, loyaltyRemainderFc: row.loyalty_remainder_fc } : null;
+    return row ? { id: row.id, restaurantId: null, phone: row.phone, loyaltyRemainderFc: 0 } : null;
   }
 
   async findRestaurantById(restaurantId: string): Promise<Restaurant | null> {

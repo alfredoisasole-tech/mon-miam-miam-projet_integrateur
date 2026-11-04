@@ -4,6 +4,9 @@ import { DAYS, FONTS, MAX_LOGO_BYTES, settingsApi } from '../../controllers/sett
 import type { Settings, SettingsPatch } from '../../controllers/settings.ts';
 import { announceRestaurantUpdated } from '../../controllers/useRestaurantProfile.ts';
 import { Alert, Card, Input, Select, Spinner } from '../components/ui.tsx';
+import { ColorField } from '../components/ColorField.tsx';
+import { LogoField } from '../components/LogoField.tsx';
+import { BrandPreview } from '../components/BrandPreview.tsx';
 import './settings.css';
 
 const COLOR = /^#[\da-f]{6}$/i;
@@ -142,8 +145,8 @@ export function AdminSettingsPage() {
       <Input label="Nom du restaurant" value={form.name} error={errors.name} onChange={e => set('name', e.target.value)} />
       <Input label="Slogan" value={form.tagline} error={errors.tagline} onChange={e => set('tagline', e.target.value)} />
       <div className="settings-row">
-        <Input label="Couleur principale" value={form.primaryColor} error={errors.primaryColor} hint="Format #rrggbb" onChange={e => set('primaryColor', e.target.value)} />
-        <Input label="Couleur secondaire" value={form.secondaryColor} error={errors.secondaryColor} hint="Format #rrggbb" onChange={e => set('secondaryColor', e.target.value)} />
+        <ColorField label="Couleur principale" value={form.primaryColor} error={errors.primaryColor} hint="Boutons, liens et prix." onChange={value => set('primaryColor', value)} />
+        <ColorField label="Couleur secondaire" value={form.secondaryColor} error={errors.secondaryColor} hint="Bandeau en haut de chaque page." onChange={value => set('secondaryColor', value)} />
       </div>
       <div className="settings-row">
         <Select label="Police" value={form.fontFamily} onChange={e => set('fontFamily', e.target.value)}>
@@ -153,8 +156,8 @@ export function AdminSettingsPage() {
           <option value="light">Clair</option><option value="dark">Sombre</option><option value="system">Selon l’appareil</option>
         </Select>
       </div>
-      <Input label="Logo" type="file" accept="image/png,image/jpeg,image/webp" hint="PNG, JPEG ou WebP, 512 Ko au plus" onChange={e => void onLogo(e.target.files?.[0])} />
-      {logoUrl && <p className="settings-logo-note muted">Un logo est défini{logoId !== initialLogo ? ' (à enregistrer)' : ''}.</p>}
+      <LogoField logoUrl={logoUrl} pending={logoId !== initialLogo} onPick={file => void onLogo(file)} onRemove={() => { setLogoId(null); setLogoUrl(null); }} />
+      <BrandPreview name={form.name} logoUrl={logoUrl} primary={form.primaryColor} secondary={form.secondaryColor} fontFamily={form.fontFamily} />
     </Card>
 
     <Card title="Horaires d’ouverture">

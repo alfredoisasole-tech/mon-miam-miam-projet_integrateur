@@ -22,8 +22,8 @@ export interface RegisterResponse {
 }
 
 export const authApi = {
-  register(slug: string, input: RegisterInput): Promise<RegisterResponse> {
-    // D-5 : POST /api/restaurants/:slug/auth/register
-    return api.post<RegisterResponse>(`/restaurants/${encodeURIComponent(slug)}/auth/register`, input);
+  register(input: RegisterInput): Promise<RegisterResponse> {
+    // Le compte appartient à la plateforme : POST /api/auth/register, sans restaurant.
+    return api.post<RegisterResponse>('/auth/register', input);
   },
 };

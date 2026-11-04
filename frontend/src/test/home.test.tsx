@@ -50,7 +50,7 @@ describe('HomePage (G-6 · feat(restaurants): liste des restaurants et selection
       </AuthProvider>
     );
 
-    expect(screen.getByText('Vos repas du campus, commandés en quelques clics')).toBeInTheDocument();
+    expect(screen.getByText('Les saveurs du campus à portée de main.')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('ZeDuc@Space')).toBeInTheDocument();
@@ -75,7 +75,7 @@ describe('HomePage (G-6 · feat(restaurants): liste des restaurants et selection
           <MemoryRouter initialEntries={['/']}>
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/menu" element={<div>Page Menu Cible</div>} />
+              <Route path="/r/:slug/menu" element={<div>Page Menu Cible</div>} />
             </Routes>
           </MemoryRouter>
         </RestaurantProvider>
@@ -114,13 +114,13 @@ describe('HomePage (G-6 · feat(restaurants): liste des restaurants et selection
     });
   });
 
-  it('RestaurantRedirectPage sélectionne le restaurant depuis l’URL puis redirige vers /menu', async () => {
+  it('RestaurantRedirectPage sélectionne le restaurant depuis l’URL puis redirige vers son menu', async () => {
     render(
       <RestaurantProvider>
         <MemoryRouter initialEntries={['/r/chez-lea']}>
           <Routes>
             <Route path="/r/:slug" element={<RestaurantRedirectPage />} />
-            <Route path="/menu" element={<div>Menu de chez-lea</div>} />
+            <Route path="/r/:slug/menu" element={<div>Menu de chez-lea</div>} />
           </Routes>
         </MemoryRouter>
       </RestaurantProvider>

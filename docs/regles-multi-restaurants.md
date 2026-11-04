@@ -23,7 +23,7 @@ Une adresse e-mail correspond à un seul compte utilisateur pour toute la platef
 
 L'utilisateur choisit un restaurant dans la liste, puis consulte le menu et les promotions de celui-ci. L'interface indique le restaurant sélectionné pour que l'étudiant sache où il commande. Changer de restaurant ne crée pas un nouveau compte et ne transfère ni commandes ni points. L'étudiant ne consulte que ses propres commandes.
 
-**Création de l'adhésion :** l'étudiant s'inscrit une seule fois, sans choisir de restaurant. L'adhésion à un restaurant se crée automatiquement à la **première commande** qu'il y passe, dans la même transaction que la commande (une commande refusée n'en crée aucune). Avant cela, il consulte le menu du restaurant et voit un solde de 0 point. Techniquement, l'inscription rattache le compte à un restaurant d'origine (celui qui était consulté, sinon le premier de la liste) ; cela n'ouvre aucun droit particulier.
+**Création de l'adhésion :** l'étudiant s'inscrit une seule fois, sans choisir de restaurant. L'adhésion à un restaurant se crée automatiquement à la **première commande** qu'il y passe, dans la même transaction que la commande (une commande refusée n'en crée aucune). Avant cela, il consulte le menu du restaurant et voit un solde de 0 point. Un compte client n'est lié à aucun restaurant : il peut commander dans n'importe lequel.
 
 **Exemple :** un étudiant déjà inscrit commande chez A puis chez B avec le même e-mail et le même mot de passe, tout en conservant deux adhésions et deux soldes de points distincts.
 
@@ -31,9 +31,9 @@ L'utilisateur choisit un restaurant dans la liste, puis consulte le menu et les 
 
 Tous les articles d'un panier doivent appartenir au même restaurant. La commande créée à partir de ce panier reste rattachée à ce restaurant. Un panier contenant un plat de A ne peut pas recevoir un plat de B ; l'interface explique cette restriction et le serveur refuse également le mélange.
 
-Les plats, catégories et promotions sont rattachés à leur restaurant. Une promotion de A ne s'applique pas aux articles de B. Si l'étudiant change de restaurant alors que son panier contient des articles, l'interface demande confirmation : accepter le changement vide le panier ; annuler conserve le restaurant et le panier actuels. Aucun article n'est transféré au nouveau restaurant.
+Les plats, catégories et promotions sont rattachés à leur restaurant. Une promotion de A ne s'applique pas aux articles de B. Chaque restaurant est un espace indépendant (adresses `/r/<restaurant>/…`) avec **son propre panier** : l'étudiant peut avoir un panier chez A et un autre chez B, chacun est conservé tel quel quand il passe de l'un à l'autre, rien n'est vidé ni transféré. Hors d'un restaurant, la plateforme ne propose que la liste des restaurants, le profil et les commandes regroupées par restaurant.
 
-**Exemple :** si le panier contient un plat du restaurant A, l'étudiant confirme son passage au restaurant B, le panier est vidé et il peut alors y ajouter une boisson de B.
+**Exemple :** l'étudiant met un plat de A dans son panier, ouvre B et y ajoute une boisson : les deux paniers coexistent et se commandent séparément.
 
 ## 4. Le personnel accède seulement à son restaurant
 
@@ -85,7 +85,7 @@ Les scénarios ci-dessous servent à relire les règles et à préparer les futu
 | Un étudiant utilise le même compte chez A et chez B. | Le compte reste unique et les adhésions restent distinctes. |
 | L'étudiant sélectionne B. | Le menu et les promotions affichés appartiennent à B. |
 | Un panier de A reçoit un article ou une promotion de B. | Le mélange est refusé dans l'interface et par le serveur. |
-| L'étudiant change de restaurant avec un panier rempli. | Une confirmation est demandée : accepter vide le panier ; annuler conserve le panier et le restaurant actuels. |
+| L'étudiant change de restaurant avec un panier rempli. | Le panier de A est conservé ; B a son propre panier, indépendant. |
 | Le personnel de A demande une commande ou des statistiques de B. | L'accès est refusé et aucune donnée de B n'est exposée. |
 | Un étudiant possédant 15 points chez A veut les utiliser chez B. | La remise est refusée ; les soldes restent séparés. |
 | Un résultat de paiement de A est présenté pour une commande de B. | La commande de B n'est pas marquée payée. |

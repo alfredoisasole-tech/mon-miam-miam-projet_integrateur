@@ -80,7 +80,7 @@ Paramètres d’un restaurant : fidélité, livraison et horaires d’ouverture.
 
 Comptes des étudiants et du personnel. L’e-mail (sans distinction de casse) et le téléphone sont uniques sur toute la plateforme.
 
-`restaurant_id` est obligatoire : pour un membre du personnel, il indique son restaurant ; pour un étudiant, son restaurant d’origine, c'est-à-dire celui auprès duquel l'inscription a été enregistrée (sans conséquence sur ses droits). Ses autres restaurants figurent dans `memberships` : une adhésion se crée à sa première commande dans chaque restaurant. Les administrateurs de la plateforme sont enregistrés dans `platform_admins`, hors de tout restaurant.
+`restaurant_id` est obligatoire pour un membre du personnel (son restaurant) et vide pour un étudiant : un compte client appartient à la plateforme (migration `006_students_belong_to_platform`). Ses restaurants figurent dans `memberships` : une adhésion se crée à sa première commande dans chaque restaurant et ne porte que ses points. Les administrateurs de la plateforme sont enregistrés dans `platform_admins`, hors de tout restaurant.
 
 | Attribut | Type | Obligatoire | Défaut | Clé |
 |---|---|---|---|---|
@@ -478,7 +478,7 @@ erDiagram
 - **Parrainage** : `points_ledger.referral_id` référence `referrals.id`; `users.referred_by` est une relation réflexive et `referrals` relie deux utilisateurs distincts par `referrer_id` et `referee_id`.
 - **Réclamations** : `claims.user_id` est obligatoire ; `order_id`, `proposed_by` et `resolved_by` sont facultatifs.
 - **Liens facultatifs** : `claims.order_id`, `claims.proposed_by`, `claims.resolved_by`, `order_events.user_id`, `points_ledger.order_id`, `points_ledger.referral_id`, `points_ledger.created_by`, `referrals.rewarded_order_id`, `users.referred_by`, ainsi que les trois références d'image vers `assets`.
-- **Cohérence entre restaurants** : les déclencheurs SQLite vérifient l'adhésion de l'étudiant au restaurant de sa commande ainsi que le rattachement des articles, paiements, réclamations, points, parrainages et images à leurs parents. Le vérificateur couvre ces rejets. Le seul `users.restaurant_id` ne suffit pas puisqu'il désigne le restaurant d'origine et que `memberships` autorise plusieurs restaurants.
+- **Cohérence entre restaurants** : les déclencheurs SQLite vérifient l'adhésion de l'étudiant au restaurant de sa commande ainsi que le rattachement des articles, paiements, réclamations, points, parrainages et images à leurs parents. Le vérificateur couvre ces rejets. Le seul `users.restaurant_id` ne suffit pas : il est vide pour un étudiant et `memberships` autorise plusieurs restaurants.
 - **Administrateurs de plateforme** : `platform_admins` n'est rattachée à aucun restaurant.
 
 ## 3. Validation des clés, des contraintes et de la cohérence
@@ -491,7 +491,7 @@ Le modèle a été vérifié entre ses trois sections : les entités, les relati
 - [x] Les **34 clés étrangères** figurent dans le tableau et le diagramme ; les quatre relations ajoutées couvrent les trois références d'image et le lien de parrainage du journal de points.
 - [x] Chaque entité possède la clé primaire indiquée ci-dessous.
 - [x] Les montants sont exprimés en entiers FC ; les dates sont des textes ISO 8601 en UTC ; les booléens sont des entiers 0 ou 1.
-- [x] Le reliquat de fidélité est porté uniquement par `memberships`. `users.restaurant_id` désigne le restaurant d'origine de l'étudiant ou le restaurant de travail du personnel.
+- [x] Le reliquat de fidélité est porté uniquement par `memberships`. `users.restaurant_id` désigne le restaurant de travail du personnel ; il est vide pour un étudiant.
 - [x] L'e-mail et le téléphone des utilisateurs sont uniques sur toute la plateforme ; l'e-mail ne distingue pas les majuscules des minuscules.
 - [x] La réduction de fidélité par défaut est de 3 000 FC, conformément à la règle de 15 points pour 3 000 FC.
 - [x] La règle d'appartenance commune entre commande, paiement, réclamation, journal de points et leur restaurant parent est définie et sera couverte par des tests automatisés.

@@ -32,7 +32,7 @@ export interface Restaurant {
 
 export interface StudentProfile {
   id: string;
-  restaurantId: string;
+  restaurantId: string | null;
   phone: string;
   loyaltyRemainderFc: number;
 }

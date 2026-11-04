@@ -76,7 +76,7 @@ describe('Menu : ce qui est déjà dans le panier', () => {
   it('renvoie vers le panier', async () => {
     mount();
     await userEvent.click((await addButtons())[0]!);
-    expect(await screen.findByRole('link', { name: 'Voir le panier' })).toHaveAttribute('href', '/cart');
+    expect(await screen.findByRole('link', { name: 'Voir le panier' })).toHaveAttribute('href', '/r/alpha/cart');
   });
 
   it('n’affiche rien aux visiteurs qui ne sont pas étudiants', async () => {

@@ -2,12 +2,12 @@
 
 Ce rapport répond au livrable « Rapport de test avec couverture des fonctionnalités principales ». Il décrit ce qui est testé, comment relancer les tests et ce qui ne l'est pas.
 
-## Résultats de la version complète (3 novembre 2026)
+## Résultats de la version complète (4 novembre 2026)
 
 | Partie | Outil | Tests | Résultat |
 |---|---|---|---|
-| Serveur (API, règles métier, base de données) | `node:test` | 363 | tous réussis |
-| Site (écrans, contrôleurs) | Vitest | 267 | tous réussis |
+| Serveur (API, règles métier, base de données) | `node:test` | 402 | tous réussis |
+| Site (écrans, contrôleurs) | Vitest | 343 | tous réussis |
 | Typage | `tsc --noEmit` (serveur et site) | — | sans erreur |
 | Construction du site | `vite build` | — | réussie |
 
@@ -35,7 +35,7 @@ La colonne « Fichiers » donne les fichiers de test les plus représentatifs (d
 | Mot de passe oublié et changement | code à durée limitée, mot de passe faible refusé, anciens jetons invalidés, mot de passe temporaire à changer | `auth-api`, `account-api`, `account-pages`, `require-role` |
 | Restaurants, menu, plat du jour | profil public, menu séparé par restaurant, plats indisponibles masqués, images contrôlées | `restaurants-menu`, `menu-admin-api`, `menu`, `admin-menu` |
 | Commande (sur place, livraison) | prix recalculés par le serveur, restaurant unique par commande, rejeu sans doublon, statuts, annulation | `orders`, `orders-sqlite`, `orders-tracking`, `cart-page`, `my-orders` |
-| Paiement | espèces, mobile money simulé, notification signée, montant vérifié, aucune confirmation côté site | `payments`, `payments-amount`, `payments-easypay-ipn`, `payment-return` |
+| Paiement | espèces, mobile money simulé (page de simulation : approuver, échec, annuler), notification signée, montant vérifié, aucune confirmation côté site | `payments`, `payments-amount`, `payments-easypay-ipn`, `payment-return`, `payment-start`, `simulated-payment` |
 | Fidélité | 3 000 FC = 1 point, 15 points = 3 000 FC de réduction, points par restaurant, expiration à 12 mois, plafond | `loyalty-earning`, `loyalty-redemption`, `loyalty-balance`, `loyalty-security`, `loyalty` |
 | Parrainage | code global, code inconnu refusé, récompense à la première commande qualifiante, nom du filleul masqué | `referral-api`, `community` |
 | Avis après livraison | note de 1 à 5, un seul avis par commande, commande terminée seulement | `order-review-api`, `my-orders` |
@@ -45,13 +45,17 @@ La colonne « Fichiers » donne les fichiers de test les plus représentatifs (d
 | Données personnelles (RGPD) | export du compte, suppression anonymisante, refus s'il reste une commande en cours | `account-api`, `account-pages`, `parcours-complet` |
 | Comptes du personnel, promotions, plateforme | création, désactivation, mot de passe temporaire, dates de promotion, liste des restaurants | `staff-accounts-api`, `promotions-api`, `platform-api`, `platform-list-api` (PR #79), `admin-pages` |
 | Statistiques | bilan jour, semaine, mois ; ventes de la semaine de l'employé | `api/stats`, `api/stats-access`, `stats`, `weekly-stats` |
+| Restaurants indépendants | espace par restaurant `/r/<restaurant>/…`, un panier par restaurant, menu de la plateforme réduit, commandes regroupées par restaurant, anciennes adresses redirigées | `useCart`, `ux-navigation`, `layout`, `cart-page`, `menu-panier` |
+| Compte de la plateforme | inscription sans restaurant, adhésion à la première commande, commande sans restaurant refusée, migration d'une base existante | `auth-api`, `adhesion-premiere-commande`, `database`, `register-restaurant` |
+| Charte du restaurant | couleur par rouge, vert, bleu synchronisée avec le code, aperçu, avertissement de contraste, aperçu et retrait du logo | `admin-settings`, `color` |
+| Données de démonstration | quatre restaurants, menus propres, logos, ajout des restaurants manquants à une base existante | `seed`, `seed-menu`, `seed-logos` |
 | Cookies et pages légales | choix mémorisé, liens vers la politique de confidentialité | `legal-cookies` |
 | Mini-jeux | trois jeux locaux, sans points | `community` |
 | Parcours complet | charte, parrainage, commande, avis, top 10, points, export, suppression, changement de mot de passe | `parcours-complet` |
 
 ## Ce qui n'est pas couvert
 
-- **Paiement mobile money réel** : seul le mode simulé est testé automatiquement. Le fournisseur réel doit être essayé à la main avec ses clés de test avant toute ouverture au public.
+- **Paiement mobile money réel** : seul le mode simulé est testé automatiquement. L'essai avec Easypay est **arrêté** : son bac à sable ne fonctionne pas (voir [anomalies.md](anomalies.md)). Le fournisseur réel devra être essayé à la main avant toute ouverture au public.
 - **Envoi du code de mot de passe oublié** : aucun service d'envoi (SMS ou e-mail) n'est branché. Hors production, le code est écrit dans les journaux du serveur ; en production la demande répond 503. Cet envoi est donc à tester à la main une fois le fournisseur choisi.
 - **Navigateurs et appareils** : les tests du site tournent dans un navigateur simulé (jsdom). La mise en page sur téléphone doit être vérifiée à la main (voir [plan-beta.md](plan-beta.md)).
 - **Charge** : aucun test de montée en charge n'a été fait.

@@ -14,9 +14,9 @@ afterEach(() => {
 });
 
 describe('Page principale', () => {
-  it('affiche le titre « Mon Miam Miam »', () => {
+  it('affiche le titre de la page d’accueil', () => {
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'Mon Miam Miam' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Les saveurs du campus à portée de main.' })).toBeTruthy();
   });
 
   it('contient une zone principale accessible aux lecteurs d\'écran', () => {
@@ -28,7 +28,7 @@ describe('Page principale', () => {
     ['/login', 'Heureux de vous retrouver à table.'],
     ['/register', 'Créez votre compte étudiant'],
     ['/staff/overview', 'Heureux de vous retrouver à table.'],
-    ['/menu', 'Choisissez un restaurant pour afficher son menu.'],
+    ['/menu', 'Les saveurs du campus à portée de main.'],
     ['/adresse-inconnue', 'Page indisponible'],
   ])('affiche la page %s dans la mise en page commune', (path, text) => {
     window.history.replaceState(null, '', path);

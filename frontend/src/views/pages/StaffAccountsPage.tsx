@@ -64,6 +64,11 @@ export function StaffAccountsPage() {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [resetting, setResetting] = useState<string | null>(null);
+  const [reset, setReset] = useState<{ name: string; password: string } | null>(null);
+  /** Un gérant réinitialise les employés ; un administrateur, les employés et les gérants. */
+  const canReset = (account: StaffAccount) => account.id !== user?.id && account.status === 'active'
+    && (isAdmin ? account.role !== 'admin' : user?.role === 'manager' && account.role === 'employee');
 
   const load = useCallback(() => {
     adminApi.listStaff().then(setAccounts).catch(e => { setAccounts([]); setError(messageOf(e)); });
@@ -91,6 +96,15 @@ export function StaffAccountsPage() {
     try { await adminApi.deactivateStaff(id); setConfirming(null); load(); }
     catch (e) { setError(messageOf(e)); setConfirming(null); }
   }
+  async function resetPassword(account: StaffAccount) {
+    setError(null); setSaved(null); setCreated(null); setReset(null);
+    try {
+      const result = await adminApi.resetStaffPassword(account.id);
+      setReset({ name: account.name, password: result.temporaryPassword });
+      setResetting(null);
+      load();
+    } catch (e) { setError(messageOf(e)); setResetting(null); }
+  }
   async function reactivate(account: StaffAccount) {
     setError(null); setSaved(null);
     try { await adminApi.reactivateStaff(account.id); setSaved(`Compte de ${account.name} réactivé.`); load(); }
@@ -101,6 +115,10 @@ export function StaffAccountsPage() {
     <h1>Comptes du personnel</h1>
     <Alert>{error}</Alert>
     {saved && <Alert kind="success">{saved}</Alert>}
+    {reset && <Alert kind="success">
+      Nouveau mot de passe temporaire pour {reset.name} : <strong>{reset.password}</strong>.
+      Il ne sera plus affiché : transmettez-le à la personne, qui devra le changer à sa prochaine connexion. Ses anciennes sessions sont fermées.
+    </Alert>}
     {created && <Alert kind="success">
       Compte créé pour {created.name}. Mot de passe temporaire : <strong>{created.password}</strong>.
       Il ne sera plus affiché : transmettez-le à la personne, qui devra le changer à sa première connexion.
@@ -128,6 +146,13 @@ export function StaffAccountsPage() {
           ? <EditAccount account={account} canChangeRole={account.role !== 'admin' && account.id !== user?.id}
             onCancel={() => setEditing(null)} onSaved={message => { setEditing(null); setSaved(message); load(); }} />
           : isAdmin && <button type="button" className="btn" onClick={() => { setSaved(null); setEditing(account.id); }} aria-label={`Modifier ${account.name}`}>Modifier</button>}
+        {canReset(account) && (resetting === account.id
+          ? <>
+            <span>Donner un nouveau mot de passe temporaire à {account.name} ? L’ancien ne fonctionnera plus.</span>
+            <button type="button" className="btn btn-danger" onClick={() => void resetPassword(account)}>Oui, générer</button>
+            <button type="button" className="btn" onClick={() => setResetting(null)}>Non</button>
+          </>
+          : <button type="button" className="btn" onClick={() => { setResetting(account.id); setReset(null); }} aria-label={`Nouveau mot de passe pour ${account.name}`}>Mot de passe oublié</button>)}
         {isAdmin && account.status !== 'active' && account.id !== user?.id && (
           <button type="button" className="btn" onClick={() => void reactivate(account)} aria-label={`Réactiver ${account.name}`}>Réactiver</button>)}
         {isAdmin && account.status === 'active' && account.id !== user?.id && (confirming === account.id

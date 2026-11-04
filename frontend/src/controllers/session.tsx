@@ -2,9 +2,11 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
+import { Outlet, useParams } from "react-router-dom";
 import { api } from "../models/http";
 import type { User } from "../models/types";
 
@@ -15,6 +17,8 @@ interface AuthContextValue {
   loading: boolean;
   login: (token: string) => Promise<User>;
   logout: () => void;
+  /** Remplace le profil affiché après une modification (nom, téléphone, adresse). */
+  updateUser: (user: User) => void;
 }
 
 interface RestaurantContextValue {
@@ -95,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser: setUser }}>
       {children}
     </AuthContext.Provider>
   );
@@ -111,7 +115,7 @@ export function useAuth(): AuthContextValue {
 
 // ─── RestaurantProvider ──────────────────────────────────────────────────────
 
-const RestaurantContext = createContext<RestaurantContextValue | undefined>(
+export const RestaurantContext = createContext<RestaurantContextValue | undefined>(
   undefined
 );
 
@@ -147,4 +151,24 @@ export function useRestaurant(): RestaurantContextValue {
     );
   }
   return ctx;
+}
+
+/**
+ * Enveloppe d'un restaurant (adresses `/r/:slug/…`) : à l'intérieur, le restaurant courant est celui de
+ * l'adresse, jamais un restaurant mémorisé. Le dernier restaurant visité sert seulement de raccourci.
+ */
+export function RestaurantScope() {
+  const { slug } = useParams();
+  const parent = useRestaurant();
+  const { setRestaurant, clearRestaurant } = parent;
+  useEffect(() => { if (slug && parent.slug !== slug) setRestaurant(slug); }, [slug, parent.slug, setRestaurant]);
+  const value = useMemo<RestaurantContextValue>(
+    () => ({ slug: slug ?? null, setRestaurant, clearRestaurant }),
+    [slug, setRestaurant, clearRestaurant],
+  );
+  return (
+    <RestaurantContext.Provider value={value}>
+      <Outlet />
+    </RestaurantContext.Provider>
+  );
 }

@@ -14,7 +14,7 @@ const sample = { period: 'day', salesFc: 120000, averageOrderFc: 4000, orders: {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(api.get).mockResolvedValue(sample);
-  vi.mocked(useAuth).mockReturnValue({ user: { id: 'u1', name: 'Gérante', role: 'manager' }, loading: false, logout: vi.fn(), login: vi.fn() });
+  vi.mocked(useAuth).mockReturnValue({ user: { id: 'u1', name: 'Gérante', role: 'manager' }, loading: false, logout: vi.fn(), updateUser: vi.fn(), login: vi.fn() });
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
@@ -51,18 +51,18 @@ describe('Écran E-7', () => {
     expect(await screen.findByText('Poulet mayonnaise')).toBeVisible();
   });
   it.each(['student', 'employee', 'platform_admin'] as const)('refuse le bilan global au rôle %s avant tout appel API', role => {
-    vi.mocked(useAuth).mockReturnValue({ user: { id: 'u1', name: 'Test', role }, loading: false, logout: vi.fn(), login: vi.fn() });
+    vi.mocked(useAuth).mockReturnValue({ user: { id: 'u1', name: 'Test', role }, loading: false, logout: vi.fn(), updateUser: vi.fn(), login: vi.fn() });
     render(<MemoryRouter initialEntries={['/staff/overview']}><Routes><Route path="/staff/overview" element={<RequireRole allowedRoles={['manager', 'admin']}><StatsPage /></RequireRole>} /><Route path="/" element={<p>Accueil</p>} /></Routes></MemoryRouter>);
     expect(screen.getByText('Accueil')).toBeVisible();
     expect(api.get).not.toHaveBeenCalled();
   });
   it.each(['manager', 'admin'] as const)('autorise le rôle %s à charger le bilan', async role => {
-    vi.mocked(useAuth).mockReturnValue({ user: { id: 'u1', name: 'Test', role }, loading: false, logout: vi.fn(), login: vi.fn() });
+    vi.mocked(useAuth).mockReturnValue({ user: { id: 'u1', name: 'Test', role }, loading: false, logout: vi.fn(), updateUser: vi.fn(), login: vi.fn() });
     render(<MemoryRouter><RequireRole allowedRoles={['manager', 'admin']}><StatsPage /></RequireRole></MemoryRouter>);
     expect(await screen.findByText('Poulet mayonnaise')).toBeVisible();
   });
   it('redirige un visiteur vers la connexion sans requête de statistiques', () => {
-    vi.mocked(useAuth).mockReturnValue({ user: null, loading: false, logout: vi.fn(), login: vi.fn() });
+    vi.mocked(useAuth).mockReturnValue({ user: null, loading: false, logout: vi.fn(), updateUser: vi.fn(), login: vi.fn() });
     render(<MemoryRouter initialEntries={['/staff/overview']}><Routes><Route path="/staff/overview" element={<RequireRole allowedRoles={['manager', 'admin']}><StatsPage /></RequireRole>} /><Route path="/login" element={<p>Connexion requise</p>} /></Routes></MemoryRouter>);
     expect(screen.getByText('Connexion requise')).toBeVisible();
     expect(api.get).not.toHaveBeenCalled();

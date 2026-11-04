@@ -3,3 +3,24 @@
 .settings-check { display: flex; align-items: center; gap: .6rem; min-height: 44px; }
 .settings-check input { width: auto; min-height: 0; }
 .settings-logo-note { margin: .25rem 0 0; }
+
+.color-field { border: 1px solid var(--mm-border, #d8d2c4); border-radius: .5rem; padding: .6rem .8rem .8rem; margin: 0; min-width: 0; }
+.color-field legend { font-weight: 600; padding: 0 .3rem; }
+.color-field-row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
+.color-field label { display: grid; gap: .2rem; font-size: .85rem; }
+.color-field .color-swatch { width: 3.25rem; height: 3rem; padding: 0; border: 1px solid var(--mm-border, #d8d2c4); border-radius: .4rem; cursor: pointer; }
+.color-field .color-code input { width: 7.5rem; font-family: ui-monospace, monospace; }
+.color-field .color-channel input { width: 5rem; }
+
+.logo-field { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+.logo-field-preview { display: grid; place-items: center; width: 12rem; height: 4rem; border: 1px dashed var(--mm-border, #b9b09b); border-radius: .5rem; background: repeating-conic-gradient(#f1eee6 0 25%, #fff 0 50%) 0 0 / 16px 16px; overflow: hidden; }
+.logo-field-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.logo-field-actions { display: grid; gap: .4rem; }
+
+.brand-preview { border: 1px solid var(--mm-border, #d8d2c4); border-radius: .6rem; overflow: hidden; background: #fff; color: #222; }
+.brand-preview-header { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; justify-content: space-between; padding: .7rem 1rem; }
+.brand-preview-header img { max-height: 2.2rem; max-width: 9rem; object-fit: contain; }
+.brand-preview-header span { font-size: .85rem; opacity: .9; }
+.brand-preview-body { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; padding: 1rem; }
+.brand-preview-body button { border: 0; border-radius: .4rem; padding: .55rem 1.1rem; font: inherit; font-weight: 600; }
+.brand-preview-warning { margin: 0; padding: .5rem 1rem; background: #fff4d6; color: #5c4200; font-size: .9rem; }

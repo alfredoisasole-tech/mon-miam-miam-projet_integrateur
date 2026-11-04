@@ -16,17 +16,21 @@ import {
   type Cart,
   type CartProduct,
 } from '../models/cart.ts';
+import { RestaurantContext } from './session.tsx';
 
-const CART_STORAGE_KEY = 'mmm_cart';
+/** Paniers de tous les restaurants, un par restaurant : aller chez un autre restaurant ne vide ni n'emporte rien. */
+const CARTS_STORAGE_KEY = 'mmm_carts';
+/** Ancien stockage : un seul panier pour toute la plateforme. Repris puis supprimé. */
+const LEGACY_CART_STORAGE_KEY = 'mmm_cart';
 
-export type AddProductResult = 'added' | 'confirmation_required' | 'error';
+export type Carts = Record<string, Cart>;
+export type AddProductResult = 'added' | 'error';
 
 export interface CartContextValue {
   cart: Cart;
   totalFc: number;
   count: number;
   error: string | null;
-  pendingRestaurantChange: CartProduct | null;
   addProduct: (product: CartProduct, quantity?: number) => AddProductResult;
   add: (product: CartProduct, quantity?: number) => AddProductResult;
   removeProduct: (productId: string) => void;
@@ -35,223 +39,147 @@ export interface CartContextValue {
   setQty: (productId: string, quantity: number) => void;
   clearCart: () => void;
   clear: () => void;
-  confirmRestaurantChange: () => void;
-  cancelRestaurantChange: () => void;
 }
 
-const CartContext = createContext<CartContextValue | null>(null);
+interface CartStore {
+  carts: Carts;
+  error: string | null;
+  setError: (message: string | null) => void;
+  update: (slug: string, change: (cart: Cart) => Cart) => void;
+  clear: (slug: string) => void;
+}
 
-function loadCartFromStorage(): Cart {
+const isCart = (value: unknown): value is Cart => Boolean(value) && typeof value === 'object'
+  && Array.isArray((value as Cart).lines) && ((value as Cart).restaurantSlug === null || typeof (value as Cart).restaurantSlug === 'string');
+
+/** Lit les paniers enregistrés et y range, au passage, l'ancien panier unique sous le restaurant qu'il désignait. */
+export function loadCartsFromStorage(): Carts {
+  const carts: Carts = {};
   try {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
-    if (!raw) return createEmptyCart();
-    const parsed = JSON.parse(raw);
-    if (parsed && Array.isArray(parsed.lines)) {
-      return parsed as Cart;
+    const raw = localStorage.getItem(CARTS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) as unknown : null;
+    if (parsed && typeof parsed === 'object') {
+      for (const [slug, cart] of Object.entries(parsed as Record<string, unknown>)) {
+        if (isCart(cart) && cart.lines.length > 0) carts[slug] = cart;
+      }
+    }
+    const legacyRaw = localStorage.getItem(LEGACY_CART_STORAGE_KEY);
+    if (legacyRaw) {
+      const legacy = JSON.parse(legacyRaw) as unknown;
+      if (isCart(legacy) && legacy.restaurantSlug && legacy.lines.length > 0 && !carts[legacy.restaurantSlug]) {
+        carts[legacy.restaurantSlug] = legacy;
+      }
+      localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
     }
   } catch {
-    // Ignore storage parse issues
+    // Stockage illisible ou indisponible : on repart de paniers vides.
   }
-  return createEmptyCart();
+  return carts;
 }
 
-function saveCartToStorage(cart: Cart): void {
+function saveCartsToStorage(carts: Carts): void {
   try {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    localStorage.setItem(CARTS_STORAGE_KEY, JSON.stringify(carts));
   } catch {
-    // Ignore storage issues
+    // Stockage indisponible : le panier reste en mémoire pour cette visite.
   }
 }
+
+function useCartStore(persist: boolean): CartStore {
+  const [carts, setCarts] = useState<Carts>(() => (persist ? loadCartsFromStorage() : {}));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (persist) saveCartsToStorage(carts);
+  }, [carts, persist]);
+
+  const update = useCallback((slug: string, change: (cart: Cart) => Cart) => {
+    setCarts((previous) => {
+      const next = change(previous[slug] ?? createEmptyCart());
+      const rest = { ...previous };
+      if (next.lines.length === 0) delete rest[slug]; else rest[slug] = next;
+      return rest;
+    });
+  }, []);
+  const clear = useCallback((slug: string) => {
+    setCarts((previous) => {
+      const rest = { ...previous };
+      delete rest[slug];
+      return rest;
+    });
+    setError(null);
+  }, []);
+
+  return { carts, error, setError, update, clear };
+}
+
+const CartContext = createContext<CartStore | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<Cart>(loadCartFromStorage);
-  const [pendingChange, setPendingChange] = useState<{ product: CartProduct; quantity: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  // Synchronise dans le localStorage dès que le panier change
-  useEffect(() => {
-    saveCartToStorage(cart);
-  }, [cart]);
-
-  const addProduct = useCallback(
-    (product: CartProduct, quantity = 1): AddProductResult => {
-      setError(null);
-      try {
-        const result = addCartItem(cart, product, quantity);
-        if (result.confirmationRequired) {
-          setPendingChange({ product, quantity });
-          return 'confirmation_required';
-        }
-        setCart(result.cart);
-        setPendingChange(null);
-        return 'added';
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Impossible d’ajouter ce plat au panier.';
-        setError(msg);
-        return 'error';
-      }
-    },
-    [cart],
-  );
-
-  const confirmRestaurantChange = useCallback(() => {
-    if (!pendingChange) return;
-    setError(null);
-    try {
-      const result = addCartItem(cart, pendingChange.product, pendingChange.quantity, true);
-      setCart(result.cart);
-      setPendingChange(null);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Impossible de changer de restaurant.';
-      setError(msg);
-    }
-  }, [cart, pendingChange]);
-
-  const cancelRestaurantChange = useCallback(() => {
-    setPendingChange(null);
-  }, []);
-
-  const updateProductQuantity = useCallback(
-    (productId: string, quantity: number) => {
-      setError(null);
-      try {
-        setCart(setCartItemQuantity(cart, productId, quantity));
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Impossible de modifier la quantité.';
-        setError(msg);
-      }
-    },
-    [cart],
-  );
-
-  const removeProduct = useCallback(
-    (productId: string) => {
-      setError(null);
-      setCart(removeCartItem(cart, productId));
-    },
-    [cart],
-  );
-
-  const clearCart = useCallback(() => {
-    const empty = createEmptyCart();
-    setCart(empty);
-    setPendingChange(null);
-    setError(null);
-    saveCartToStorage(empty);
-  }, []);
-
-  const totalFc = useMemo(() => calculateIndicativeTotal(cart), [cart]);
-  const count = useMemo(() => cart.lines.reduce((sum, line) => sum + line.quantity, 0), [cart]);
-
-  const value: CartContextValue = {
-    cart,
-    totalFc,
-    count,
-    error,
-    pendingRestaurantChange: pendingChange?.product ?? null,
-    addProduct,
-    add: addProduct,
-    removeProduct,
-    remove: removeProduct,
-    updateProductQuantity,
-    setQty: updateProductQuantity,
-    clearCart,
-    clear: clearCart,
-    confirmRestaurantChange,
-    cancelRestaurantChange,
-  };
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  const store = useCartStore(true);
+  return <CartContext.Provider value={store}>{children}</CartContext.Provider>;
 }
 
-export function useCart(): CartContextValue {
-  const ctx = useContext(CartContext);
-  if (ctx) return ctx;
-
-  // Fallback si useCart est appelé hors d'un CartProvider (ex: tests unitaires isolés)
-  return useLocalCartHook();
+/** Quand aucun fournisseur n'est monté (tests isolés), les paniers restent en mémoire, sans stockage. */
+function useStore(): CartStore {
+  const shared = useContext(CartContext);
+  const local = useCartStore(false);
+  return shared ?? local;
 }
 
-function useLocalCartHook(): CartContextValue {
-  const [cart, setCart] = useState<Cart>(createEmptyCart);
-  const [pendingChange, setPendingChange] = useState<{ product: CartProduct; quantity: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Panier du restaurant courant (celui de l'adresse `/r/:slug/…`), ou d'un restaurant donné.
+ * Sans restaurant, le panier est vide et ne peut rien recevoir.
+ */
+export function useCart(restaurantSlug?: string | null): CartContextValue {
+  const current = useContext(RestaurantContext)?.slug ?? null;
+  const slug = restaurantSlug === undefined ? current : restaurantSlug;
+  const store = useStore();
+  const cart = (slug ? store.carts[slug] : undefined) ?? createEmptyCart();
 
   const addProduct = useCallback((product: CartProduct, quantity = 1): AddProductResult => {
-    setError(null);
-    try {
-      const result = addCartItem(cart, product, quantity);
-      if (result.confirmationRequired) {
-        setPendingChange({ product, quantity });
-        return 'confirmation_required';
-      }
-      setCart(result.cart);
-      setPendingChange(null);
-      return 'added';
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Impossible d’ajouter ce plat au panier.';
-      setError(msg);
+    store.setError(null);
+    if (!slug || product.restaurantSlug !== slug) {
+      store.setError('Ce plat n’appartient pas au restaurant que vous consultez.');
       return 'error';
     }
-  }, [cart]);
-
-  const confirmRestaurantChange = useCallback(() => {
-    if (!pendingChange) return;
-    setError(null);
     try {
-      const result = addCartItem(cart, pendingChange.product, pendingChange.quantity, true);
-      setCart(result.cart);
-      setPendingChange(null);
+      addCartItem(store.carts[slug] ?? createEmptyCart(), product, quantity);
+      store.update(slug, (previous) => addCartItem(previous, product, quantity).cart);
+      return 'added';
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Impossible de changer de restaurant.';
-      setError(msg);
+      store.setError(err instanceof Error ? err.message : 'Impossible d’ajouter ce plat au panier.');
+      return 'error';
     }
-  }, [cart, pendingChange]);
-
-  const cancelRestaurantChange = useCallback(() => {
-    setPendingChange(null);
-  }, []);
+  }, [slug, store]);
 
   const updateProductQuantity = useCallback((productId: string, quantity: number) => {
-    setError(null);
+    if (!slug) return;
+    store.setError(null);
     try {
-      setCart(setCartItemQuantity(cart, productId, quantity));
+      setCartItemQuantity(store.carts[slug] ?? createEmptyCart(), productId, quantity);
+      store.update(slug, (previous) => setCartItemQuantity(previous, productId, quantity));
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Impossible de modifier la quantité.';
-      setError(msg);
+      store.setError(err instanceof Error ? err.message : 'Impossible de modifier la quantité.');
     }
-  }, [cart]);
+  }, [slug, store]);
 
   const removeProduct = useCallback((productId: string) => {
-    setError(null);
-    setCart(removeCartItem(cart, productId));
-  }, [cart]);
+    if (!slug) return;
+    store.setError(null);
+    store.update(slug, (previous) => removeCartItem(previous, productId));
+  }, [slug, store]);
 
-  const clearCart = useCallback(() => {
-    setCart(createEmptyCart());
-    setPendingChange(null);
-    setError(null);
-  }, []);
+  const clearCart = useCallback(() => { if (slug) store.clear(slug); }, [slug, store]);
 
   const totalFc = useMemo(() => calculateIndicativeTotal(cart), [cart]);
   const count = useMemo(() => cart.lines.reduce((sum, line) => sum + line.quantity, 0), [cart]);
 
   return {
-    cart,
-    totalFc,
-    count,
-    error,
-    pendingRestaurantChange: pendingChange?.product ?? null,
-    addProduct,
-    add: addProduct,
-    removeProduct,
-    remove: removeProduct,
-    updateProductQuantity,
-    setQty: updateProductQuantity,
-    clearCart,
-    clear: clearCart,
-    confirmRestaurantChange,
-    cancelRestaurantChange,
+    cart, totalFc, count, error: store.error,
+    addProduct, add: addProduct,
+    removeProduct, remove: removeProduct,
+    updateProductQuantity, setQty: updateProductQuantity,
+    clearCart, clear: clearCart,
   };
 }
-

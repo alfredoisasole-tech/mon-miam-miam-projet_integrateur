@@ -27,7 +27,7 @@ const staffClaim = (over: Partial<StaffClaim> = {}): StaffClaim => ({
   managerNote: null, createdAt: '2026-11-01T10:00:00.000Z', updatedAt: '2026-11-01T10:00:00.000Z', resolvedAt: null, ...over,
 });
 function asRole(role: 'student' | 'employee' | 'manager' | 'admin') {
-  vi.mocked(session.useAuth).mockReturnValue({ user: { id: 'u', name: 'X', role }, loading: false, login: vi.fn(), logout: vi.fn() });
+  vi.mocked(session.useAuth).mockReturnValue({ user: { id: 'u', name: 'X', role }, loading: false, login: vi.fn(), logout: vi.fn(), updateUser: vi.fn() });
   vi.mocked(session.useRestaurant).mockReturnValue({ slug: 'zeduc-space', setRestaurant: vi.fn(), clearRestaurant: vi.fn() });
 }
 beforeEach(() => { vi.clearAllMocks(); });
