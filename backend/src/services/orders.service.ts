@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { AppError } from '../http/errors.ts';
+import { canonicalCommune } from '../domain/communes.ts';
 import type { CreateOrderInput, DeliveryDetails, DeliveryInput, Order, OrderItem, OrderStatus, OrdersRepository, Restaurant } from '../domain/orders.ts';
 
 const TIME_ZONE = 'Africa/Kinshasa';
-const KINSHASA_COMMUNES = ['Bandalungwa', 'Barumbu', 'Bumbu', 'Gombe', 'Kalamu', 'Kasa-Vubu', 'Kimbanseke', 'Kinshasa', 'Kintambo', 'Kisenso', 'Lemba', 'Limete', 'Lingwala', 'Makala', 'Maluku', 'Masina', 'Matete', 'Mont-Ngafula', "N'djili", "N'sele", 'Ngaba', 'Ngaliema', 'Ngiri-Ngiri', 'Selembao'];
 
 interface ParsedOrderInput extends Omit<CreateOrderInput, 'restaurant'> { restaurant: string | null }
 
@@ -17,15 +17,11 @@ function readText(value: unknown, label: string, optional = false): string | nul
   if (typeof value !== 'string' || value.trim().length === 0) throw createValidationError(`Le champ « ${label} » doit être un texte non vide.`);
   return value.trim();
 }
-function normalizeCommune(value: string): string | null {
-  const normalizedName = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘`]/g, "'").replace(/\s+/g, ' ').trim().toLowerCase();
-  return KINSHASA_COMMUNES.find((name) => name.toLowerCase() === normalizedName) ?? null;
-}
 
 function parseDeliveryDetails(value: unknown): DeliveryInput {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw createValidationError('Les informations de livraison sont obligatoires.');
   const raw = value as Record<string, unknown>;
-  const normalizedCommune = normalizeCommune(readText(raw['commune'], 'delivery.commune')!);
+  const normalizedCommune = canonicalCommune(readText(raw['commune'], 'delivery.commune')!);
   if (!normalizedCommune) throw createValidationError('La commune indiquée ne fait pas partie des communes reconnues de Kinshasa.');
   const address = readText(raw['address'], 'delivery.address', true);
   const landmark = readText(raw['landmark'], 'delivery.landmark', true);
@@ -180,7 +176,7 @@ export class OrdersService {
     }
     if (input.type === 'delivery') {
       if (!restaurant.settings.deliveryEnabled) throw new AppError(422, 'DELIVERY_DISABLED', 'La livraison est désactivée pour ce restaurant.');
-      if (!restaurant.settings.deliveryCommunes.some((served) => normalizeCommune(served) === input.delivery!.commune)) throw new AppError(422, 'COMMUNE_NOT_SERVED', 'Cette commune n’est pas desservie par le restaurant.');
+      if (!restaurant.settings.deliveryCommunes.some((served) => canonicalCommune(served) === input.delivery!.commune)) throw new AppError(422, 'COMMUNE_NOT_SERVED', 'Cette commune n’est pas desservie par le restaurant.');
     }
     if (input.paymentMethod === 'mobile_money' && !restaurant.settings.mobileMoneyEnabled) throw new AppError(422, 'PAYMENT_METHOD_UNAVAILABLE', 'Le paiement mobile money n’est pas disponible pour ce restaurant.');
 

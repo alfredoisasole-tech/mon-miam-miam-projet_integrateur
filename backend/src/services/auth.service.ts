@@ -10,6 +10,7 @@ import {
   PASSWORD_PATTERN,
 } from '../domain/password.ts';
 import { normalizePhone } from '../domain/phone.ts';
+import { canonicalCommune } from '../domain/communes.ts';
 
 export { hashPassword, verifyPassword, isPasswordStrong };
 
@@ -44,7 +45,13 @@ function publicAccount(account: Account) {
   };
 }
 
-type PublicProfile = ReturnType<typeof publicAccount> & { restaurant: { slug: string; name: string } | null };
+type PublicProfile = ReturnType<typeof publicAccount> & {
+  restaurant: { slug: string; name: string } | null;
+  /** Adresse habituelle de livraison (étudiants) ; null pour le personnel et la plateforme. */
+  commune: string | null;
+  quartier: string | null;
+  address: string | null;
+};
 
 export class AuthService {
   private readonly attempts = new Map<string, number[]>();
@@ -321,7 +328,80 @@ export class AuthService {
     const restaurant = staff && account.restaurantId
       ? this.db.get<{ slug: string; name: string }>('SELECT slug, name FROM restaurants WHERE id = ?', [account.restaurantId]) ?? null
       : null;
-    return { ...publicAccount(account), restaurant };
+    const delivery = account.role === 'platform_admin' ? undefined
+      : this.db.get<{ commune: string | null; quartier: string | null; address: string | null }>('SELECT commune, quartier, address FROM users WHERE id = ?', [account.id]);
+    return { ...publicAccount(account), restaurant, commune: delivery?.commune ?? null, quartier: delivery?.quartier ?? null, address: delivery?.address ?? null };
+  }
+
+  /**
+   * Modification de ses propres coordonnées : nom, téléphone et, pour un étudiant, adresse habituelle de livraison.
+   * L'e-mail est l'identifiant de connexion et ne change pas. Changer de numéro exige le mot de passe actuel, car le
+   * numéro sert aussi à se connecter et à retrouver un compte. La session reste valable.
+   */
+  updateProfile(userId: string, input: unknown): PublicProfile {
+    const body = input && typeof input === 'object' && !Array.isArray(input) ? input as Record<string, unknown> : null;
+    const FIELDS = ['name', 'phone', 'currentPassword', 'commune', 'quartier', 'address'];
+    const changes = body ? Object.keys(body).filter((key) => key !== 'currentPassword') : [];
+    if (!body || changes.length === 0 || Object.keys(body).some((key) => !FIELDS.includes(key))) {
+      throw new AppError(400, 'INVALID_BODY', 'Indiquez ce qu’il faut modifier : le nom, le téléphone ou l’adresse habituelle.');
+    }
+    const account = this.findAccount(userId);
+    if (!account || account.status !== 'active') throw new AppError(403, 'ACCOUNT_DISABLED', 'Ce compte est désactivé.');
+    if (account.role === 'platform_admin') throw new AppError(403, 'FORBIDDEN', 'Ce compte n’a pas de coordonnées à modifier ici.');
+    if (account.mustChangePassword) throw new AppError(403, 'PASSWORD_CHANGE_REQUIRED', 'Changez d’abord votre mot de passe temporaire.');
+    const student = account.role === 'student';
+    if (!student && ['commune', 'quartier', 'address'].some((key) => key in body)) {
+      throw new AppError(400, 'INVALID_BODY', 'L’adresse habituelle ne concerne que les étudiants.');
+    }
+
+    const next: Record<string, string | null> = {};
+    if ('name' in body) {
+      const name = typeof body['name'] === 'string' ? body['name'].trim() : '';
+      if (name.length < 2 || name.length > 80) throw new AppError(400, 'INVALID_BODY', 'Le nom doit contenir de 2 à 80 caractères.');
+      next['name'] = name;
+    }
+    if ('phone' in body) {
+      const phone = normalizePhone(body['phone']);
+      if (!phone) throw new AppError(400, 'INVALID_BODY', 'Le numéro de téléphone est invalide (format +243XXXXXXXXX).');
+      if (phone !== account.phone) {
+        const key = `profile-password:${userId}`;
+        if (typeof body['currentPassword'] !== 'string' || !body['currentPassword']) {
+          throw new AppError(400, 'INVALID_BODY', 'Indiquez votre mot de passe actuel pour changer de numéro.');
+        }
+        if (this.isLimited(key)) throw new AppError(429, 'TOO_MANY_ATTEMPTS', 'Trop de tentatives, réessayez dans 15 minutes.');
+        if (!verifyPassword(body['currentPassword'], this.getPasswordHash(account.id))) {
+          this.recordFailure(key);
+          throw new AppError(401, 'INVALID_CREDENTIALS', 'Le mot de passe actuel est incorrect.');
+        }
+        this.attempts.delete(key);
+        if (this.db.get('SELECT id FROM users WHERE phone = ? AND id <> ?', [phone, account.id])) {
+          throw new AppError(409, 'PHONE_TAKEN', 'Un compte existe déjà avec ce téléphone.');
+        }
+        next['phone'] = phone;
+      }
+    }
+    const optional = (key: string, max: number, label: string): string | null => {
+      const value = body[key];
+      if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return null;
+      if (typeof value !== 'string' || value.trim().length > max) throw new AppError(400, 'INVALID_BODY', `${label} : ${max} caractères au plus.`);
+      return value.trim();
+    };
+    if ('commune' in body) {
+      const raw = optional('commune', 40, 'La commune');
+      const commune = raw === null ? null : canonicalCommune(raw);
+      if (raw !== null && !commune) throw new AppError(400, 'INVALID_BODY', 'Cette commune n’est pas une commune de Kinshasa.');
+      next['commune'] = commune;
+    }
+    if ('quartier' in body) next['quartier'] = optional('quartier', 80, 'Le quartier');
+    if ('address' in body) next['address'] = optional('address', 200, 'L’adresse');
+
+    const columns = Object.keys(next);
+    if (columns.length > 0) {
+      this.db.run(`UPDATE users SET ${columns.map((column) => `${column} = ?`).join(', ')} WHERE id = ?`, [...columns.map((column) => next[column]), account.id]);
+    }
+    const updated = this.findAccount(account.id);
+    if (!updated) throw new Error('Le compte vient d’être modifié mais ne peut pas être relu.');
+    return this.withRestaurant(updated);
   }
 
   private issueToken(account: Account): string {

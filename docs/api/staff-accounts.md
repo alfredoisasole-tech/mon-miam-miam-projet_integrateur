@@ -30,3 +30,11 @@ Réponse `200` : `{ "account": { id, name, email, phone, role, status, mustChang
 Un administrateur ne peut changer ni son propre rôle ni son propre état, et le rôle d’un autre administrateur ne se modifie pas ici (`400`). Une cible d’un autre restaurant, qui n’est pas un compte du personnel ou introuvable répond `404 STAFF_ACCOUNT_NOT_FOUND`.
 
 Un gérant ne peut ni créer un administrateur, ni modifier, désactiver ou réactiver un compte. Aucun champ de restaurant fourni par le client n’est accepté pour déterminer le périmètre.
+
+## `POST /api/staff/accounts/:id/reset-password`
+
+**Rôles autorisés :** gérant et administrateur du restaurant.
+
+Voie de secours quand une personne du personnel a tout oublié (aucun SMS ni e-mail n'est branché). Sans corps. Un **gérant** réinitialise les **employés** ; un **administrateur** réinitialise les **employés et les gérants**, jamais un autre administrateur ni son propre compte (`400` pour soi-même, `403` pour un rôle supérieur ou égal). Une cible d'un autre restaurant, qui n'est pas un compte du personnel ou introuvable répond `404 STAFF_ACCOUNT_NOT_FOUND` ; un compte désactivé répond `409 ACCOUNT_INACTIVE` (réactivez-le d'abord).
+
+Réponse `200` : `{ "account": { id, name, email, phone, role, status, mustChangePassword: true, createdAt }, "temporaryPassword" }`. Le mot de passe temporaire, aléatoire et différent à chaque appel, n'est révélé **que dans cette réponse** ; seule son empreinte est conservée. La personne doit le changer à sa prochaine connexion, ses anciennes sessions sont révoquées et un éventuel blocage de connexion est levé.

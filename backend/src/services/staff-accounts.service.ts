@@ -137,6 +137,33 @@ export class StaffAccountsService {
     return { account: staffOutput({ ...target, ...next }) };
   }
 
+  /**
+   * Donne un nouveau mot de passe temporaire à un membre du personnel qui a tout oublié (sans SMS ni e-mail, c'est
+   * la seule voie de secours). Un gérant ne réinitialise que les employés ; un administrateur, les employés et les
+   * gérants, jamais un autre administrateur ni lui-même. Le mot de passe n'est montré qu'ici, une seule fois : la
+   * personne doit le changer à sa prochaine connexion, ses anciennes sessions sont révoquées et un blocage levé.
+   */
+  resetPassword(user: AuthenticatedUser & { restaurantId: string }, id: string) {
+    const target = this.db.get<StaffAccountRow>(
+      `SELECT id, name, email, phone, role, status, must_change_password, created_at FROM users
+       WHERE id = ? AND restaurant_id = ? AND role IN ('employee', 'manager', 'admin') AND status <> 'deleted'`,
+      [id, user.restaurantId],
+    );
+    if (!target) throw new AppError(404, 'STAFF_ACCOUNT_NOT_FOUND', 'Compte du personnel introuvable.');
+    if (target.id === user.id) throw new AppError(400, 'INVALID_BODY', 'Pour votre propre compte, changez votre mot de passe depuis votre profil.');
+    const allowed = user.role === 'admin' ? ['employee', 'manager'] : ['employee'];
+    if (!allowed.includes(target.role)) {
+      throw new AppError(403, 'FORBIDDEN', 'Vous ne pouvez pas réinitialiser le mot de passe de ce compte.');
+    }
+    if (target.status !== 'active') throw new AppError(409, 'ACCOUNT_INACTIVE', 'Ce compte est désactivé : réactivez-le d’abord.');
+    const password = temporaryPassword();
+    this.db.transaction(() => {
+      this.db.run('UPDATE users SET password_hash = ?, must_change_password = 1, auth_version = auth_version + 1 WHERE id = ?', [hashPassword(password), target.id]);
+      this.db.run('DELETE FROM auth_lockouts WHERE user_id = ?', [target.id]);
+    });
+    return { account: staffOutput({ ...target, must_change_password: 1 }), temporaryPassword: password };
+  }
+
   private changeStatus(user: AuthenticatedUser & { restaurantId: string }, target: StaffAccountRow, body: Record<string, unknown>) {
     if (Object.keys(body).length !== 1 || (body['status'] !== 'inactive' && body['status'] !== 'active')) {
       throw new AppError(400, 'INVALID_BODY', 'L’état se change seul, vers « inactive » ou « active ».');

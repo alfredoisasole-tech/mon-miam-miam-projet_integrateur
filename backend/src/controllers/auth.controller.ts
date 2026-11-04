@@ -23,6 +23,12 @@ export function registerAuthRoutes(
       res.status(200).json(service.profile(user.id));
     } catch (error) { next(error); }
   });
+  app.patch('/api/me', authenticate, (req, res, next) => {
+    try {
+      const user = res.locals['authenticatedUser'] as { id: string };
+      res.status(200).json(service.updateProfile(user.id, req.body as unknown));
+    } catch (error) { next(error); }
+  });
   app.post('/api/auth/change-password', authenticate, (req, res, next) => {
     try {
       const user = res.locals['authenticatedUser'] as { id: string };
