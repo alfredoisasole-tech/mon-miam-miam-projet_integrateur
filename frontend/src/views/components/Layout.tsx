@@ -14,7 +14,7 @@ import './layout.css';
 const publicLinks = [['/', 'Accueil'], ['/login', 'Connexion'], ['/register', 'Inscription']];
 function linksFor(role: User['role']) {
   switch (role) {
-    case 'student': return [['/menu', 'Menu'], ['/cart', 'Panier'], ['/orders', 'Mes commandes'], ['/loyalty', 'Mes points'], ['/claims', 'Réclamations']];
+    case 'student': return [['/menu', 'Menu'], ['/cart', 'Panier'], ['/orders', 'Mes commandes'], ['/loyalty', 'Mes points'], ['/community', 'Communauté'], ['/claims', 'Réclamations']];
     case 'employee': return [['/staff/orders', 'Commandes'], ['/staff/menu', 'Menu'], ['/staff/weekly', 'Statistiques'], ['/staff/claims', 'Réclamations']];
     case 'manager': return [['/staff/orders', 'Commandes'], ['/staff/menu', 'Menu'], ['/staff/overview', 'Statistiques'], ['/staff/claims', 'Réclamations']];
     case 'admin': return [['/staff/orders', 'Commandes'], ['/admin/menu', 'Menu'], ['/staff/overview', 'Statistiques'], ['/staff/claims', 'Réclamations'], ['/admin/settings', 'Paramètres']];
