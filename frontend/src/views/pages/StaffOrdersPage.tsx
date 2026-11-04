@@ -71,7 +71,7 @@ export const StaffOrdersPage: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
           <h2 style={{ margin: '0 0 0.5rem' }}>Les commandes du service</h2>
-          <p style={{ margin: 0, color: '#6b7280' }}>
+          <p style={{ margin: 0, color: 'var(--mm-muted)' }}>
             Gestion en direct des commandes du restaurant.
           </p>
         </div>
@@ -80,8 +80,8 @@ export const StaffOrdersPage: React.FC = () => {
           onClick={() => reload()}
           style={{
             padding: '0.5rem 1rem',
-            backgroundColor: '#f3f4f6',
-            border: '1px solid #d1d5db',
+            backgroundColor: 'var(--mm-bg)',
+            border: '1px solid var(--mm-line)',
             borderRadius: '0.375rem',
             cursor: 'pointer',
             fontWeight: 500,
@@ -96,7 +96,7 @@ export const StaffOrdersPage: React.FC = () => {
       <div
         role="tablist"
         aria-label="Filtrer les commandes"
-        style={{ display: 'flex', gap: '0.5rem', borderBottom: '2px solid #e5e7eb', marginBottom: '1.5rem' }}
+        style={{ display: 'flex', gap: '0.5rem', borderBottom: '2px solid var(--mm-line)', marginBottom: '1.5rem' }}
       >
         <button
           type="button"
@@ -107,7 +107,7 @@ export const StaffOrdersPage: React.FC = () => {
             padding: '0.75rem 1.25rem',
             border: 'none',
             background: 'none',
-            borderBottom: activeTab === 'active' ? '3px solid var(--mm-color-primary, #cfbd97)' : '3px solid transparent',
+            borderBottom: activeTab === 'active' ? '3px solid var(--mm-brand)' : '3px solid transparent',
             fontWeight: activeTab === 'active' ? 'bold' : 'normal',
             cursor: 'pointer',
           }}
@@ -125,7 +125,7 @@ export const StaffOrdersPage: React.FC = () => {
             padding: '0.75rem 1.25rem',
             border: 'none',
             background: 'none',
-            borderBottom: activeTab === 'completed' ? '3px solid var(--mm-color-primary, #cfbd97)' : '3px solid transparent',
+            borderBottom: activeTab === 'completed' ? '3px solid var(--mm-brand)' : '3px solid transparent',
             fontWeight: activeTab === 'completed' ? 'bold' : 'normal',
             cursor: 'pointer',
           }}
@@ -143,7 +143,7 @@ export const StaffOrdersPage: React.FC = () => {
             padding: '0.75rem 1.25rem',
             border: 'none',
             background: 'none',
-            borderBottom: activeTab === 'cancelled' ? '3px solid var(--mm-color-primary, #cfbd97)' : '3px solid transparent',
+            borderBottom: activeTab === 'cancelled' ? '3px solid var(--mm-brand)' : '3px solid transparent',
             fontWeight: activeTab === 'cancelled' ? 'bold' : 'normal',
             cursor: 'pointer',
           }}
@@ -169,7 +169,7 @@ export const StaffOrdersPage: React.FC = () => {
         <Spinner label="Chargement des commandes..." />
       ) : displayedOrders.length === 0 ? (
         <Card>
-          <p style={{ color: '#6b7280', textAlign: 'center', margin: '2rem 0' }}>
+          <p style={{ color: 'var(--mm-muted)', textAlign: 'center', margin: '2rem 0' }}>
             Aucune commande dans cet onglet.
           </p>
         </Card>
@@ -179,13 +179,13 @@ export const StaffOrdersPage: React.FC = () => {
             style={{
               width: '100%',
               borderCollapse: 'collapse',
-              backgroundColor: '#fff',
-              border: '1px solid #e5e7eb',
+              backgroundColor: 'var(--mm-surface)',
+              border: '1px solid var(--mm-line)',
               borderRadius: '0.5rem',
             }}
           >
             <thead>
-              <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
+              <tr style={{ backgroundColor: 'var(--mm-bg)', borderBottom: '1px solid var(--mm-line)', textAlign: 'left' }}>
                 <th style={{ padding: '0.75rem 1rem' }}>Numéro</th>
                 <th style={{ padding: '0.75rem 1rem' }}>Service</th>
                 <th style={{ padding: '0.75rem 1rem' }}>Articles</th>
@@ -203,7 +203,7 @@ export const StaffOrdersPage: React.FC = () => {
                   <tr
                     key={order.id}
                     data-testid={`order-row-${order.id}`}
-                    style={{ borderBottom: '1px solid #e5e7eb' }}
+                    style={{ borderBottom: '1px solid var(--mm-line)' }}
                   >
                     <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>
                       {order.orderNumber}
@@ -212,7 +212,7 @@ export const StaffOrdersPage: React.FC = () => {
                     <td style={{ padding: '0.75rem 1rem' }}>
                       {order.type === 'dine_in' ? 'Sur place' : 'Livraison'}
                       {order.arrivalTime && (
-                        <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--mm-muted)' }}>
                           Arrivée : {new Date(order.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       )}
@@ -248,7 +248,7 @@ export const StaffOrdersPage: React.FC = () => {
                               onClick={() => handleAction(order.id, 'confirmed')}
                               style={{
                                 padding: '0.375rem 0.75rem',
-                                backgroundColor: '#10b981',
+                                backgroundColor: 'var(--mm-ok)',
                                 color: '#fff',
                                 border: 'none',
                                 borderRadius: '0.25rem',
@@ -265,7 +265,7 @@ export const StaffOrdersPage: React.FC = () => {
                               onClick={() => handleAction(order.id, 'cancelled')}
                               style={{
                                 padding: '0.375rem 0.75rem',
-                                backgroundColor: '#ef4444',
+                                backgroundColor: 'var(--mm-danger)',
                                 color: '#fff',
                                 border: 'none',
                                 borderRadius: '0.25rem',
@@ -304,7 +304,7 @@ export const StaffOrdersPage: React.FC = () => {
                               onClick={() => handleAction(order.id, 'cancelled')}
                               style={{
                                 padding: '0.375rem 0.75rem',
-                                backgroundColor: '#ef4444',
+                                backgroundColor: 'var(--mm-danger)',
                                 color: '#fff',
                                 border: 'none',
                                 borderRadius: '0.25rem',
@@ -365,7 +365,7 @@ export const StaffOrdersPage: React.FC = () => {
                               onClick={() => handleAction(order.id, 'completed')}
                               style={{
                                 padding: '0.375rem 0.75rem',
-                                backgroundColor: '#10b981',
+                                backgroundColor: 'var(--mm-ok)',
                                 color: '#fff',
                                 border: 'none',
                                 borderRadius: '0.25rem',
@@ -386,7 +386,7 @@ export const StaffOrdersPage: React.FC = () => {
                             onClick={() => handleAction(order.id, 'completed')}
                             style={{
                               padding: '0.375rem 0.75rem',
-                              backgroundColor: '#10b981',
+                              backgroundColor: 'var(--mm-ok)',
                               color: '#fff',
                               border: 'none',
                               borderRadius: '0.25rem',

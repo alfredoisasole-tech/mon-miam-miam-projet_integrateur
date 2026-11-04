@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { api } from '../models/http.ts';
-import { useRestaurantProfile } from '../controllers/useRestaurantProfile.ts';
+import { announceRestaurantUpdated, useRestaurantProfile } from '../controllers/useRestaurantProfile.ts';
 vi.mock('../models/http.ts', () => ({ api: { get: vi.fn() } }));
 afterEach(cleanup);
 beforeEach(() => vi.clearAllMocks());
@@ -23,4 +23,14 @@ it('n’appelle pas l’API sans restaurant et expose une erreur de profil', asy
   rerender({ slug: 'a/b' });
   await waitFor(() => expect(result.current.error).toMatch(/indisponible/));
   expect(api.get).toHaveBeenCalledWith('/restaurants/a%2Fb');
+});
+it('recharge le profil quand le restaurant vient d’être personnalisé, sans recharger la page', async () => {
+  vi.mocked(api.get)
+    .mockResolvedValueOnce({ slug: 'a', name: 'Restaurant A', colors: { primary: '#cfbd97', secondary: '#000000' } })
+    .mockResolvedValueOnce({ slug: 'a', name: 'Restaurant A', colors: { primary: '#2e7d32', secondary: '#14301a' } });
+  const { result } = renderHook(() => useRestaurantProfile('a'));
+  await waitFor(() => expect(result.current.restaurant?.colors.primary).toBe('#cfbd97'));
+  await act(async () => { announceRestaurantUpdated(); });
+  await waitFor(() => expect(result.current.restaurant?.colors.primary).toBe('#2e7d32'));
+  expect(api.get).toHaveBeenCalledTimes(2);
 });

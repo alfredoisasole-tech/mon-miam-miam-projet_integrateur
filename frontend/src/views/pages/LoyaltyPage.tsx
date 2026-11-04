@@ -26,9 +26,9 @@ export const LoyaltyPage: React.FC = () => {
     return (
       <RequireRole allowedRoles={['student']}>
         <div className="loyalty-page" data-testid="loyalty-no-restaurant">
-          <h2>Mes points de fidélité</h2>
+          <h1>Mes points de fidélité</h1>
           <Card>
-            <p style={{ color: '#6b7280', margin: '1rem 0' }}>
+            <p style={{ color: 'var(--mm-muted)', margin: '1rem 0' }}>
               Choisissez un restaurant pour consulter vos points de fidélité.
             </p>
             <Link
@@ -36,8 +36,8 @@ export const LoyaltyPage: React.FC = () => {
               style={{
                 display: 'inline-block',
                 padding: '0.625rem 1.25rem',
-                backgroundColor: 'var(--mm-color-primary, #cfbd97)',
-                color: 'var(--mm-color-secondary, #000000)',
+                backgroundColor: 'var(--mm-brand)',
+                color: 'var(--mm-on-brand)',
                 borderRadius: '0.375rem',
                 textDecoration: 'none',
                 fontWeight: 600,
@@ -55,10 +55,8 @@ export const LoyaltyPage: React.FC = () => {
     <RequireRole allowedRoles={['student']}>
       <div className="loyalty-page" data-testid="loyalty-page">
         <header style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.875rem', margin: '0 0 0.5rem' }}>
-            Vos points Miam Club
-          </h2>
-          <p style={{ margin: 0, color: '#6b7280' }}>
+          <h1>Vos points Miam Club</h1>
+          <p style={{ margin: 0, color: 'var(--mm-muted)' }}>
             Les points sont calculés restaurant par restaurant
             {balance?.rules ? ` : ${formatPrice(balance.rules.spendPerPointFc)} payés = 1 point.` : '.'}
           </p>
@@ -85,17 +83,17 @@ export const LoyaltyPage: React.FC = () => {
             >
               {/* Carte Solde */}
               <Card>
-                <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem', color: '#6b7280' }}>
+                <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem', color: 'var(--mm-muted)' }}>
                   Solde chez {balance.restaurant.name}
                 </h3>
                 <div style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: '0.5rem 0' }} data-testid="available-points">
                   {balance.availablePoints}
                 </div>
-                <p style={{ margin: 0, color: '#4b5563', fontSize: '0.95rem' }}>
+                <p style={{ margin: 0, color: 'var(--mm-muted)', fontSize: '0.95rem' }}>
                   points · soit {formatPrice(Math.floor(balance.availablePoints / (balance.rules?.pointsForReward || 15)) * (balance.rules?.rewardValueFc || 3000))} de réduction possible
                 </p>
                 {balance.remainderFc > 0 && (
-                  <p style={{ margin: '0.75rem 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
+                  <p style={{ margin: '0.75rem 0 0', fontSize: '0.85rem', color: 'var(--mm-muted)' }}>
                     Dépenses en attente : {formatPrice(balance.remainderFc)} / {formatPrice(balance.rules?.spendPerPointFc || 3000)} pour le prochain point
                   </p>
                 )}
@@ -103,7 +101,7 @@ export const LoyaltyPage: React.FC = () => {
 
               {/* Carte Palier de réduction */}
               <Card>
-                <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem', color: '#6b7280' }}>
+                <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem', color: 'var(--mm-muted)' }}>
                   Palier de réduction
                 </h3>
                 <div style={{ fontSize: '1.5rem', fontWeight: 600, margin: '0.5rem 0' }}>
@@ -111,11 +109,11 @@ export const LoyaltyPage: React.FC = () => {
                 </div>
 
                 {balance.availablePoints >= (balance.rules?.pointsForReward ?? 15) ? (
-                  <p style={{ margin: 0, color: '#16a34a', fontWeight: 600 }} data-testid="reward-available">
+                  <p style={{ margin: 0, color: 'var(--mm-ok)', fontWeight: 600 }} data-testid="reward-available">
                     Vous avez {balance.availablePoints} points : {Math.floor(balance.availablePoints / (balance.rules?.pointsForReward ?? 15))} réduction(s) disponible(s).
                   </p>
                 ) : (
-                  <p style={{ margin: 0, color: '#4b5563' }} data-testid="points-missing">
+                  <p style={{ margin: 0, color: 'var(--mm-muted)' }} data-testid="points-missing">
                     Il vous manque {(balance.rules?.pointsForReward ?? 15) - balance.availablePoints} points pour une réduction de {formatPrice(balance.rules?.rewardValueFc ?? 3000)}.
                   </p>
                 )}
@@ -130,7 +128,7 @@ export const LoyaltyPage: React.FC = () => {
 
               {balance.movements.length === 0 ? (
                 <Card>
-                  <p style={{ color: '#6b7280', textAlign: 'center', margin: '2rem 0' }} data-testid="empty-movements">
+                  <p style={{ color: 'var(--mm-muted)', textAlign: 'center', margin: '2rem 0' }} data-testid="empty-movements">
                     Vous n'avez pas encore cumulé de points chez {balance.restaurant.name}.
                   </p>
                 </Card>
@@ -140,13 +138,13 @@ export const LoyaltyPage: React.FC = () => {
                     style={{
                       width: '100%',
                       borderCollapse: 'collapse',
-                      backgroundColor: '#fff',
-                      border: '1px solid #e5e7eb',
+                      backgroundColor: 'var(--mm-surface)',
+                      border: '1px solid var(--mm-line)',
                       borderRadius: '0.5rem',
                     }}
                   >
                     <thead>
-                      <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
+                      <tr style={{ backgroundColor: 'var(--mm-bg)', borderBottom: '1px solid var(--mm-line)', textAlign: 'left' }}>
                         <th style={{ padding: '0.75rem 1rem' }}>Date</th>
                         <th style={{ padding: '0.75rem 1rem' }}>Motif</th>
                         <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Points</th>
@@ -154,8 +152,8 @@ export const LoyaltyPage: React.FC = () => {
                     </thead>
                     <tbody>
                       {balance.movements.map((mov, index) => (
-                        <tr key={`${mov.createdAt}-${mov.kind}-${mov.orderId ?? index}-${index}`} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                          <td style={{ padding: '0.75rem 1rem', color: '#6b7280' }}>
+                        <tr key={`${mov.createdAt}-${mov.kind}-${mov.orderId ?? index}-${index}`} style={{ borderBottom: '1px solid var(--mm-line)' }}>
+                          <td style={{ padding: '0.75rem 1rem', color: 'var(--mm-muted)' }}>
                             {formatDate(mov.createdAt)}
                           </td>
                           <td style={{ padding: '0.75rem 1rem' }}>{movementLabel(mov)}</td>
@@ -164,7 +162,7 @@ export const LoyaltyPage: React.FC = () => {
                               padding: '0.75rem 1rem',
                               textAlign: 'right',
                               fontWeight: 'bold',
-                              color: mov.points > 0 ? '#16a34a' : '#dc2626',
+                              color: mov.points > 0 ? 'var(--mm-ok)' : 'var(--mm-danger)',
                             }}
                           >
                             {mov.points > 0 ? `+${mov.points}` : mov.points}

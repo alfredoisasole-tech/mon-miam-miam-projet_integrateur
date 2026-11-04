@@ -38,6 +38,10 @@ export const MenuPage: React.FC = () => {
   const quantityOf = (dishId: string) => cart.cart.lines.find((line) => line.id === dishId)?.quantity ?? 0;
   return (
     <div className="menu-page">
+      <h1>Notre menu</h1>
+      {!user && <p className="muted" data-testid="visitor-hint">
+        Pour commander, <Link to="/login">connectez-vous</Link> ou <Link to="/register">créez un compte étudiant</Link>.
+      </p>}
       {promotions.length > 0 && (
         <section aria-labelledby="promotions-heading">
           <h3 id="promotions-heading">Promotions et événements</h3>
@@ -46,10 +50,6 @@ export const MenuPage: React.FC = () => {
           </div>
         </section>
       )}
-      <h2>Notre Menu</h2>
-      {!user && <p className="muted" data-testid="visitor-hint">
-        Pour commander, <Link to="/login">connectez-vous</Link> ou <Link to="/register">créez un compte étudiant</Link>.
-      </p>}
       {menu.dailyItems.length > 0 && (
         <section aria-labelledby="daily-menu-heading">
           <h3 id="daily-menu-heading">Plats du jour</h3>
