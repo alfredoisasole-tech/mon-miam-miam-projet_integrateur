@@ -65,7 +65,7 @@ describe('Panier : paiement mobile money', () => {
     vi.spyOn(api, 'get').mockImplementation(async (path: string) => (path === '/me'
       ? { id: 'student-1', name: 'Alex', email: 'alex@example.com', role: 'student' }
       : { restaurant: { slug: 'chez-lea', name: 'Chez Léa' }, availablePoints: 0, remainderFc: 0, canRedeem: false,
-        rules: { spendPerPointFc: 3000, pointsForReward: 15, rewardDiscountFc: 3000, pointsValidityMonths: 12 }, movements: [] }) as never);
+        rules: { spendPerPointFc: 3000, pointsForReward: 15, rewardValueFc: 3000, validityMonths: 12 }, movements: [] }) as never);
     render(<AuthProvider><CartProvider><MemoryRouter><CartPage /></MemoryRouter></CartProvider></AuthProvider>);
     await screen.findByTestId('confirm-order-button');
   }

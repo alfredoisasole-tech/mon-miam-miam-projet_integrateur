@@ -43,7 +43,7 @@ export const CartPage: React.FC = () => {
   const balance = loaded?.rules ? loaded : null;
   const canRedeem = balance?.canRedeem === true;
   // Calcul indicatif ; le serveur recalcule et fait foi.
-  const discountFc = redeemPoints && canRedeem && balance ? Math.min(balance.rules.rewardDiscountFc, totalFc) : 0;
+  const discountFc = redeemPoints && canRedeem && balance ? Math.min(balance.rules.rewardValueFc, totalFc) : 0;
   const netTotalFc = Math.max(0, totalFc - discountFc);
   // Un total à 0 FC (payé en points) n'a rien à régler chez l'opérateur.
   const needsOnlinePayment = paymentMethod === 'mobile_money' && netTotalFc > 0;
@@ -414,12 +414,12 @@ export const CartPage: React.FC = () => {
                         onChange={(e) => setRedeemPoints(e.target.checked)}
                         data-testid="checkbox-loyalty-discount"
                       />
-                      <span>Utiliser {balance.rules.pointsForReward} points pour une réduction de {formatPrice(balance.rules.rewardDiscountFc)} (vous en avez {balance.availablePoints})</span>
+                      <span>Utiliser {balance.rules.pointsForReward} points pour une réduction de {formatPrice(balance.rules.rewardValueFc)} (vous en avez {balance.availablePoints})</span>
                     </label>
                   ) : (
                     <p className="muted" data-testid="loyalty-info">
                       Vous avez {balance.availablePoints} {balance.availablePoints > 1 ? 'points' : 'point'} chez {balance.restaurant.name} :
-                      {' '}{balance.rules.pointsForReward} points donnent une réduction de {formatPrice(balance.rules.rewardDiscountFc)}.
+                      {' '}{balance.rules.pointsForReward} points donnent une réduction de {formatPrice(balance.rules.rewardValueFc)}.
                     </p>
                   )}
                 </div>

@@ -27,22 +27,12 @@ describe('LoyaltyPage (G-12 · feat(fidelite): ecran des points de l\'etudiant)'
     rules: {
       spendPerPointFc: 3000,
       pointsForReward: 15,
-      rewardDiscountFc: 3000,
-      pointsValidityMonths: 12,
+      rewardValueFc: 3000,
+      validityMonths: 12,
     },
     movements: [
-      {
-        id: 'mov-1',
-        points: 2,
-        reason: 'Commande 20261027-001',
-        createdAt: '2026-10-27T12:00:00.000Z',
-      },
-      {
-        id: 'mov-2',
-        points: -15,
-        reason: 'Réduction utilisée',
-        createdAt: '2026-10-25T14:00:00.000Z',
-      },
+      { kind: 'earn', points: 2, orderId: 'ord-1', orderNumber: '20261027-001', createdAt: '2026-10-27T12:00:00.000Z', expiresAt: '2027-10-27T12:00:00.000Z' },
+      { kind: 'redeem', points: -15, orderId: null, orderNumber: null, createdAt: '2026-10-25T14:00:00.000Z', expiresAt: null },
     ],
   };
 
@@ -91,7 +81,9 @@ describe('LoyaltyPage (G-12 · feat(fidelite): ecran des points de l\'etudiant)'
       expect(screen.getByText('Vos points Miam Club')).toBeInTheDocument();
       expect(screen.getByTestId('available-points')).toHaveTextContent('30');
       expect(screen.getByTestId('reward-available')).toHaveTextContent('2 réduction(s) disponible(s)');
-      expect(screen.getByText('Commande 20261027-001')).toBeInTheDocument();
+      expect(screen.getByText('Points gagnés · commande 20261027-001')).toBeInTheDocument();
+      expect(screen.getByText('Réduction utilisée')).toBeInTheDocument();
+      expect(screen.getByText(/3 000 FC payés = 1 point/)).toBeInTheDocument();
       expect(screen.getByText('+2')).toBeInTheDocument();
       expect(screen.getByText('-15')).toBeInTheDocument();
     });

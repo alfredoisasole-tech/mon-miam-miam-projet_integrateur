@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../models/http.ts';
 
+/** Règles de fidélité du restaurant, telles que l'API les renvoie (docs/api/fidelite.md). */
 export interface LoyaltyRules {
   spendPerPointFc: number;
   pointsForReward: number;
-  rewardDiscountFc: number;
-  pointsValidityMonths: number;
+  rewardValueFc: number;
+  validityMonths: number;
 }
 
 export interface LoyaltyMovement {
-  id: string;
+  kind: string;
   points: number;
-  reason: string;
+  orderId: string | null;
+  orderNumber: string | null;
   createdAt: string;
-  orderId?: string | null;
+  expiresAt: string | null;
 }
 
 export interface LoyaltyBalance {
@@ -26,6 +28,21 @@ export interface LoyaltyBalance {
   canRedeem: boolean;
   rules: LoyaltyRules;
   movements: LoyaltyMovement[];
+}
+
+const KIND_LABEL: Record<string, string> = {
+  earn: 'Points gagnés',
+  referral: 'Parrainage',
+  redeem: 'Réduction utilisée',
+  expire: 'Points expirés',
+  adjust: 'Ajustement',
+  refund: 'Points rendus (commande annulée)',
+};
+
+/** Libellé lisible d'un mouvement, avec le numéro de la commande concernée quand il y en a une. */
+export function movementLabel(movement: Pick<LoyaltyMovement, 'kind' | 'orderNumber'>): string {
+  const label = KIND_LABEL[movement.kind] ?? 'Mouvement de points';
+  return movement.orderNumber ? `${label} · commande ${movement.orderNumber}` : label;
 }
 
 export function useLoyalty(restaurantSlug: string | null) {
@@ -65,4 +82,3 @@ export function useLoyalty(restaurantSlug: string | null) {
     reload: load,
   };
 }
-
