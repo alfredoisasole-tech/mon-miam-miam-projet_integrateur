@@ -8,7 +8,8 @@ import { authApi } from '../models/api.ts';
 import { HomePage, homeFor } from '../views/pages/HomePage.tsx';
 import { LoginPage } from '../views/pages/LoginPage.tsx';
 import { RegisterPage } from '../views/pages/RegisterPage.tsx';
-import { LayoutView } from '../views/components/Layout.tsx';
+import { Layout, LayoutView } from '../views/components/Layout.tsx';
+import { CartProvider } from '../controllers/cart.tsx';
 import { normalizePhone } from '../models/phone.ts';
 import { authApi as registrationApi } from '../models/authApi.ts';
 
@@ -207,5 +208,23 @@ describe('Barre de navigation étudiante', () => {
   it('n’affiche aucun compteur quand le panier est vide', () => {
     mount(0);
     expect(within(nav()).getByRole('link', { name: 'Panier', hidden: true })).toHaveTextContent(/^Panier$/);
+  });
+});
+
+describe('Charte graphique du personnel', () => {
+  it('applique la charte et le nom du restaurant du personnel, même sans restaurant choisi', async () => {
+    localStorage.setItem('mmm_token', 'fake-token');
+    vi.spyOn(api, 'get').mockImplementation(async (path: string) => {
+      if (path === '/me') return { id: 'a1', name: 'Admin', role: 'admin', restaurant: { slug: 'zeduc-space', name: 'ZeDuc@Space' } } as never;
+      if (path === '/restaurants/zeduc-space') return { slug: 'zeduc-space', name: 'ZeDuc@Space', colors: { primary: '#2e7d32', secondary: '#102a12' }, fontFamily: 'Georgia', defaultMode: 'dark' } as never;
+      return { items: [], total: 0, page: 1, pageSize: 20 } as never;
+    });
+    render(<MemoryRouter><AuthProvider><RestaurantProvider><CartProvider><Routes>
+      <Route element={<Layout />}><Route path="/" element={<p>Contenu</p>} /></Route>
+    </Routes></CartProvider></RestaurantProvider></AuthProvider></MemoryRouter>);
+    expect(await screen.findByRole('link', { name: 'ZeDuc@Space' })).toBeInTheDocument();
+    const shell = document.querySelector('.app-shell') as HTMLElement;
+    expect(shell).toHaveAttribute('data-mode', 'dark');
+    expect(shell.style.getPropertyValue('--mm-brand')).toBe('#2e7d32');
   });
 });

@@ -151,7 +151,7 @@
 
 **En-tête** : `Authorization: Bearer <token>`
 
-**Sortie (200)** : même structure que `user` dans la réponse de `/login`.
+**Sortie (200)** : même structure que `user` dans la réponse de `/login`. Pour un employé, un gérant ou un administrateur, le champ `restaurant` (`{ slug, name }`) indique son restaurant : le site s'en sert pour appliquer la charte graphique du restaurant à ses écrans. Il vaut `null` pour un étudiant (qui choisit son restaurant) et pour l'administrateur de la plateforme.
 
 **Erreurs** :
 
