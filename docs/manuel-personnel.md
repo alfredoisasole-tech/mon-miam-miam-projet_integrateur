@@ -128,7 +128,7 @@ La capture ci-dessous provient du contrôle local du 3 novembre 2026 avec l’AP
 
 ![Statistiques du restaurant avec données de démonstration](manuel-personnel/statistiques.jpg)
 
-## 8. Réclamations, paramètres et plateforme
+## 6. Réclamations, paramètres et plateforme
 
 ### Réclamations (employé, gérant, administrateur)
 
@@ -161,7 +161,7 @@ Cliquez sur **Restaurants** (`/plateforme`). La liste montre tous les restaurant
 
 Le lien **Mon profil**, en bas de page, permet à chaque membre du personnel de changer son mot de passe.
 
-## 6. Si une page ne fonctionne pas
+## 7. Si une page ne fonctionne pas
 
 | Ce que vous voyez | Que faire |
 | --- | --- |
@@ -172,7 +172,7 @@ Le lien **Mon profil**, en bas de page, permet à chaque membre du personnel de 
 | Message d’accès refusé | Vérifiez le compte utilisé. Un employé ne peut pas ouvrir le bilan global. |
 | Anciennes valeurs avec avertissement | Vérifiez la date affichée ; attendez une actualisation réussie avant d’utiliser ces chiffres. |
 
-## 7. Compléter les captures et tenir le guide à jour
+## 8. Compléter les captures et tenir le guide à jour
 
 Les quatre captures sont présentes : **connexion**, **menu du personnel**, **carte administrateur**, **statistiques**. Elles ont été prises le **3 novembre 2026**, sur une version locale avec le correctif #62, une API réelle et une base de démonstration temporaire. Aucune donnée d’activité réelle n’y figure.
 
