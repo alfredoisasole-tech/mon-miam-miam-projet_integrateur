@@ -8,6 +8,7 @@ import { Alert, Card, Spinner } from '../components/ui.tsx';
 import { PaymentChoice, type PaymentMethod } from '../components/PaymentChoice.tsx';
 import { PaymentDetails, isValidPaymentPhone, normalizePaymentPhone } from '../components/PaymentDetails.tsx';
 import { paymentApi, type PaymentOperator } from '../../controllers/payment.ts';
+import { useLoyalty } from '../../controllers/loyalty.ts';
 
 const KINSHASA_COMMUNES = [
   'Bandalungwa', 'Barumbu', 'Bumbu', 'Gombe', 'Kalamu', 'Kasa-Vubu', 'Kimbanseke',
@@ -37,8 +38,12 @@ export const CartPage: React.FC = () => {
   const [payPhone, setPayPhone] = useState('');
   const [payPhoneError, setPayPhoneError] = useState<string | null>(null);
 
-  // Calcul indicatif avec réduction de points (3 000 FC max sur les plats)
-  const discountFc = redeemPoints ? Math.min(3000, totalFc) : 0;
+  // Les règles de fidélité (points nécessaires, valeur de la réduction) sont celles du restaurant, pas des valeurs fixes.
+  const { balance: loaded } = useLoyalty(user ? cart.restaurantSlug : null);
+  const balance = loaded?.rules ? loaded : null;
+  const canRedeem = balance?.canRedeem === true;
+  // Calcul indicatif ; le serveur recalcule et fait foi.
+  const discountFc = redeemPoints && canRedeem && balance ? Math.min(balance.rules.rewardDiscountFc, totalFc) : 0;
   const netTotalFc = Math.max(0, totalFc - discountFc);
   // Un total à 0 FC (payé en points) n'a rien à régler chez l'opérateur.
   const needsOnlinePayment = paymentMethod === 'mobile_money' && netTotalFc > 0;
@@ -101,7 +106,7 @@ export const CartPage: React.FC = () => {
           menuItemId: line.id,
           quantity: line.quantity,
         })),
-        redeemMeal: redeemPoints,
+        redeemMeal: redeemPoints && canRedeem,
         note: note.trim() || undefined,
       };
 
@@ -399,17 +404,26 @@ export const CartPage: React.FC = () => {
               </div>
 
               {/* Remise fidélité */}
-              <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={redeemPoints}
-                    onChange={(e) => setRedeemPoints(e.target.checked)}
-                    data-testid="checkbox-loyalty-discount"
-                  />
-                  <span>Utiliser 15 points pour une réduction de 3 000 FC</span>
-                </label>
-              </div>
+              {balance && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  {canRedeem ? (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={redeemPoints}
+                        onChange={(e) => setRedeemPoints(e.target.checked)}
+                        data-testid="checkbox-loyalty-discount"
+                      />
+                      <span>Utiliser {balance.rules.pointsForReward} points pour une réduction de {formatPrice(balance.rules.rewardDiscountFc)} (vous en avez {balance.availablePoints})</span>
+                    </label>
+                  ) : (
+                    <p className="muted" data-testid="loyalty-info">
+                      Vous avez {balance.availablePoints} {balance.availablePoints > 1 ? 'points' : 'point'} chez {balance.restaurant.name} :
+                      {' '}{balance.rules.pointsForReward} points donnent une réduction de {formatPrice(balance.rules.rewardDiscountFc)}.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Récapitulatif du total */}
               <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', marginBottom: '1.25rem' }}>
