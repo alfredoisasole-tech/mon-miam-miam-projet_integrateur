@@ -218,6 +218,92 @@ describe('API des comptes du personnel', () => {
     });
   });
 
+  describe('réinitialisation du mot de passe d’un compte du personnel', () => {
+    async function made(email: string, role = 'employee') {
+      const response = await create(adminToken, email, role);
+      assert.equal(response.status, 201);
+      return await response.json() as { account: { id: string; email: string }; temporaryPassword: string };
+    }
+    const reset = (token: string | null, id: string) => fetch(`${server.base}/api/staff/accounts/${id}/reset-password`, {
+      method: 'POST', headers: token ? auth(token) : { 'content-type': 'application/json' },
+    });
+    const tryLogin = (identifier: string, password: string) => fetch(`${server.base}/api/auth/login`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ identifier, password }),
+    });
+
+    it('un administrateur redonne un mot de passe temporaire à un employé qui a tout oublié', async () => {
+      const employee = await made('forgot-1@example.test');
+      const oldToken = await login(employee.account.email, employee.temporaryPassword);
+      const response = await reset(adminToken, employee.account.id);
+      assert.equal(response.status, 200);
+      const body = await response.json() as { temporaryPassword: string; account: Record<string, unknown> };
+      assert.match(body.temporaryPassword, /^(?=.*[A-Z])(?=.*\d).{8,}$/);
+      assert.notEqual(body.temporaryPassword, employee.temporaryPassword);
+      assert.equal(body.account['mustChangePassword'], true);
+      assert.ok(!('passwordHash' in body.account));
+      assert.equal((await tryLogin(employee.account.email, employee.temporaryPassword)).status, 401, 'l’ancien mot de passe ne marche plus');
+      assert.equal((await tryLogin(employee.account.email, body.temporaryPassword)).status, 200, 'le nouveau marche');
+      assert.equal((await fetch(`${server.base}/api/staff/accounts`, { headers: auth(oldToken) })).status, 401, 'les anciennes sessions sont révoquées');
+      assert.equal(db.get<{ must_change_password: number }>('SELECT must_change_password FROM users WHERE id = ?', [employee.account.id])?.must_change_password, 1);
+    });
+
+    it('chaque réinitialisation donne un mot de passe différent, jamais revu ailleurs', async () => {
+      const employee = await made('forgot-2@example.test');
+      const first = await (await reset(adminToken, employee.account.id)).json() as { temporaryPassword: string };
+      const second = await (await reset(adminToken, employee.account.id)).json() as { temporaryPassword: string };
+      assert.notEqual(first.temporaryPassword, second.temporaryPassword);
+      const listed = await (await fetch(`${server.base}/api/staff/accounts`, { headers: auth(adminToken) })).json() as Array<Record<string, unknown>>;
+      assert.ok(listed.every((account) => !('temporaryPassword' in account) && !('passwordHash' in account)));
+    });
+
+    it('un gérant réinitialise un employé, mais ni un gérant ni un administrateur', async () => {
+      const employee = await made('forgot-3@example.test');
+      assert.equal((await reset(managerToken, employee.account.id)).status, 200);
+      const otherManager = await made('forgot-manager@example.test', 'manager');
+      assert.equal((await reset(managerToken, otherManager.account.id)).status, 403);
+      assert.equal((await reset(managerToken, 'manager-a')).status, 400, 'pas son propre compte');
+      assert.equal((await reset(managerToken, 'admin-a')).status, 403);
+    });
+
+    it('un administrateur réinitialise un gérant, mais pas un autre administrateur ni lui-même', async () => {
+      const manager = await made('forgot-manager-2@example.test', 'manager');
+      assert.equal((await reset(adminToken, manager.account.id)).status, 200);
+      db.run(`INSERT INTO users (id, restaurant_id, role, name, email, phone, password_hash, created_at)
+        VALUES ('admin-a2', 'restaurant-a', 'admin', 'Admin A2', 'admin-a2@example.test', '+243810000099', 'x', '2026-11-03T08:00:00.000Z')`);
+      assert.equal((await reset(adminToken, 'admin-a2')).status, 403);
+      assert.equal((await reset(adminToken, 'admin-a')).status, 400);
+    });
+
+    it('ne touche ni aux comptes d’un autre restaurant, ni aux comptes non personnels, ni aux comptes désactivés', async () => {
+      const foreign = await (await create(adminBToken, 'forgot-foreign@example.test')).json() as { account: { id: string } };
+      assert.equal((await reset(adminToken, foreign.account.id)).status, 404);
+      db.run(`INSERT INTO users (id, restaurant_id, role, name, email, phone, password_hash, created_at)
+        VALUES ('student-reset', 'restaurant-a', 'student', 'Étudiant', 'student-reset@example.test', '+243810000098', 'x', '2026-11-03T08:00:00.000Z')`);
+      assert.equal((await reset(adminToken, 'student-reset')).status, 404);
+      assert.equal((await reset(adminToken, 'inconnu')).status, 404);
+      const disabled = await made('forgot-disabled@example.test');
+      await fetch(`${server.base}/api/staff/accounts/${disabled.account.id}`, { method: 'PATCH', headers: auth(adminToken), body: JSON.stringify({ status: 'inactive' }) });
+      const blocked = await reset(adminToken, disabled.account.id);
+      assert.equal(blocked.status, 409);
+      assert.equal(((await blocked.json()) as { error: { code: string } }).error.code, 'ACCOUNT_INACTIVE');
+    });
+
+    it('est réservé aux gérants et administrateurs, avec une connexion', async () => {
+      const employee = await made('forgot-4@example.test');
+      const employeeSession = await login(employee.account.email, employee.temporaryPassword);
+      assert.equal((await reset(employeeSession, employee.account.id)).status, 403);
+      assert.equal((await reset(null, employee.account.id)).status, 401);
+    });
+
+    it('lève un blocage de connexion pour que la personne puisse se reconnecter', async () => {
+      const employee = await made('forgot-5@example.test');
+      db.run("INSERT INTO auth_lockouts (user_id, locked_at) VALUES (?, '2026-11-03T10:00:00.000Z')", [employee.account.id]);
+      const body = await (await reset(adminToken, employee.account.id)).json() as { temporaryPassword: string };
+      assert.equal(db.get('SELECT 1 FROM auth_lockouts WHERE user_id = ?', [employee.account.id]), undefined);
+      assert.equal((await tryLogin(employee.account.email, body.temporaryPassword)).status, 200);
+    });
+  });
+
   it('déduit le restaurant du jeton et refuse la lecture ou la désactivation directe des comptes d’un autre restaurant', async () => {
     const createdResponse = await create(adminBToken, 'employee-b@example.test');
     assert.equal(createdResponse.status, 201);

@@ -160,6 +160,18 @@
 | 401 | `UNAUTHORIZED` | « Connexion requise » |
 | 403 | `ACCOUNT_DISABLED` | « Ce compte est désactivé » |
 
+### `PATCH /api/me`
+
+**Rôles autorisés** : étudiant, employé, gérant, administrateur de restaurant (pas l'administrateur de la plateforme).
+
+**Entrée** : au moins un champ parmi `name` (2 à 80 caractères), `phone`, et, **pour un étudiant seulement**, `commune` (une des 24 communes de Kinshasa, accents et casse ignorés), `quartier` (80 caractères au plus) et `address` (200 au plus). `null` ou un texte vide efface une information facultative. L'e-mail est l'identifiant de connexion : il ne change pas. Tout autre champ répond `400 INVALID_BODY`.
+
+**Changer de numéro** exige `currentPassword` (le numéro sert aussi à se connecter) : absent, `400` ; faux, `401 INVALID_CREDENTIALS` (limité à quelques essais) ; numéro déjà pris, `409 PHONE_TAKEN`. Le numéro est normalisé en `+243XXXXXXXXX` (`0990001111` est accepté). Renvoyer son propre numéro n'est pas un changement. La session reste valable.
+
+**Sortie (200)** : le profil à jour, avec `commune`, `quartier`, `address` (`null` pour le personnel) et `restaurant`. `GET /api/me` renvoie désormais ces mêmes champs.
+
+**Erreurs** : `401` sans connexion ; `403 PASSWORD_CHANGE_REQUIRED` tant qu'un mot de passe temporaire n'a pas été changé ; `403 FORBIDDEN` pour l'administrateur de la plateforme.
+
 ---
 
 ## 4. Demande de réinitialisation de mot de passe

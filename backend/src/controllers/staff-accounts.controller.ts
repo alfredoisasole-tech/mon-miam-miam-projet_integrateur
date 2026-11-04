@@ -29,6 +29,16 @@ export function registerStaffAccountRoutes(app: Express, service: StaffAccountsS
     catch (error) { next(error); }
   });
 
+  app.post('/api/staff/accounts/:id/reset-password', authenticate, (req, res, next) => {
+    const user = administrator(res, next, new Set(['manager', 'admin']));
+    if (!user) return;
+    try {
+      const id = req.params['id'];
+      if (typeof id !== 'string') throw new AppError(404, 'STAFF_ACCOUNT_NOT_FOUND', 'Compte du personnel introuvable.');
+      res.status(200).json(service.resetPassword(user, id));
+    } catch (error) { next(error); }
+  });
+
   app.patch('/api/staff/accounts/:id', authenticate, (req, res, next) => {
     const user = administrator(res, next, new Set(['admin']));
     if (!user) return;
