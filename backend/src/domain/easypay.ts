@@ -49,7 +49,7 @@ function texte(valeur: unknown): string | null {
 }
 
 /**
- * Passerelle e-COM EasyPay (parcours avec redirection, canal Mobile Money).
+ * Passerelle e-COM EasyPay (parcours avec redirection, canal Mobile Money ; carte aussi au bac à sable).
  * Ses notifications (IPN) n'ont ni signature ni montant documentés : elles ne sont jamais crues,
  * `checkPayment` rappelle Easypay pour confirmer l'état du paiement (voir docs/api/easypay.md).
  */
@@ -80,7 +80,9 @@ export class EasypayPaymentProvider implements PaymentProvider {
         description: 'Commande Mon Miam Miam',
         customer_name: input.customerName,
         language: 'FR',
-        channels: [{ channel: 'MOBILE MONEY' }],
+        // Au bac à sable, aucun numéro de test Mobile Money n'existe : la carte de test publiée par Easypay
+        // permet d'y obtenir un paiement réussi. En production, seul le Mobile Money est proposé.
+        channels: mode === 'sandbox' ? [{ channel: 'MOBILE MONEY' }, { channel: 'CREDIT CARD' }] : [{ channel: 'MOBILE MONEY' }],
         success_url: retour('succes'),
         cancel_url: retour('annule'),
         error_url: retour('erreur'),
