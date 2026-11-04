@@ -53,7 +53,7 @@ export function useRegister() {
 
     const target = chosen || slug;
     if (!target) {
-      setErrors({ form: 'Choisissez le restaurant où créer votre compte.' });
+      setErrors({ form: 'Aucun restaurant n’est disponible pour le moment. Réessayez dans un instant.' });
       return false;
     }
 
