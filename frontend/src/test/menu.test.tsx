@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider, RestaurantProvider } from '../controllers/session.tsx';
 import { MenuPage } from '../views/pages/MenuPage.tsx';
@@ -8,11 +9,13 @@ vi.mock('../models/http.ts', () => ({ api: { get } }));
 
 function renderMenu(): void {
   render(
-    <AuthProvider>
-      <RestaurantProvider>
-        <MenuPage />
-      </RestaurantProvider>
-    </AuthProvider>,
+    <MemoryRouter>
+      <AuthProvider>
+        <RestaurantProvider>
+          <MenuPage />
+        </RestaurantProvider>
+      </AuthProvider>
+    </MemoryRouter>,
   );
 }
 
@@ -54,6 +57,7 @@ describe('MenuPage', () => {
     localStorage.removeItem('mmm_restaurant');
     renderMenu();
     expect(screen.getByText('Choisissez un restaurant pour afficher son menu.')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Voir les restaurants' }).getAttribute('href')).toBe('/');
     expect(get).not.toHaveBeenCalled();
   });
 });
