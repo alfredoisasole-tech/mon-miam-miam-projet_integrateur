@@ -91,7 +91,7 @@ Lors d’une panne d’actualisation, les anciens chiffres peuvent rester visibl
 
 Cliquez sur **Équipe** (`/staff/accounts`) puis remplissez **Nom**, **E-mail**, **Téléphone** (`+243XXXXXXXXX`) et **Rôle**. Le gérant crée des employés ; seul l’administrateur peut aussi créer un gérant.
 
-Le compte reçoit un **mot de passe temporaire** affiché **une seule fois** : transmettez-le à la personne. À sa première connexion, elle est dirigée vers **Mon profil** et doit choisir un nouveau mot de passe avant d’utiliser le reste du site. Seul l’administrateur peut désactiver un compte (confirmation demandée).
+Le compte reçoit un **mot de passe temporaire** affiché **une seule fois** : transmettez-le à la personne. À sa première connexion, elle est dirigée vers **Mon profil** et doit choisir un nouveau mot de passe avant d’utiliser le reste du site. Seul l’administrateur peut **modifier** un compte (nom, téléphone, rôle employé ou gérant ; l’e-mail ne change pas), le **désactiver** (confirmation demandée) ou le **réactiver**. Changer le rôle ou le téléphone oblige la personne à se reconnecter ; un administrateur ne peut modifier ni son propre rôle ni son propre état.
 
 ## 5. Administrateur du restaurant : carte, promotions et statistiques
 
@@ -112,7 +112,7 @@ Cliquez sur **Promotions** (`/admin/promotions`). Choisissez le **Type** (promot
 
 ### Statistiques et employés
 
-L’administrateur du restaurant peut utiliser le bilan décrit dans la section **Gérant : consulter les statistiques**. Il voit uniquement les données de son restaurant. Il crée et désactive aussi les comptes du personnel depuis **Équipe**.
+L’administrateur du restaurant peut utiliser le bilan décrit dans la section **Gérant : consulter les statistiques**. Il voit uniquement les données de son restaurant. Il crée, modifie, désactive et réactive aussi les comptes du personnel depuis **Équipe**.
 
 L’administrateur d’un restaurant ne crée pas les autres restaurants et ne change pas leur statut : ces opérations appartiennent à l’administration de la plateforme.
 

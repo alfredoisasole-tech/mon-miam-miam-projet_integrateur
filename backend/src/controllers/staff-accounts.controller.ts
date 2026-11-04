@@ -35,7 +35,7 @@ export function registerStaffAccountRoutes(app: Express, service: StaffAccountsS
     try {
       const id = req.params['id'];
       if (typeof id !== 'string') throw new AppError(404, 'STAFF_ACCOUNT_NOT_FOUND', 'Compte du personnel introuvable.');
-      res.status(200).json(service.deactivate(user, id, req.body as unknown));
+      res.status(200).json(service.update(user, id, req.body as unknown));
     } catch (error) { next(error); }
   });
 }
