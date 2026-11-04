@@ -11,7 +11,7 @@ import * as session from '../controllers/session.tsx';
 vi.mock('../controllers/admin.ts', async importOriginal => ({
   ...(await importOriginal<typeof import('../controllers/admin.ts')>()),
   adminApi: {
-    listStaff: vi.fn(), createStaff: vi.fn(), deactivateStaff: vi.fn(),
+    listStaff: vi.fn(), createStaff: vi.fn(), deactivateStaff: vi.fn(), reactivateStaff: vi.fn(), updateStaff: vi.fn(),
     listPromotions: vi.fn(), createPromotion: vi.fn(), updatePromotion: vi.fn(), deletePromotion: vi.fn(),
     listRestaurants: vi.fn(), createRestaurant: vi.fn(), setRestaurantStatus: vi.fn(),
   },
@@ -68,6 +68,97 @@ describe('Comptes du personnel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Créer le compte' }));
     expect(screen.getByLabelText('Téléphone')).toHaveAttribute('aria-invalid', 'true');
     expect(api.createStaff).not.toHaveBeenCalled();
+  });
+
+  describe('modification d’un compte', () => {
+    const open = async () => {
+      asRole('admin');
+      api.listStaff.mockResolvedValue([staff(), staff({ id: 's2', name: 'Awa', email: 'awa@example.test', phone: '+243820000002', status: 'inactive' })]);
+      render(<MemoryRouter><StaffAccountsPage /></MemoryRouter>);
+      await screen.findByText('Chef Paul');
+    };
+
+    it('modifie le nom, le téléphone et le rôle en n’envoyant que ce qui a changé', async () => {
+      await open();
+      api.updateStaff.mockResolvedValue({ account: staff({ name: 'Paul Chef' }) });
+      await userEvent.click(screen.getByRole('button', { name: 'Modifier Chef Paul' }));
+      const form = screen.getByRole('form', { name: 'Modifier Chef Paul' });
+      const name = within(form).getByLabelText('Nom');
+      await userEvent.clear(name);
+      await userEvent.type(name, 'Paul Chef');
+      await userEvent.selectOptions(within(form).getByLabelText('Rôle'), 'manager');
+      await userEvent.click(within(form).getByRole('button', { name: 'Enregistrer' }));
+      await waitFor(() => expect(api.updateStaff).toHaveBeenCalledWith('s1', { name: 'Paul Chef', role: 'manager' }));
+      expect(await screen.findByText(/Cette personne devra se reconnecter/)).toBeInTheDocument();
+      expect(screen.queryByRole('form', { name: 'Modifier Chef Paul' })).toBeNull();
+    });
+
+    it('ne demande pas de reconnexion quand seul le nom change', async () => {
+      await open();
+      api.updateStaff.mockResolvedValue({ account: staff({ name: 'Paul Chef' }) });
+      await userEvent.click(screen.getByRole('button', { name: 'Modifier Chef Paul' }));
+      const name = screen.getByLabelText('Nom', { selector: 'form[aria-label="Modifier Chef Paul"] input' });
+      await userEvent.clear(name);
+      await userEvent.type(name, 'Paul Chef');
+      await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+      expect(await screen.findByText('Compte de Paul Chef modifié.')).toBeInTheDocument();
+    });
+
+    it('valide le téléphone et n’appelle rien quand rien n’a changé', async () => {
+      await open();
+      await userEvent.click(screen.getByRole('button', { name: 'Modifier Chef Paul' }));
+      const form = screen.getByRole('form', { name: 'Modifier Chef Paul' });
+      const phone = within(form).getByLabelText('Téléphone');
+      await userEvent.clear(phone);
+      await userEvent.type(phone, '0820000009');
+      await userEvent.click(within(form).getByRole('button', { name: 'Enregistrer' }));
+      expect(phone).toHaveAttribute('aria-invalid', 'true');
+      await userEvent.clear(phone);
+      await userEvent.type(phone, '+243810000001');
+      await userEvent.click(within(form).getByRole('button', { name: 'Enregistrer' }));
+      expect(api.updateStaff).not.toHaveBeenCalled();
+      expect(screen.queryByRole('form', { name: 'Modifier Chef Paul' })).toBeNull();
+    });
+
+    it('affiche l’erreur du serveur, par exemple un téléphone déjà utilisé', async () => {
+      await open();
+      api.updateStaff.mockRejectedValue(new Error('Un compte existe déjà avec ce téléphone.'));
+      await userEvent.click(screen.getByRole('button', { name: 'Modifier Chef Paul' }));
+      const form = screen.getByRole('form', { name: 'Modifier Chef Paul' });
+      const phone = within(form).getByLabelText('Téléphone');
+      await userEvent.clear(phone);
+      await userEvent.type(phone, '+243820000002');
+      await userEvent.click(within(form).getByRole('button', { name: 'Enregistrer' }));
+      expect(await within(form).findByRole('alert')).toHaveTextContent('Un compte existe déjà avec ce téléphone.');
+    });
+
+    it('réactive un compte désactivé, et seulement ceux-là', async () => {
+      await open();
+      api.reactivateStaff.mockResolvedValue({ id: 's2', status: 'active', account: staff({ id: 's2', name: 'Awa', status: 'active' }) });
+      expect(screen.queryByRole('button', { name: 'Réactiver Chef Paul' })).toBeNull();
+      await userEvent.click(screen.getByRole('button', { name: 'Réactiver Awa' }));
+      await waitFor(() => expect(api.reactivateStaff).toHaveBeenCalledWith('s2'));
+      expect(await screen.findByText('Compte de Awa réactivé.')).toBeInTheDocument();
+    });
+
+    it('n’offre pas la modification à un gérant', async () => {
+      asRole('manager');
+      api.listStaff.mockResolvedValue([staff()]);
+      render(<MemoryRouter><StaffAccountsPage /></MemoryRouter>);
+      await screen.findByText('Chef Paul');
+      expect(screen.queryByRole('button', { name: /Modifier|Réactiver/ })).toBeNull();
+    });
+
+    it('ne laisse pas un administrateur changer son propre rôle', async () => {
+      asRole('admin');
+      api.listStaff.mockResolvedValue([staff({ id: 'me', name: 'Moi', role: 'admin' })]);
+      render(<MemoryRouter><StaffAccountsPage /></MemoryRouter>);
+      await screen.findByText('Moi', { selector: 'strong' });
+      await userEvent.click(screen.getByRole('button', { name: 'Modifier Moi' }));
+      const form = screen.getByRole('form', { name: 'Modifier Moi' });
+      expect(within(form).queryByLabelText('Rôle')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Réactiver Moi' })).toBeNull();
+    });
   });
 });
 
