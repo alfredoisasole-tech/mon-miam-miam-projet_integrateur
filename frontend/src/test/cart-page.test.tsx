@@ -68,7 +68,7 @@ describe('CartPage (G-8 · feat(panier): panier d\'un seul restaurant et changem
 
   const loyalty = (availablePoints: number) => ({
     restaurant: { slug: 'zeduc-space', name: 'ZeDuc@Space' }, availablePoints, remainderFc: 0, canRedeem: availablePoints >= 15,
-    rules: { spendPerPointFc: 3000, pointsForReward: 15, rewardDiscountFc: 3000, pointsValidityMonths: 12 }, movements: [],
+    rules: { spendPerPointFc: 3000, pointsForReward: 15, rewardValueFc: 3000, validityMonths: 12 }, movements: [],
   });
   const mountWithLoyalty = (points: number) => {
     localStorage.setItem('mmm_cart', JSON.stringify({ restaurantSlug: 'zeduc-space', lines: [
