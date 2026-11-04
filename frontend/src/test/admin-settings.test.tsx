@@ -42,7 +42,7 @@ describe('Paramètres du restaurant', () => {
     fireEvent.change(screen.getByLabelText('Couleur principale'), { target: { value: '#112233' } });
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() => expect(api.update).toHaveBeenCalledWith({ brand: { primaryColor: '#112233' } }));
-    expect(await screen.findByRole('status')).toHaveTextContent('enregistrés');
+    expect(await screen.findByText('Les paramètres sont enregistrés.')).toBeInTheDocument();
   });
 
   it('refuse une couleur invalide sans appeler le serveur', async () => {
@@ -79,7 +79,7 @@ describe('Paramètres du restaurant', () => {
     api.update.mockResolvedValue(settings);
     await ouvrir();
     const file = new File([new Uint8Array([137, 80, 78, 71])], 'logo.png', { type: 'image/png' });
-    await userEvent.upload(screen.getByLabelText('Logo'), file);
+    await userEvent.upload(screen.getByLabelText('Fichier du logo'), file);
     await waitFor(() => expect(api.uploadLogo).toHaveBeenCalledWith(file));
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() => expect(api.update).toHaveBeenCalledWith({ brand: { logoAssetId: 'ast_9' } }));
@@ -88,9 +88,57 @@ describe('Paramètres du restaurant', () => {
   it('refuse un logo trop lourd ou au mauvais format', async () => {
     await ouvrir();
     const big = new File([new Uint8Array(600 * 1024)], 'gros.png', { type: 'image/png' });
-    await userEvent.upload(screen.getByLabelText('Logo'), big);
+    await userEvent.upload(screen.getByLabelText('Fichier du logo'), big);
     expect(await screen.findByRole('alert')).toHaveTextContent('512 Ko');
     expect(api.uploadLogo).not.toHaveBeenCalled();
+  });
+
+  it('règle la couleur avec les champs rouge, vert et bleu, synchronisés avec le code', async () => {
+    api.update.mockResolvedValue(settings);
+    await ouvrir();
+    fireEvent.change(screen.getByLabelText('Couleur principale : rouge (0 à 255)'), { target: { value: '17' } });
+    fireEvent.change(screen.getByLabelText('Couleur principale : vert (0 à 255)'), { target: { value: '34' } });
+    fireEvent.change(screen.getByLabelText('Couleur principale : bleu (0 à 255)'), { target: { value: '51' } });
+    expect(screen.getByLabelText('Couleur principale')).toHaveValue('#112233');
+    expect(screen.getByLabelText('Couleur principale : palette')).toHaveValue('#112233');
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() => expect(api.update).toHaveBeenCalledWith({ brand: { primaryColor: '#112233' } }));
+  });
+
+  it('met à jour les champs rouge, vert, bleu quand on tape le code ou choisit dans la palette', async () => {
+    await ouvrir();
+    fireEvent.change(screen.getByLabelText('Couleur secondaire'), { target: { value: '#ff8000' } });
+    expect(screen.getByLabelText('Couleur secondaire : rouge (0 à 255)')).toHaveValue(255);
+    expect(screen.getByLabelText('Couleur secondaire : vert (0 à 255)')).toHaveValue(128);
+    expect(screen.getByLabelText('Couleur secondaire : bleu (0 à 255)')).toHaveValue(0);
+    fireEvent.change(screen.getByLabelText('Couleur secondaire : palette'), { target: { value: '#00ff00' } });
+    expect(screen.getByLabelText('Couleur secondaire')).toHaveValue('#00ff00');
+  });
+
+  it('borne les canaux entre 0 et 255', async () => {
+    await ouvrir();
+    fireEvent.change(screen.getByLabelText('Couleur principale : rouge (0 à 255)'), { target: { value: '999' } });
+    expect(screen.getByLabelText('Couleur principale')).toHaveValue('#ffbd97');
+  });
+
+  it('montre un aperçu en direct et prévient quand la couleur principale se confond avec le fond', async () => {
+    await ouvrir();
+    expect(screen.getByLabelText('Aperçu de la charte')).toBeInTheDocument();
+    expect(screen.queryByRole('status')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Couleur principale'), { target: { value: '#f8f8f0' } });
+    expect(await screen.findByRole('status')).toHaveTextContent('mode clair');
+  });
+
+  it('montre le logo choisi dans l’aperçu et permet de le retirer', async () => {
+    api.get.mockResolvedValue({ ...structuredClone(settings), brand: { ...settings.brand, logoAssetId: 'ast_1', logoUrl: '/api/restaurants/zeduc-space/assets/ast_1' } });
+    api.update.mockResolvedValue(settings);
+    await ouvrir();
+    expect(screen.getByAltText('Logo actuel du restaurant')).toHaveAttribute('src', '/api/restaurants/zeduc-space/assets/ast_1');
+    expect(screen.getByAltText('Logo de ZeDuc@Space')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Retirer le logo' }));
+    expect(screen.queryByAltText('Logo actuel du restaurant')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() => expect(api.update).toHaveBeenCalledWith({ brand: { logoAssetId: null } }));
   });
 
   it('affiche le message du serveur en cas d’échec', async () => {
