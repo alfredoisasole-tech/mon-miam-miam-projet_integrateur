@@ -19,7 +19,7 @@ export const LoyaltyRedemption: React.FC<LoyaltyRedemptionProps> = ({
   useEffect(() => {
     if (usePoints && balance?.canRedeem) {
       // La remise est plafonnée au montant total de la commande
-      const discount = Math.min(balance.rules.rewardDiscountFc, totalFc);
+      const discount = Math.min(balance.rules.rewardValueFc, totalFc);
       // On consomme le bloc de points requis (ex: 15 points)
       const pointsUsed = balance.rules.pointsForReward; 
       onDiscountApplied(discount, pointsUsed);
@@ -37,7 +37,7 @@ export const LoyaltyRedemption: React.FC<LoyaltyRedemptionProps> = ({
     const missingPoints = balance ? balance.rules.pointsForReward - balance.availablePoints : 15;
     return (
       <p style={{ fontSize: '0.875rem', color: '#6b7280' }} data-testid="loyalty-insufficient">
-        💎 Solde : {balance?.availablePoints || 0} pts. Il vous manque {missingPoints} points pour obtenir une remise de {balance?.rules.rewardDiscountFc || 3000} FC.
+        💎 Solde : {balance?.availablePoints || 0} pts. Il vous manque {missingPoints} points pour obtenir une remise de {balance?.rules.rewardValueFc || 3000} FC.
       </p>
     );
   }
@@ -52,8 +52,8 @@ export const LoyaltyRedemption: React.FC<LoyaltyRedemptionProps> = ({
           data-testid="checkbox-use-points"
         />
         <span>
-          💎 Utiliser {balance.rules.pointsForReward} points pour une réduction de {balance.rules.rewardDiscountFc} FC
-          {usePoints && <strong> (-{Math.min(balance.rules.rewardDiscountFc, totalFc)} FC)</strong>}
+          💎 Utiliser {balance.rules.pointsForReward} points pour une réduction de {balance.rules.rewardValueFc} FC
+          {usePoints && <strong> (-{Math.min(balance.rules.rewardValueFc, totalFc)} FC)</strong>}
         </span>
       </label> {/* ✅ CORRIGÉ : </label> au lieu de </a> */}
     </div>
