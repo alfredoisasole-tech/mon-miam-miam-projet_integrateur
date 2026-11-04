@@ -2,8 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { CartPage } from '../views/pages/CartPage.tsx';
-import { CartProvider } from '../controllers/cart.tsx';
-import { AuthProvider } from '../controllers/session.tsx';
+import { AtRestaurant } from './AtRestaurant.tsx';
 import { api } from '../models/http.ts';
 import type { Cart } from '../models/cart.ts';
 
@@ -15,18 +14,12 @@ describe('CartPage (G-8 · feat(panier): panier d\'un seul restaurant et changem
 
   it('affiche un message quand le panier est vide', () => {
     render(
-      <AuthProvider>
-        <CartProvider>
-          <MemoryRouter>
-            <CartPage />
-          </MemoryRouter>
-        </CartProvider>
-      </AuthProvider>
+      <AtRestaurant slug="zeduc-space"><CartPage /></AtRestaurant>
     );
 
     expect(screen.getByTestId('empty-cart')).toBeInTheDocument();
     expect(screen.getByText('Votre panier est vide pour le moment.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Découvrir le menu' })).toHaveAttribute('href', '/menu');
+    expect(screen.getByRole('link', { name: 'Découvrir le menu' })).toHaveAttribute('href', '/r/zeduc-space/menu');
   });
 
   it('affiche les articles du panier et permet de modifier les quantités', () => {
@@ -45,13 +38,7 @@ describe('CartPage (G-8 · feat(panier): panier d\'un seul restaurant et changem
     localStorage.setItem('mmm_cart', JSON.stringify(initialCart));
 
     render(
-      <AuthProvider>
-        <CartProvider>
-          <MemoryRouter>
-            <CartPage />
-          </MemoryRouter>
-        </CartProvider>
-      </AuthProvider>
+      <AtRestaurant slug="zeduc-space"><CartPage /></AtRestaurant>
     );
 
     expect(screen.getByText('Poulet DG')).toBeInTheDocument();
@@ -77,7 +64,7 @@ describe('CartPage (G-8 · feat(panier): panier d\'un seul restaurant et changem
     localStorage.setItem('mmm_token', 'fake-token');
     vi.spyOn(api, 'get').mockImplementation(async (path: string) => (path === '/me'
       ? { id: 'student-1', name: 'Alex', email: 'alex@example.com', role: 'student' } : loyalty(points)) as never);
-    render(<AuthProvider><CartProvider><MemoryRouter><CartPage /></MemoryRouter></CartProvider></AuthProvider>);
+    render(<AtRestaurant slug="zeduc-space"><CartPage /></AtRestaurant>);
   };
 
   it('préremplit la livraison avec l’adresse habituelle du profil, modifiable à chaque commande', async () => {
@@ -88,7 +75,7 @@ describe('CartPage (G-8 · feat(panier): panier d\'un seul restaurant et changem
     vi.spyOn(api, 'get').mockImplementation(async (path: string) => (path === '/me'
       ? { id: 'student-1', name: 'Alex', email: 'alex@example.com', role: 'student', commune: 'Limete', address: '12 avenue du Marché' }
       : loyalty(0)) as never);
-    render(<AuthProvider><CartProvider><MemoryRouter><CartPage /></MemoryRouter></CartProvider></AuthProvider>);
+    render(<AtRestaurant slug="zeduc-space"><CartPage /></AtRestaurant>);
     fireEvent.click(await screen.findByLabelText(/Livraison/));
     expect(await screen.findByTestId('select-commune')).toHaveValue('Limete');
     const address = screen.getByLabelText('Adresse');
@@ -165,13 +152,7 @@ describe('CartPage (G-8 · feat(panier): panier d\'un seul restaurant et changem
     });
 
     render(
-      <AuthProvider>
-        <CartProvider>
-          <MemoryRouter>
-            <CartPage />
-          </MemoryRouter>
-        </CartProvider>
-      </AuthProvider>
+      <AtRestaurant slug="zeduc-space"><CartPage /></AtRestaurant>
     );
 
     await waitFor(() => {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../controllers/cart.tsx';
+import { useRestaurant } from '../../controllers/session.tsx';
 import { useAuth } from '../../controllers/session.tsx';
 import { api } from '../../models/http.ts';
 import { formatPrice } from '../../models/format.ts';
@@ -15,6 +16,8 @@ import { KINSHASA_COMMUNES } from '../../models/communes.ts';
 export const CartPage: React.FC = () => {
   const { cart, totalFc, updateProductQuantity, removeProduct, clearCart } = useCart();
   const { user } = useAuth();
+  const { slug: restaurantSlug } = useRestaurant();
+  const base = `/r/${restaurantSlug}`;
   const navigate = useNavigate();
 
   const [orderType, setOrderType] = useState<'dine_in' | 'delivery'>('dine_in');
@@ -143,7 +146,7 @@ export const CartPage: React.FC = () => {
           </p>
           <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
             <Link
-              to="/orders"
+              to={`${base}/orders`}
               style={{
                 display: 'inline-block',
                 padding: '0.625rem 1.25rem',
@@ -160,7 +163,7 @@ export const CartPage: React.FC = () => {
               type="button"
               onClick={() => {
                 setConfirmedOrder(null);
-                navigate('/menu');
+                navigate(`${base}/menu`);
               }}
               style={{
                 padding: '0.625rem 1.25rem',
@@ -187,7 +190,7 @@ export const CartPage: React.FC = () => {
             Votre panier est vide pour le moment.
           </p>
           <Link
-            to="/menu"
+            to={`${base}/menu`}
             style={{
               display: 'inline-block',
               padding: '0.625rem 1.25rem',

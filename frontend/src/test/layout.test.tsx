@@ -7,7 +7,7 @@ import type { User } from '../models/types.ts';
 afterEach(cleanup);
 const cases: [User['role'], string[]][] = [
   [undefined, ['Accueil', 'Connexion', 'Inscription']],
-  ['student', ['Restaurants', 'Menu', 'Panier', 'Mes commandes', 'Mes points', 'Communauté', 'Réclamations']],
+  ['student', ['Restaurants', 'Mes commandes', 'Mon profil']],
   ['employee', ['Commandes', 'Menu', 'Statistiques', 'Réclamations']],
   ['manager', ['Commandes', 'Menu', 'Statistiques', 'Réclamations', 'Équipe']],
   ['admin', ['Commandes', 'Menu', 'Statistiques', 'Réclamations', 'Équipe', 'Promotions', 'Paramètres']],
@@ -22,6 +22,13 @@ describe('Mise en page E-6', () => {
     const nav = screen.getByRole('navigation', { name: 'Navigation principale' });
     expect(within(nav).getAllByRole('link', { hidden: true }).map(link => link.textContent)).toEqual(labels);
     expect(screen.queryByRole('button', { name: 'Déconnexion' })).toBe(role ? screen.getByRole('button', { name: 'Déconnexion' }) : null);
+  });
+  it('donne à un client chez un restaurant la navigation de ce restaurant seulement', () => {
+    mount('student', { scopeSlug: 'campus', cartCount: 2 });
+    const nav = screen.getByRole('navigation', { name: 'Navigation principale' });
+    const links = within(nav).getAllByRole('link', { hidden: true });
+    expect(links.map(link => link.textContent)).toEqual(['Menu', 'Panier2', 'Mes commandes', 'Mes points', 'Communauté', 'Réclamations', 'Changer de restaurant']);
+    expect(links.map(link => link.getAttribute('href'))).toEqual(['/r/campus/menu', '/r/campus/cart', '/r/campus/orders', '/r/campus/loyalty', '/r/campus/community', '/r/campus/claims', '/']);
   });
   it('affiche le restaurant, ses couleurs, un contenu principal et un pied de page', () => {
     mount('student', { restaurant: { slug: 'campus', name: 'Table du campus', colors: { primary: '#cfbd97', secondary: '#000000' } } });

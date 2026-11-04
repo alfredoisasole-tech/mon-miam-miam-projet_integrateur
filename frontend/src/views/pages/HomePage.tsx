@@ -31,7 +31,7 @@ export const HomePage: React.FC = () => {
 
   const handleSelectRestaurant = (slug: string) => {
     setRestaurant(slug);
-    navigate('/menu');
+    navigate(`/r/${slug}/menu`);
   };
 
   return (
@@ -117,7 +117,7 @@ export const HomePage: React.FC = () => {
                 <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.75rem' }}>
                   <h3 style={{ margin: 0, fontSize: '1.25rem', flex: '1 1 8rem', overflowWrap: 'normal' }}>{r.name}</h3>
                   <span>
-                    {user && slug === r.slug && <Badge kind="info">Votre restaurant</Badge>}{' '}
+                    {user && slug === r.slug && <Badge kind="info">Dernier visité</Badge>}{' '}
                     <Badge kind={r.isOpenNow ? 'success' : 'neutral'}>
                       {r.isOpenNow ? 'Ouvert' : 'Fermé'}
                     </Badge>
@@ -166,7 +166,7 @@ export const RestaurantRedirectPage: React.FC = () => {
   useEffect(() => {
     if (slug) {
       setRestaurant(slug);
-      navigate('/menu', { replace: true });
+      navigate(`/r/${slug}/menu`, { replace: true });
     }
   }, [slug, setRestaurant, navigate]);
 

@@ -28,7 +28,7 @@ describe('Page principale', () => {
     ['/login', 'Heureux de vous retrouver à table.'],
     ['/register', 'Créez votre compte étudiant'],
     ['/staff/overview', 'Heureux de vous retrouver à table.'],
-    ['/menu', 'Choisissez un restaurant pour afficher son menu.'],
+    ['/menu', 'Vos repas du campus, commandés en quelques clics'],
     ['/adresse-inconnue', 'Page indisponible'],
   ])('affiche la page %s dans la mise en page commune', (path, text) => {
     window.history.replaceState(null, '', path);

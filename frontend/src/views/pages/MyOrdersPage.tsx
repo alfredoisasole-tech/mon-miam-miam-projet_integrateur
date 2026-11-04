@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { STATUS_LABEL, canCancel, canPay, isActive, ordersApi } from '../../controllers/orders.ts';
 import type { Order, OrderDetail } from '../../controllers/orders.ts';
 import { paymentApi } from '../../controllers/payment.ts';
@@ -111,6 +111,7 @@ function OrderCard({ order, onChanged }: { order: Order; onChanged: (order: Orde
 }
 
 export function MyOrdersPage() {
+  const { slug } = useParams();
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -136,14 +137,25 @@ export function MyOrdersPage() {
     setOrders(previous => previous?.map(order => (order.id === updated.id ? { ...order, ...updated } : order)) ?? null);
   }
 
+  const shown = (orders ?? []).filter(order => !slug || order.restaurant.slug === slug);
+  const groups = shown.reduce<{ slug: string; name: string; orders: Order[] }[]>((all, order) => {
+    const group = all.find(item => item.slug === order.restaurant.slug);
+    if (group) group.orders.push(order); else all.push({ slug: order.restaurant.slug, name: order.restaurant.name, orders: [order] });
+    return all;
+  }, []);
+
   return <section className="my-orders-page">
     <h1>Mes commandes</h1>
     {paymentResult === 'succes' && <Alert kind="success">Paiement reçu. Votre commande sera confirmée dès que l’opérateur nous le notifie, quelques secondes au plus.</Alert>}
     {paymentResult === 'annule' && <Alert kind="info">Paiement annulé. Votre commande reste en attente : vous pouvez payer à nouveau ou l’annuler.</Alert>}
     {paymentResult === 'erreur' && <Alert>Le paiement a échoué. Votre commande reste en attente : vous pouvez réessayer ou l’annuler.</Alert>}
     <Alert>{error}</Alert>
-    {orders === null ? <Spinner label="Chargement de vos commandes…" /> : orders.length === 0 && !error
-      ? <Empty>Vous n’avez pas encore passé de commande.</Empty>
-      : orders.map(order => <OrderCard key={order.id} order={order} onChanged={replace} />)}
+    {slug && <p className="muted"><Link to="/orders">Voir mes commandes de tous les restaurants</Link></p>}
+    {orders === null ? <Spinner label="Chargement de vos commandes…" /> : shown.length === 0 && !error
+      ? <Empty>{slug ? 'Vous n’avez pas encore commandé dans ce restaurant.' : 'Vous n’avez pas encore passé de commande.'}</Empty>
+      : groups.map(group => <section key={group.slug} className="order-group" aria-label={`Commandes chez ${group.name}`}>
+        {!slug && <h2><Link to={`/r/${group.slug}/menu`}>{group.name}</Link></h2>}
+        {group.orders.map(order => <OrderCard key={order.id} order={order} onChanged={replace} />)}
+      </section>)}
   </section>;
 }

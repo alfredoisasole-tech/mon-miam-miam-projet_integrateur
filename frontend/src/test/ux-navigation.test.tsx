@@ -31,7 +31,7 @@ const routes = (initial: string) => render(
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/menu" element={<p>Page du menu</p>} />
+        <Route path="/r/:slug/menu" element={<p>Page du menu</p>} />
         <Route path="/staff/orders" element={<p>Tableau de bord du personnel</p>} />
         <Route path="/plateforme" element={<p>Espace plateforme</p>} />
         <Route path="/legal/conditions" element={<p>Conditions d’utilisation</p>} />
@@ -55,21 +55,21 @@ describe('Page d’arrivée de chaque rôle', () => {
 });
 
 describe('Accueil', () => {
-  it('liste les restaurants pour un étudiant connecté, sans bouton d’inscription, et repère le sien', async () => {
+  it('liste les restaurants pour un étudiant connecté, sans bouton d’inscription, et repère le dernier visité', async () => {
     localStorage.setItem('mmm_restaurant', 'chez-lea');
     asRole('student');
     routes('/');
     expect(await screen.findByText('Chez Léa')).toBeInTheDocument();
     expect(screen.getByText('ZeDuc@Space')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Créer un compte étudiant' })).toBeNull();
-    expect(screen.getAllByText('Votre restaurant')).toHaveLength(1);
+    expect(screen.getAllByText('Dernier visité')).toHaveLength(1);
   });
 
   it('garde le bouton d’inscription pour les visiteurs', async () => {
     asRole(null);
     routes('/');
     expect(await screen.findByRole('link', { name: 'Créer un compte étudiant' })).toBeInTheDocument();
-    expect(screen.queryByText('Votre restaurant')).toBeNull();
+    expect(screen.queryByText('Dernier visité')).toBeNull();
   });
 
   it.each([['employee', 'Tableau de bord du personnel'], ['admin', 'Tableau de bord du personnel'], ['platform_admin', 'Espace plateforme']])(
@@ -183,12 +183,12 @@ describe('Inscription : liens légaux', () => {
 
 describe('Barre de navigation étudiante', () => {
   const mount = (cartCount?: number) => render(
-    <MemoryRouter><LayoutView role="student" onLogout={vi.fn()} cartCount={cartCount}><h1>Contenu</h1></LayoutView></MemoryRouter>);
+    <MemoryRouter><LayoutView role="student" scopeSlug="zeduc-space" onLogout={vi.fn()} cartCount={cartCount}><h1>Contenu</h1></LayoutView></MemoryRouter>);
   const nav = () => screen.getByRole('navigation', { name: 'Navigation principale' });
 
   it('permet de changer de restaurant', () => {
     mount();
-    expect(within(nav()).getByRole('link', { name: 'Restaurants', hidden: true })).toHaveAttribute('href', '/');
+    expect(within(nav()).getByRole('link', { name: 'Changer de restaurant', hidden: true })).toHaveAttribute('href', '/');
   });
   it('affiche le nombre d’articles sur le panier', () => {
     mount(3);
@@ -198,7 +198,7 @@ describe('Barre de navigation étudiante', () => {
   it('garde le panier visible dans l’en-tête, même quand le menu est replié sur mobile', () => {
     mount(2);
     const shortcut = screen.getByRole('link', { name: 'Voir le panier, 2 articles', hidden: true });
-    expect(shortcut).toHaveAttribute('href', '/cart');
+    expect(shortcut).toHaveAttribute('href', '/r/zeduc-space/cart');
     expect(nav()).not.toContainElement(shortcut);
   });
   it('n’affiche aucun raccourci ni compteur quand le panier est vide', () => {
@@ -235,13 +235,30 @@ describe('Charte graphique : plateforme fixe, restaurant propre à chaque restau
     expect(shell().style.getPropertyValue('--mm-brand')).toBe('#2e7d32');
   });
 
-  it.each(['/menu', '/cart', '/orders', '/loyalty', '/community', '/claims'])('applique la charte du restaurant consulté sur %s', async (path) => {
-    const shell = mountLayoutAt(path, 'student');
+  it.each(['menu', 'cart', 'orders', 'loyalty', 'community', 'claims'])('applique la charte du restaurant consulté sur /r/zeduc-space/%s', async (page) => {
+    const shell = mountLayoutAt(`/r/zeduc-space/${page}`, 'student');
     expect(await screen.findByRole('img', { name: 'ZeDuc@Space' })).toBeInTheDocument();
     expect(shell().style.getPropertyValue('--mm-brand')).toBe('#2e7d32');
   });
 
-  it.each(['/', '/login', '/register', '/forgot-password', '/profile', '/legal/mentions', '/legal/conditions'])(
+  it('ne fait pas suivre le panier d’un restaurant dans un autre', async () => {
+    const line = (slug: string) => ({ restaurantSlug: slug, lines: [{ id: 'd1', name: 'Plat', restaurantSlug: slug, unitPriceFc: 500, quantity: 2 }] });
+    localStorage.setItem('mmm_carts', JSON.stringify({ 'chez-lea': line('chez-lea') }));
+    mountLayoutAt('/r/zeduc-space/menu', 'student');
+    await screen.findByRole('img', { name: 'ZeDuc@Space' });
+    expect(screen.queryByRole('link', { name: /Voir le panier/, hidden: true })).toBeNull();
+    cleanup();
+    mountLayoutAt('/r/chez-lea/menu', 'student');
+    expect(await screen.findByRole('link', { name: 'Voir le panier, 2 articles', hidden: true })).toHaveAttribute('href', '/r/chez-lea/cart');
+  });
+
+  it('ne montre à un client hors restaurant que Restaurants, Mes commandes et Mon profil', async () => {
+    mountLayoutAt('/', 'student');
+    const nav = await screen.findByRole('navigation', { name: 'Navigation principale' });
+    await waitFor(() => expect(within(nav).getAllByRole('link', { hidden: true }).map(link => link.textContent)).toEqual(['Restaurants', 'Mes commandes', 'Mon profil']));
+  });
+
+  it.each(['/', '/login', '/register', '/forgot-password', '/profile', '/orders', '/legal/mentions', '/legal/conditions'])(
     'garde la charte de la plateforme, fixe, sur %s même avec un restaurant choisi', async (path) => {
       const shell = mountLayoutAt(path, 'student');
       const home = await screen.findByRole('link', { name: /Mon Miam Miam/ });

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth, useRestaurant } from '../../controllers/session.tsx';
+import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../controllers/session.tsx';
 import { useCart } from '../../controllers/useCart.ts';
 import { useRestaurantProfile } from '../../controllers/useRestaurantProfile.ts';
 import type { RestaurantBrand } from '../../controllers/useRestaurantProfile.ts';
@@ -13,14 +13,17 @@ import { LEGAL_LINKS } from '../pages/LegalPage.tsx';
 import './layout.css';
 
 const publicLinks = [['/', 'Accueil'], ['/login', 'Connexion'], ['/register', 'Inscription']];
-function linksFor(role: User['role']) {
+function linksFor(role: User['role'] | undefined, scope: string | null) {
+  const base = scope ? `/r/${scope}` : null;
   switch (role) {
-    case 'student': return [['/', 'Restaurants'], ['/menu', 'Menu'], ['/cart', 'Panier'], ['/orders', 'Mes commandes'], ['/loyalty', 'Mes points'], ['/community', 'Communauté'], ['/claims', 'Réclamations']];
+    case 'student': return base
+      ? [[`${base}/menu`, 'Menu'], [`${base}/cart`, 'Panier'], [`${base}/orders`, 'Mes commandes'], [`${base}/loyalty`, 'Mes points'], [`${base}/community`, 'Communauté'], [`${base}/claims`, 'Réclamations'], ['/', 'Changer de restaurant']]
+      : [['/', 'Restaurants'], ['/orders', 'Mes commandes'], ['/profile', 'Mon profil']];
     case 'employee': return [['/staff/orders', 'Commandes'], ['/staff/menu', 'Menu'], ['/staff/weekly', 'Statistiques'], ['/staff/claims', 'Réclamations']];
     case 'manager': return [['/staff/orders', 'Commandes'], ['/staff/menu', 'Menu'], ['/staff/overview', 'Statistiques'], ['/staff/claims', 'Réclamations'], ['/staff/accounts', 'Équipe']];
     case 'admin': return [['/staff/orders', 'Commandes'], ['/admin/menu', 'Menu'], ['/staff/overview', 'Statistiques'], ['/staff/claims', 'Réclamations'], ['/staff/accounts', 'Équipe'], ['/admin/promotions', 'Promotions'], ['/admin/settings', 'Paramètres']];
     case 'platform_admin': return [['/plateforme', 'Restaurants']];
-    default: return publicLinks;
+    default: return base ? [[`${base}/menu`, 'Menu'], ['/', 'Changer de restaurant'], ['/login', 'Connexion'], ['/register', 'Inscription']] : publicLinks;
   }
 }
 function onColor(color: string) {
@@ -55,13 +58,15 @@ export interface LayoutViewProps {
   onLogout: () => void;
   /** Page de la plateforme (accueil, compte, pages légales) : charte fixe, jamais celle d'un restaurant. */
   platformStyle?: boolean;
+  /** Restaurant dont l'espace est affiché (`/r/:slug/…`), ou null sur la plateforme et dans l'espace du personnel. */
+  scopeSlug?: string | null;
   /** Nombre d'articles du panier, affiché sur le lien « Panier » des étudiants. */
   cartCount?: number;
   children?: ReactNode;
 }
 
 /** Pages de la plateforme : charte fixe. Le reste (menu, panier, commandes, points, personnel…) prend la charte du restaurant. */
-const PLATFORM_PATHS = new Set(['/', '/login', '/register', '/forgot-password', '/profile', '/plateforme']);
+const PLATFORM_PATHS = new Set(['/', '/orders', '/login', '/register', '/forgot-password', '/profile', '/plateforme']);
 export const isPlatformPage = (pathname: string) => PLATFORM_PATHS.has(pathname) || pathname.startsWith('/legal');
 
 /** Revient en haut de page à chaque changement de page, comme sur un site classique. */
@@ -72,7 +77,7 @@ function ScrollToTop() {
 }
 
 /** Vue partagée, sans appel API ; Layout raccorde la session et le profil public. */
-export function LayoutView({ role, loading = false, restaurant, onLogout, cartCount = 0, platformStyle = false, children }: LayoutViewProps) {
+export function LayoutView({ role, loading = false, restaurant, onLogout, cartCount = 0, platformStyle = false, scopeSlug = null, children }: LayoutViewProps) {
   const location = useLocation();
   const navId = useId();
   const toggle = useRef<HTMLButtonElement>(null);
@@ -89,7 +94,7 @@ export function LayoutView({ role, loading = false, restaurant, onLogout, cartCo
     <a className="skip-link" href="#main-content">Aller au contenu</a>
     <header className="topbar">
       <Link to={platform ? '/plateforme' : '/'} className="brand">{logo && <img className="brand-logo" src={assetUrl(logo)} alt={brand} />}{!logo && fixed && <img className="brand-mark" src="/mon-miam-miam.svg" alt="" />}{!logo && brand}</Link>
-      {role === 'student' && cartCount > 0 && <Link to="/cart" className="cart-shortcut" aria-label={`Voir le panier, ${cartCount} ${cartCount > 1 ? 'articles' : 'article'}`}>
+      {role === 'student' && scopeSlug && cartCount > 0 && <Link to={`/r/${scopeSlug}/cart`} className="cart-shortcut" aria-label={`Voir le panier, ${cartCount} ${cartCount > 1 ? 'articles' : 'article'}`}>
         Panier <span className="nav-badge" aria-hidden="true">{cartCount}</span>
       </Link>}
       {loading ? <Spinner label="Chargement de la session…" /> : <>
@@ -97,9 +102,9 @@ export function LayoutView({ role, loading = false, restaurant, onLogout, cartCo
         <nav id={navId} className={`main-nav${open ? ' open' : ''}`} aria-label="Navigation principale" onKeyDown={event => {
           if (event.key === 'Escape') { setOpenedAt(null); toggle.current?.focus(); }
         }}>
-          {linksFor(role).map(([to, label]) => <NavLink key={to} to={to} end={to === '/'} onClick={() => setOpenedAt(null)}>
+          {linksFor(role, scopeSlug).map(([to, label]) => <NavLink key={to} to={to} end={to === '/'} onClick={() => setOpenedAt(null)}>
             {label}
-            {to === '/cart' && cartCount > 0 && <span className="nav-badge" aria-label={`${cartCount} ${cartCount > 1 ? 'articles' : 'article'}`}>{cartCount}</span>}
+            {to.endsWith('/cart') && cartCount > 0 && <span className="nav-badge" aria-label={`${cartCount} ${cartCount > 1 ? 'articles' : 'article'}`}>{cartCount}</span>}
           </NavLink>)}
           {role && <button type="button" className="logout" onClick={() => { setOpenedAt(null); onLogout(); }}>Déconnexion</button>}
         </nav>
@@ -119,13 +124,14 @@ export function LayoutView({ role, loading = false, restaurant, onLogout, cartCo
 
 export function Layout({ children }: { children?: ReactNode }) {
   const { user, loading, logout } = useAuth();
-  const { slug } = useRestaurant();
-  // Le personnel voit la charte de son restaurant ; un étudiant, celle du restaurant qu'il consulte.
+  // Le personnel voit la charte de son restaurant ; un client, celle du restaurant dont il consulte l'espace (adresse /r/<restaurant>/…).
   const platformPage = isPlatformPage(useLocation().pathname);
-  const { restaurant, error } = useRestaurantProfile(platformPage || user?.role === 'platform_admin' ? null : (user?.restaurant?.slug ?? slug));
+  const urlSlug = useMatch('/r/:slug/*')?.params.slug ?? null;
+  const staffSlug = user && user.role !== 'student' ? user.restaurant?.slug ?? null : null;
+  const { restaurant, error } = useRestaurantProfile(platformPage || user?.role === 'platform_admin' ? null : (staffSlug ?? urlSlug));
   const navigate = useNavigate();
-  const { count } = useCart();
-  return <LayoutView role={user?.role} loading={loading} restaurant={restaurant} cartCount={count} platformStyle={platformPage} onLogout={() => { logout(); navigate('/', { replace: true }); }}>
+  const { count } = useCart(urlSlug);
+  return <LayoutView role={user?.role} loading={loading} restaurant={restaurant} cartCount={count} scopeSlug={staffSlug ? null : urlSlug} platformStyle={platformPage} onLogout={() => { logout(); navigate('/', { replace: true }); }}>
     {error && <Alert kind="info">{error}</Alert>}
     {children ?? <Outlet />}
   </LayoutView>;
