@@ -7,7 +7,7 @@ import type { User } from '../models/types.ts';
 afterEach(cleanup);
 const cases: [User['role'], string[]][] = [
   [undefined, ['Accueil', 'Connexion', 'Inscription']],
-  ['student', ['Menu', 'Panier', 'Mes commandes', 'Mes points', 'Communauté', 'Réclamations']],
+  ['student', ['Restaurants', 'Menu', 'Panier', 'Mes commandes', 'Mes points', 'Communauté', 'Réclamations']],
   ['employee', ['Commandes', 'Menu', 'Statistiques', 'Réclamations']],
   ['manager', ['Commandes', 'Menu', 'Statistiques', 'Réclamations', 'Équipe']],
   ['admin', ['Commandes', 'Menu', 'Statistiques', 'Réclamations', 'Équipe', 'Promotions', 'Paramètres']],

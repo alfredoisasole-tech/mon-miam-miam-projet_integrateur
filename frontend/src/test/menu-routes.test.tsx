@@ -10,10 +10,10 @@ afterEach(() => {
 });
 
 it.each([
-  ['/staff/menu', 'employee', 'Gestion rapide du menu (Staff)'],
-  ['/staff/menu', 'manager', 'Gestion rapide du menu (Staff)'],
-  ['/staff/menu', 'admin', 'Gestion rapide du menu (Staff)'],
-  ['/admin/menu', 'admin', 'Administration du Menu'],
+  ['/staff/menu', 'employee', 'Disponibilité du menu'],
+  ['/staff/menu', 'manager', 'Disponibilité du menu'],
+  ['/staff/menu', 'admin', 'Disponibilité du menu'],
+  ['/admin/menu', 'admin', 'Menu du restaurant'],
 ])('ouvre %s pour %s et charge le menu avec un seul préfixe API', async (path, role, title) => {
   localStorage.setItem('mmm_token', 'menu-route-test');
   const fetchMock = vi.fn(async (url: string) => {
@@ -27,7 +27,7 @@ it.each([
   window.history.replaceState(null, '', path);
   render(<App />);
   expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument();
-  expect(await screen.findByText(/^Pondu(?: - 2500 FC)?$/)).toBeInTheDocument();
+  expect(await screen.findByText(/^Pondu$/)).toBeInTheDocument();
   expect(fetchMock).toHaveBeenCalledWith('/api/staff/menu', expect.objectContaining({ method: 'GET' }));
   expect(window.location.pathname).toBe(path);
 });
@@ -38,12 +38,18 @@ it.each([
   ['/admin/menu', 'student'], ['/admin/menu', 'platform_admin'],
 ])('refuse %s à %s avant tout chargement du menu', async (path, role) => {
   localStorage.setItem('mmm_token', 'menu-route-test');
-  const fetchMock = vi.fn(async () => Response.json({ id: 'user', name: 'Démo', role }));
+  // Seul /me renvoie l'utilisateur ; les pages d'arrivée (restaurants, plateforme) reçoivent une liste vide valide.
+  const fetchMock = vi.fn(async (input: unknown) => String(input).endsWith('/me')
+    ? Response.json({ id: 'user', name: 'Démo', role })
+    : Response.json({ items: [], total: 0, page: 1, pageSize: 20 }));
   vi.stubGlobal('fetch', fetchMock);
   window.history.replaceState(null, '', path);
   render(<App />);
-  await waitFor(() => expect(window.location.pathname).toBe('/'));
-  expect(fetchMock.mock.calls).toHaveLength(1);
+  // Un utilisateur refusé revient à sa page d'arrivée : l'accueil pour un étudiant, son tableau de bord pour le personnel.
+  const landing = { student: '/', employee: '/staff/orders', manager: '/staff/orders', platform_admin: '/plateforme' }[role];
+  await waitFor(() => expect(window.location.pathname).toBe(landing));
+  const urls = (fetchMock.mock.calls as unknown as Array<[unknown]>).map(([url]) => String(url));
+  expect(urls.some(url => url.endsWith('/menu') || url.includes('/staff/menu'))).toBe(false);
 });
 
 it.each(['/staff/menu', '/admin/menu'])('demande une connexion pour %s sans appeler le menu', async (path) => {

@@ -1,7 +1,8 @@
 import React, { useState, type FormEvent } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Navigate, useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../controllers/session";
 import { authApi } from "../../models/api";
+import { homeFor } from "./HomePage";
 import "./LoginPage.css";
 
 export const LoginPage: React.FC = () => {
@@ -12,9 +13,11 @@ export const LoginPage: React.FC = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { user, login } = useAuth();
 
-  const from = (location.state as any)?.from?.pathname || "/";
+  const requested = (location.state as any)?.from?.pathname as string | undefined;
+  // Déjà connecté : inutile de montrer le formulaire.
+  if (user) return <Navigate to={requested ?? homeFor(user.role)} replace />;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -23,8 +26,9 @@ export const LoginPage: React.FC = () => {
 
     try {
       const { token } = await authApi.login({ identifier, password });
-      await login(token);
-      navigate(from, { replace: true });
+      const profile = await login(token);
+      // Retour à la page demandée, sinon page d'arrivée du rôle (le personnel ne passe pas par l'accueil étudiant).
+      navigate(requested ?? homeFor(profile?.role), { replace: true });
     } catch (err: any) {
       setError(err?.message || "Identifiants incorrects");
     } finally {

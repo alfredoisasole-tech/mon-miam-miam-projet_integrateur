@@ -66,7 +66,34 @@ describe('CartPage (G-8 · feat(panier): panier d\'un seul restaurant et changem
     expect(screen.getByTestId('quantity-dish-1')).toHaveTextContent('2');
   });
 
-  it('applique la réduction fidélité lorsque la case est cochée', () => {
+  const loyalty = (availablePoints: number) => ({
+    restaurant: { slug: 'zeduc-space', name: 'ZeDuc@Space' }, availablePoints, remainderFc: 0, canRedeem: availablePoints >= 15,
+    rules: { spendPerPointFc: 3000, pointsForReward: 15, rewardValueFc: 3000, validityMonths: 12 }, movements: [],
+  });
+  const mountWithLoyalty = (points: number) => {
+    localStorage.setItem('mmm_cart', JSON.stringify({ restaurantSlug: 'zeduc-space', lines: [
+      { id: 'dish-1', name: 'Poulet DG', restaurantSlug: 'zeduc-space', unitPriceFc: 7000, quantity: 1 },
+    ] }));
+    localStorage.setItem('mmm_token', 'fake-token');
+    vi.spyOn(api, 'get').mockImplementation(async (path: string) => (path === '/me'
+      ? { id: 'student-1', name: 'Alex', email: 'alex@example.com', role: 'student' } : loyalty(points)) as never);
+    render(<AuthProvider><CartProvider><MemoryRouter><CartPage /></MemoryRouter></CartProvider></AuthProvider>);
+  };
+
+  it('propose la réduction fidélité avec les règles du restaurant quand les points suffisent', async () => {
+    mountWithLoyalty(20);
+    expect(await screen.findByTestId('checkbox-loyalty-discount')).toBeInTheDocument();
+    expect(screen.getByText(/Utiliser 15 points pour une réduction de 3 000 FC \(vous en avez 20\)/)).toBeInTheDocument();
+  });
+
+  it('n’offre pas la case quand les points ne suffisent pas et indique le solde', async () => {
+    mountWithLoyalty(4);
+    expect(await screen.findByTestId('loyalty-info')).toHaveTextContent('Vous avez 4 points chez ZeDuc@Space');
+    expect(screen.queryByTestId('checkbox-loyalty-discount')).toBeNull();
+    expect(screen.getByTestId('net-total')).toHaveTextContent('7 000 FC');
+  });
+
+  it('applique la réduction fidélité lorsque la case est cochée', async () => {
     const initialCart: Cart = {
       restaurantSlug: 'zeduc-space',
       lines: [
@@ -80,20 +107,11 @@ describe('CartPage (G-8 · feat(panier): panier d\'un seul restaurant et changem
       ],
     };
     localStorage.setItem('mmm_cart', JSON.stringify(initialCart));
-
-    render(
-      <AuthProvider>
-        <CartProvider>
-          <MemoryRouter>
-            <CartPage />
-          </MemoryRouter>
-        </CartProvider>
-      </AuthProvider>
-    );
+    mountWithLoyalty(20);
 
     expect(screen.getByTestId('net-total')).toHaveTextContent('7 000 FC');
 
-    const checkbox = screen.getByTestId('checkbox-loyalty-discount');
+    const checkbox = await screen.findByTestId('checkbox-loyalty-discount');
     fireEvent.click(checkbox);
 
     expect(screen.getByText('Réduction fidélité :')).toBeInTheDocument();

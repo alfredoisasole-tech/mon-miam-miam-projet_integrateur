@@ -12,7 +12,7 @@ import type { Order } from '../controllers/orders.ts';
 import { paymentApi } from '../controllers/payment.ts';
 import { isValidPaymentPhone, normalizePaymentPhone } from '../views/components/PaymentDetails.tsx';
 
-vi.mock('../controllers/payment.ts', () => ({ paymentApi: { startPayment: vi.fn(), simulatePayment: vi.fn() } }));
+vi.mock('../controllers/payment.ts', () => ({ paymentApi: { startPayment: vi.fn() } }));
 vi.mock('../controllers/orders.ts', async importOriginal => ({
   ...(await importOriginal<typeof import('../controllers/orders.ts')>()),
   ordersApi: { list: vi.fn(), get: vi.fn(), cancel: vi.fn(), review: vi.fn() },
@@ -62,7 +62,10 @@ describe('Panier : paiement mobile money', () => {
   async function mountCart() {
     localStorage.setItem('mmm_cart', JSON.stringify({ restaurantSlug: 'chez-lea', lines: [{ id: 'd1', name: 'Poulet braisé', restaurantSlug: 'chez-lea', unitPriceFc: 500, quantity: 1 }] }));
     localStorage.setItem('mmm_token', 'fake-token');
-    vi.spyOn(api, 'get').mockResolvedValue({ id: 'student-1', name: 'Alex', email: 'alex@example.com', role: 'student' });
+    vi.spyOn(api, 'get').mockImplementation(async (path: string) => (path === '/me'
+      ? { id: 'student-1', name: 'Alex', email: 'alex@example.com', role: 'student' }
+      : { restaurant: { slug: 'chez-lea', name: 'Chez Léa' }, availablePoints: 0, remainderFc: 0, canRedeem: false,
+        rules: { spendPerPointFc: 3000, pointsForReward: 15, rewardValueFc: 3000, validityMonths: 12 }, movements: [] }) as never);
     render(<AuthProvider><CartProvider><MemoryRouter><CartPage /></MemoryRouter></CartProvider></AuthProvider>);
     await screen.findByTestId('confirm-order-button');
   }

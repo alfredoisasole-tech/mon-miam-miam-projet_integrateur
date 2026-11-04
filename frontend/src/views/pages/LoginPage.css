@@ -9,8 +9,9 @@
   width: min(100%, 28rem);
   padding: 2rem;
   border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 8px 30px rgb(0 0 0 / 10%);
+  background: var(--mm-surface);
+  color: var(--mm-text);
+  box-shadow: var(--mm-shadow);
 }
 
 .login-header,
@@ -31,20 +32,18 @@
 
 .form-group input {
   padding: 0.7rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--mm-line);
   border-radius: 6px;
 }
 
-.btn-primary {
+/* Limité à la carte de connexion : un style global écraserait le bouton principal de tout le site. */
+.login-card .btn-primary {
   padding: 0.8rem;
-  border: 0;
   border-radius: 6px;
-  background: #26734d;
-  color: #fff;
   cursor: pointer;
 }
 
-.btn-primary:disabled {
+.login-card .btn-primary:disabled {
   opacity: 0.6;
   cursor: wait;
 }
@@ -52,6 +51,6 @@
 .error-banner {
   padding: 0.75rem;
   border-radius: 6px;
-  background: #fee;
-  color: #900;
+  background: var(--mm-danger-bg);
+  color: var(--mm-danger);
 }

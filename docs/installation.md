@@ -124,7 +124,8 @@ Le script crée les tables si nécessaire, puis ajoute :
 | Donnée | Contenu |
 |---|---|
 | Restaurants | `zeduc-space` (ZeDuc@Space) et `chez-lea` (Chez Léa) |
-| Menu | 10 plats par restaurant |
+| Identité visuelle | un **logo** (PNG dessiné pour la démonstration, dans `backend/assets/demo-logos/`) et une charte propre à chaque restaurant : Chez Léa en terracotta et crème, police Georgia, mode clair ; ZeDuc@Space en vert nuit, police Trebuchet MS, mode sombre |
+| Menu | 10 plats locaux par restaurant, décrits (riz-haricots, pondu et chikwangue, poulet à la moambe, poisson braisé et makemba, brochettes, mikate, jus de gingembre, bissap…), de 1 000 à 8 000 FC |
 | Comptes | un administrateur par restaurant, un employé, un étudiant (inscrit aux deux restaurants) et un administrateur de la plateforme |
 
 Les adresses e-mail des comptes sont dans `backend/src/seed.ts` ; les mots de passe sont ceux que vous avez fournis. Le seed est **rejouable** : si les deux restaurants existent déjà, il affiche « Données de démonstration déjà présentes » et ne modifie rien.

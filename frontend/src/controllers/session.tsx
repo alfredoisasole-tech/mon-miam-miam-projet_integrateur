@@ -13,7 +13,7 @@ import type { User } from "../models/types";
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  login: (token: string) => Promise<void>;
+  login: (token: string) => Promise<User>;
   logout: () => void;
 }
 
@@ -86,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     safeSet(TOKEN_KEY, token);
     const profile = await api.get<User>("/me");
     setUser(profile);
+    return profile;
   };
 
   const logout = () => {

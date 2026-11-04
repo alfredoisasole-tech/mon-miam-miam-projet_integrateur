@@ -1,4 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { StaffMenuPage } from '../views/pages/StaffMenuPage';
@@ -11,6 +12,7 @@ vi.mock('../controllers/adminMenu', () => ({
   adminMenuApi: {
     getStaffMenu: vi.fn(),
     createDish: vi.fn(),
+    updateDish: vi.fn(),
     staffUpdate: vi.fn(),
     deleteDish: vi.fn(),
   },
@@ -30,6 +32,7 @@ const mockedUseAuth = session.useAuth as ReturnType<typeof vi.fn>;
 const mockedApi = adminMenuApi.adminMenuApi as unknown as {
   getStaffMenu: ReturnType<typeof vi.fn>;
   createDish: ReturnType<typeof vi.fn>;
+  updateDish: ReturnType<typeof vi.fn>;
   staffUpdate: ReturnType<typeof vi.fn>;
   deleteDish: ReturnType<typeof vi.fn>;
 };
@@ -85,6 +88,14 @@ describe('StaffMenuPage', () => {
       expect(screen.getByText('Poulet braisé')).toBeInTheDocument();
       expect(screen.getByText('Coca-Cola')).toBeInTheDocument();
     });
+  });
+
+  it('affiche la catégorie et le prix de chaque plat', async () => {
+    mockedApi.getStaffMenu.mockResolvedValue(mockDishes);
+    renderWithRouter(<StaffMenuPage />);
+    const row = await screen.findByTestId('dish-row-dish-2');
+    expect(within(row).getByText('Boisson')).toBeInTheDocument();
+    expect(within(row).getByText(/1.500.FC/)).toBeInTheDocument();
   });
 
   it('affiche un message d erreur si le chargement echoue', async () => {
@@ -198,5 +209,44 @@ describe('AdminMenuPage', () => {
         })
       );
     });
+  });
+
+  it('modifie un plat existant avec le formulaire prérempli', async () => {
+    mockedApi.getStaffMenu.mockResolvedValue(mockDishes);
+    mockedApi.updateDish.mockResolvedValue({ ...mockDishes[0], priceFc: 5000 });
+    renderWithRouter(<AdminMenuPage />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier Poulet braisé' }));
+    expect(screen.getByRole('heading', { name: 'Modifier le plat' })).toBeInTheDocument();
+    expect(screen.getByTestId('input-name')).toHaveValue('Poulet braisé');
+    expect(screen.getByTestId('input-price')).toHaveValue(4500);
+    await userEvent.clear(screen.getByTestId('input-price'));
+    await userEvent.type(screen.getByTestId('input-price'), '5000');
+    await userEvent.click(screen.getByTestId('submit-btn'));
+    await waitFor(() => expect(mockedApi.updateDish).toHaveBeenCalledWith('dish-1', expect.objectContaining({ name: 'Poulet braisé', priceFc: 5000, category: 'plat' })));
+    expect(mockedApi.createDish).not.toHaveBeenCalled();
+    expect(await screen.findByText('« Poulet braisé » est mis à jour.')).toBeInTheDocument();
+  });
+
+  it('demande une confirmation intégrée avant de retirer un plat', async () => {
+    mockedApi.getStaffMenu.mockResolvedValue(mockDishes);
+    mockedApi.deleteDish.mockResolvedValue(undefined);
+    renderWithRouter(<AdminMenuPage />);
+    await userEvent.click(await screen.findByTestId('delete-dish-2'));
+    expect(mockedApi.deleteDish).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Non' }));
+    expect(mockedApi.deleteDish).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByTestId('delete-dish-2'));
+    await userEvent.click(screen.getByTestId('confirm-delete-dish-2'));
+    await waitFor(() => expect(mockedApi.deleteDish).toHaveBeenCalledWith('dish-2'));
+    expect(await screen.findByText('« Coca-Cola » est retiré du menu.')).toBeInTheDocument();
+  });
+
+  it('affiche la catégorie, l’état et le prix de chaque plat', async () => {
+    mockedApi.getStaffMenu.mockResolvedValue([{ ...mockDishes[1], isAvailable: false, isDaily: true }]);
+    renderWithRouter(<AdminMenuPage />);
+    const row = await screen.findByTestId('dish-item-dish-2');
+    expect(within(row).getByText('Boisson')).toBeInTheDocument();
+    expect(within(row).getByText('Épuisé')).toBeInTheDocument();
+    expect(within(row).getByText('Plat du jour')).toBeInTheDocument();
   });
 });
