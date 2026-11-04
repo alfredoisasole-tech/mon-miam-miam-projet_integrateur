@@ -56,6 +56,7 @@ L'état passe de **ouverte** à **en cours d'examen** puis **traitée**, avec la
 
 Le lien **Mon profil** (en bas de page) permet de :
 
+- **modifier vos informations** : nom, téléphone et **adresse habituelle de livraison** (commune, quartier, adresse). Cette adresse préremplit votre panier ; vous pouvez la changer à chaque commande. Votre e-mail sert à vous connecter et ne se modifie pas. Pour changer de numéro, le site demande votre mot de passe actuel ;
 - **changer votre mot de passe** (vos anciennes connexions sont alors fermées) ;
 - **télécharger vos données** dans un fichier ;
 - **supprimer votre compte** : il est anonymisé après confirmation par mot de passe. Impossible tant qu'une commande est en cours.

@@ -15,6 +15,8 @@ interface AuthContextValue {
   loading: boolean;
   login: (token: string) => Promise<User>;
   logout: () => void;
+  /** Remplace le profil affiché après une modification (nom, téléphone, adresse). */
+  updateUser: (user: User) => void;
 }
 
 interface RestaurantContextValue {
@@ -95,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser: setUser }}>
       {children}
     </AuthContext.Provider>
   );
