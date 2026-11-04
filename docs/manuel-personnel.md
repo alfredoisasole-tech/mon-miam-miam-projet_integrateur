@@ -12,13 +12,13 @@ Ce guide décrit `dev` au commit `15e2918`, complété par le [correctif de racc
 | --- | --- | --- |
 | Connexion et déconnexion | Tout le personnel | Disponibles |
 | Bilan du restaurant : jour, semaine, mois | Gérant et administrateur du restaurant | Disponible dans **Statistiques** |
-| Statistiques hebdomadaires de l’employé | Employé | Calcul disponible côté serveur ; écran non encore accessible |
-| Consultation et avancement des commandes | Employé, gérant, administrateur du restaurant | Traitement disponible côté serveur ; écran du personnel absent |
+| Statistiques hebdomadaires de l’employé | Employé | Disponibles dans **Statistiques** (`/staff/weekly`) |
+| Consultation et avancement des commandes | Employé, gérant, administrateur du restaurant | Disponibles dans **Commandes** |
 | Marquer un plat épuisé ou comme plat du jour | Employé, gérant, administrateur du restaurant | Disponible dans **Menu** après intégration de #62 |
 | Ajouter ou retirer un plat | Administrateur du restaurant | Disponible dans **Menu** après intégration de #62 |
 | Modifier le nom, le prix ou la catégorie d’un plat existant | Administrateur du restaurant | Traitement disponible côté serveur ; formulaire de modification absent |
-| Créer des comptes employés | Gérant et administrateur selon les droits prévus | Fonction non encore disponible |
-| Créer ou modifier des promotions | Administrateur du restaurant selon les droits prévus | Fonction non encore disponible ; les promotions existantes peuvent être consultées publiquement |
+| Créer des comptes employés | Gérant et administrateur | Disponible dans **Équipe** |
+| Créer ou modifier des promotions | Administrateur du restaurant | Disponible dans **Promotions** |
 
 Les droits prévus sont détaillés dans [Rôles et permissions](roles-permissions.md). Le présent guide distingue ces droits des fonctions effectivement accessibles.
 
@@ -45,9 +45,11 @@ Formulaire avec l’adresse du compte employé de démonstration, sans mot de pa
 
 ### Commandes
 
-Votre rôle autorise la consultation et l’avancement des commandes de votre restaurant. Toutefois, le lien **Commandes** n’ouvre pas encore un écran de traitement dans cette version : il aboutit à **Page indisponible**.
+Cliquez sur **Commandes** pour ouvrir `/staff/orders`, **Les commandes du service**. Le tableau liste les commandes de votre restaurant avec leur numéro, leur service (sur place ou livraison), les articles, le total, le paiement et le statut.
 
-Il n’existe donc pas encore de procédure utilisable dans l’application pour confirmer une commande, la passer en préparation ou la terminer. Ne considérez pas une commande comme modifiée tant qu’une action n’a pas été enregistrée par une fonction disponible.
+1. Utilisez le filtre pour n’afficher que les commandes à traiter.
+2. Dans la colonne **Actions**, faites avancer la commande : confirmée, en préparation, prête, puis terminée (et « en livraison » avant « terminée » pour une livraison).
+3. Le tableau se met à jour automatiquement ; l’état affiché est toujours celui enregistré par le serveur.
 
 ### Plat épuisé et plat du jour
 
@@ -61,7 +63,7 @@ L’employé n’a pas le droit de créer, modifier le prix ou supprimer un plat
 
 ### Statistiques de l’employé
 
-Votre rôle est limité aux statistiques hebdomadaires de votre restaurant. L’écran correspondant n’est pas encore accessible. Le bilan global décrit dans la section suivante est réservé au gérant et à l’administrateur du restaurant.
+Cliquez sur **Statistiques** pour ouvrir `/staff/weekly`, **Ventes de la semaine** : total encaissé, nombre de commandes terminées et détail par jour, du lundi au dimanche. Le bilan global (jour, semaine, mois) est réservé au gérant et à l’administrateur.
 
 ### Capture 2 — Menu rapide du personnel
 
@@ -87,7 +89,9 @@ Lors d’une panne d’actualisation, les anciens chiffres peuvent rester visibl
 
 ### Création d’employés
 
-La création et la gestion des employés sont prévues dans les permissions du gérant, mais ne sont pas encore disponibles dans l’application. Aucun bouton **Créer un employé** ni formulaire correspondant ne doit être supposé présent. Pour la démonstration, utilisez les comptes préparés par l’équipe.
+Cliquez sur **Équipe** (`/staff/accounts`) puis remplissez **Nom**, **E-mail**, **Téléphone** (`+243XXXXXXXXX`) et **Rôle**. Le gérant crée des employés ; seul l’administrateur peut aussi créer un gérant.
+
+Le compte reçoit un **mot de passe temporaire** affiché **une seule fois** : transmettez-le à la personne. À sa première connexion, elle est dirigée vers **Mon profil** et doit choisir un nouveau mot de passe avant d’utiliser le reste du site. Seul l’administrateur peut désactiver un compte (confirmation demandée).
 
 ## 5. Administrateur du restaurant : carte, promotions et statistiques
 
@@ -104,11 +108,11 @@ Le formulaire de modification du nom, du prix ou de la catégorie d’un plat ex
 
 ### Promotions
 
-La création et la modification des promotions ne sont pas encore disponibles. La consultation publique des promotions existantes ne permet pas de les administrer. Le guide sera complété lorsque les actions correspondantes seront accessibles.
+Cliquez sur **Promotions** (`/admin/promotions`). Choisissez le **Type** (promotion, événement ou jeu), saisissez le **Titre**, une description facultative, les dates de **Début** et de **Fin**, puis cliquez sur **Créer**. Chaque publication peut être désactivée, réactivée ou supprimée (confirmation demandée). Les clients ne voient que les publications actives et dans leur période.
 
 ### Statistiques et employés
 
-L’administrateur du restaurant peut utiliser le bilan décrit dans la section **Gérant : consulter les statistiques**. Il voit uniquement les données de son restaurant. La création de comptes employés reste indisponible, comme pour le gérant.
+L’administrateur du restaurant peut utiliser le bilan décrit dans la section **Gérant : consulter les statistiques**. Il voit uniquement les données de son restaurant. Il crée et désactive aussi les comptes du personnel depuis **Équipe**.
 
 L’administrateur d’un restaurant ne crée pas les autres restaurants et ne change pas leur statut : ces opérations appartiennent à l’administration de la plateforme.
 
@@ -124,11 +128,44 @@ La capture ci-dessous provient du contrôle local du 3 novembre 2026 avec l’AP
 
 ![Statistiques du restaurant avec données de démonstration](manuel-personnel/statistiques.jpg)
 
+## 8. Réclamations, paramètres et plateforme
+
+### Réclamations (employé, gérant, administrateur)
+
+Cliquez sur **Réclamations** (`/staff/claims`). Filtrez par état : **À traiter**, **À valider**, **Traitées**. La liste se met à jour toute seule toutes les 30 secondes.
+
+1. **Employé** : ouvrez une réclamation à traiter, choisissez **Accepter** ou **Refuser**, écrivez une réponse de 5 à 500 caractères et cliquez sur **Proposer**. La réclamation passe à valider.
+2. **Gérant** : relisez la proposition, puis cliquez sur **Valider** (la réponse part à l’étudiant) ou écrivez une note et cliquez sur **Renvoyer** pour demander une nouvelle proposition.
+3. **Réclamation de points** : seul l’**administrateur** la valide. Il indique les **points accordés** (au plus le nombre demandé) ; ils sont crédités une seule fois à l’étudiant.
+
+### Paramètres du restaurant (administrateur)
+
+Cliquez sur **Paramètres** (`/admin/settings`). Chaque restaurant choisit lui-même son identité visuelle, sans nouveau déploiement :
+
+- **Nom** et **slogan** ;
+- **Couleur principale** et **couleur secondaire** au format `#rrggbb` (par défaut doré `#cfbd97` et noir `#000000`) ;
+- **Police** parmi Poppins, Arial, Verdana, Trebuchet MS, Georgia, Tahoma, Times New Roman ;
+- **Mode par défaut** : clair, sombre ou selon l’appareil ;
+- **Logo** : PNG, JPEG ou WebP de 512 Ko au plus ;
+- **Horaires d’ouverture** de chaque jour (laissez vide un jour fermé) ;
+- **Livraison** : activée ou non, frais en FC, communes desservies ;
+- **Fidélité** : dépense pour 1 point (3 000 FC par défaut), points pour une récompense (15), valeur de la récompense (3 000 FC), validité en mois (12).
+
+Cliquez sur **Enregistrer** : seuls les blocs modifiés sont envoyés. Les nouvelles règles de fidélité s’appliquent aux prochaines commandes ; les points déjà gagnés gardent leur date d’expiration. Les autres restaurants ne sont jamais affectés.
+
+### Administrateur de la plateforme
+
+Cliquez sur **Restaurants** (`/plateforme`). La liste montre tous les restaurants, y compris désactivés, avec leurs administrateurs. Vous pouvez **désactiver** ou **réactiver** un restaurant (il disparaît alors des pages publiques) et **créer un restaurant** avec son premier administrateur (nom, identifiant, e-mail, téléphone, mot de passe initial).
+
+### Mon profil
+
+Le lien **Mon profil**, en bas de page, permet à chaque membre du personnel de changer son mot de passe.
+
 ## 6. Si une page ne fonctionne pas
 
 | Ce que vous voyez | Que faire |
 | --- | --- |
-| **Page indisponible** après un clic sur **Commandes** | L’écran des commandes du personnel reste absent. Ce n’est pas une confirmation d’action. |
+| Une commande ne change pas d’état | Rechargez la page, vérifiez le message d’erreur et votre rôle ; l’état affiché est celui enregistré. |
 | **Page indisponible** après un clic sur **Menu** | Vérifiez que le correctif #62 est intégré dans la version utilisée. |
 | **Impossible de charger le menu** ou erreur après une modification | Vérifiez la connexion et votre rôle ; rechargez pour relire les valeurs enregistrées avant de réessayer. |
 | **Impossible de charger les statistiques** | Réessayez avec **Actualiser**. Si le problème continue, signalez-le à l’équipe. |
