@@ -53,10 +53,16 @@ export interface LayoutViewProps {
   loading?: boolean;
   restaurant?: RestaurantBrand | null;
   onLogout: () => void;
+  /** Page de la plateforme (accueil, compte, pages légales) : charte fixe, jamais celle d'un restaurant. */
+  platformStyle?: boolean;
   /** Nombre d'articles du panier, affiché sur le lien « Panier » des étudiants. */
   cartCount?: number;
   children?: ReactNode;
 }
+
+/** Pages de la plateforme : charte fixe. Le reste (menu, panier, commandes, points, personnel…) prend la charte du restaurant. */
+const PLATFORM_PATHS = new Set(['/', '/login', '/register', '/forgot-password', '/profile', '/plateforme']);
+export const isPlatformPage = (pathname: string) => PLATFORM_PATHS.has(pathname) || pathname.startsWith('/legal');
 
 /** Revient en haut de page à chaque changement de page, comme sur un site classique. */
 function ScrollToTop() {
@@ -66,21 +72,23 @@ function ScrollToTop() {
 }
 
 /** Vue partagée, sans appel API ; Layout raccorde la session et le profil public. */
-export function LayoutView({ role, loading = false, restaurant, onLogout, cartCount = 0, children }: LayoutViewProps) {
+export function LayoutView({ role, loading = false, restaurant, onLogout, cartCount = 0, platformStyle = false, children }: LayoutViewProps) {
   const location = useLocation();
   const navId = useId();
   const toggle = useRef<HTMLButtonElement>(null);
   const [openedAt, setOpenedAt] = useState<string | null>(null);
   const open = openedAt === location.key;
   const platform = role === 'platform_admin';
-  const brand = platform ? 'Mon Miam Miam · Plateforme' : restaurant?.name ?? 'Mon Miam Miam';
-  const mode = !platform && restaurant?.defaultMode && MODES.includes(restaurant.defaultMode) ? restaurant.defaultMode : 'light';
-  const logo = !platform && restaurant?.logoUrl ? restaurant.logoUrl : null;
-  return <div className="app-shell" data-mode={platform ? undefined : mode} style={platform ? undefined : themeFor(restaurant)}>
+  // La plateforme a sa propre charte, fixe : elle ne dépend jamais de celle d'un restaurant.
+  const fixed = platform || platformStyle;
+  const brand = platform ? 'Mon Miam Miam · Plateforme' : fixed ? 'Mon Miam Miam' : restaurant?.name ?? 'Mon Miam Miam';
+  const mode = !fixed && restaurant?.defaultMode && MODES.includes(restaurant.defaultMode) ? restaurant.defaultMode : 'light';
+  const logo = !fixed && restaurant?.logoUrl ? restaurant.logoUrl : null;
+  return <div className="app-shell" data-mode={fixed ? undefined : mode} style={fixed ? undefined : themeFor(restaurant)}>
     <ScrollToTop />
     <a className="skip-link" href="#main-content">Aller au contenu</a>
     <header className="topbar">
-      <Link to={platform ? '/plateforme' : '/'} className="brand">{logo && <img className="brand-logo" src={assetUrl(logo)} alt={brand} />}{!logo && brand}</Link>
+      <Link to={platform ? '/plateforme' : '/'} className="brand">{logo && <img className="brand-logo" src={assetUrl(logo)} alt={brand} />}{!logo && fixed && <img className="brand-mark" src="/mon-miam-miam.svg" alt="" />}{!logo && brand}</Link>
       {role === 'student' && cartCount > 0 && <Link to="/cart" className="cart-shortcut" aria-label={`Voir le panier, ${cartCount} ${cartCount > 1 ? 'articles' : 'article'}`}>
         Panier <span className="nav-badge" aria-hidden="true">{cartCount}</span>
       </Link>}
@@ -113,10 +121,11 @@ export function Layout({ children }: { children?: ReactNode }) {
   const { user, loading, logout } = useAuth();
   const { slug } = useRestaurant();
   // Le personnel voit la charte de son restaurant ; un étudiant, celle du restaurant qu'il consulte.
-  const { restaurant, error } = useRestaurantProfile(user?.role === 'platform_admin' ? null : (user?.restaurant?.slug ?? slug));
+  const platformPage = isPlatformPage(useLocation().pathname);
+  const { restaurant, error } = useRestaurantProfile(platformPage || user?.role === 'platform_admin' ? null : (user?.restaurant?.slug ?? slug));
   const navigate = useNavigate();
   const { count } = useCart();
-  return <LayoutView role={user?.role} loading={loading} restaurant={restaurant} cartCount={count} onLogout={() => { logout(); navigate('/', { replace: true }); }}>
+  return <LayoutView role={user?.role} loading={loading} restaurant={restaurant} cartCount={count} platformStyle={platformPage} onLogout={() => { logout(); navigate('/', { replace: true }); }}>
     {error && <Alert kind="info">{error}</Alert>}
     {children ?? <Outlet />}
   </LayoutView>;
