@@ -60,6 +60,12 @@ export function canCancel(order: Pick<Order, 'status' | 'paymentStatus' | 'total
     && (order.paymentStatus === 'unpaid' || order.paymentStatus === 'failed' || order.totalFc === 0);
 }
 
+/** Une commande mobile money en attente, avec un montant à régler, peut être payée ou reprise. */
+export function canPay(order: Pick<Order, 'status' | 'paymentMethod' | 'paymentStatus' | 'totalFc'>) {
+  return order.status === 'pending' && order.paymentMethod === 'mobile_money' && order.totalFc > 0
+    && (order.paymentStatus === 'unpaid' || order.paymentStatus === 'pending' || order.paymentStatus === 'failed');
+}
+
 export const ordersApi = {
   list: () => api.get<OrderPage>('/orders?pageSize=100'),
   get: (id: string) => api.get<OrderDetail>(`/orders/${encodeURIComponent(id)}`),

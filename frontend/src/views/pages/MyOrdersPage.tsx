@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { STATUS_LABEL, canCancel, isActive, ordersApi } from '../../controllers/orders.ts';
+import { useSearchParams } from 'react-router-dom';
+import { STATUS_LABEL, canCancel, canPay, isActive, ordersApi } from '../../controllers/orders.ts';
 import type { Order, OrderDetail } from '../../controllers/orders.ts';
+import { paymentApi } from '../../controllers/payment.ts';
+import type { PaymentOperator } from '../../controllers/payment.ts';
 import { formatPrice } from '../../models/format.ts';
+import { PaymentDetails, isValidPaymentPhone, normalizePaymentPhone } from '../components/PaymentDetails.tsx';
 import { Alert, Badge, Empty, Spinner } from '../components/ui.tsx';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : 'Une erreur est survenue.');
@@ -31,7 +35,29 @@ function ReviewForm({ order, onDone }: { order: Order; onDone: (rating: number, 
   </div>;
 }
 
+function PayForm({ order }: { order: Order }) {
+  const [operator, setOperator] = useState<PaymentOperator>('mpesa');
+  const [phone, setPhone] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  async function pay() {
+    setError(null);
+    if (!isValidPaymentPhone(phone)) { setError('Indiquez un numéro Mobile Money valide, par exemple +243991234567.'); return; }
+    setBusy(true);
+    try {
+      const payment = await paymentApi.startPayment(order.id, { operator, phone: normalizePaymentPhone(phone) });
+      window.location.assign(payment.redirectUrl);
+    } catch (e) { setError(messageOf(e)); setBusy(false); }
+  }
+  return <div className="pay-form">
+    <PaymentDetails idPrefix={`pay-${order.id}`} operator={operator} phone={phone} onOperatorChange={setOperator} onPhoneChange={setPhone} />
+    <Alert>{error}</Alert>
+    <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void pay()}>{busy ? 'Ouverture du paiement…' : `Payer ${formatPrice(order.totalFc)}`}</button>
+  </div>;
+}
+
 function OrderCard({ order, onChanged }: { order: Order; onChanged: (order: Order) => void }) {
+  const [paying, setPaying] = useState(false);
   const [detail, setDetail] = useState<OrderDetail | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +91,8 @@ function OrderCard({ order, onChanged }: { order: Order; onChanged: (order: Orde
 
     <div className="order-actions">
       <button type="button" className="btn" onClick={() => void track()}>Suivre la commande</button>
+      {canPay(order) && !paying && <button type="button" className="btn btn-primary" onClick={() => setPaying(true)}>
+        {order.paymentStatus === 'unpaid' ? 'Payer par Mobile Money' : 'Reprendre le paiement'}</button>}
       {canCancel(order) && !confirming && <button type="button" className="btn" onClick={() => setConfirming(true)}>Annuler la commande</button>}
       {confirming && <>
         <span>Annuler cette commande ?</span>
@@ -72,6 +100,7 @@ function OrderCard({ order, onChanged }: { order: Order; onChanged: (order: Orde
         <button type="button" className="btn" onClick={() => setConfirming(false)}>Non</button>
       </>}
     </div>
+    {paying && canPay(order) && <PayForm order={order} />}
 
     {order.status === 'completed' && (thanks
       ? <Alert kind="success">Merci pour votre avis !</Alert>
@@ -92,11 +121,16 @@ export function MyOrdersPage() {
   }, []);
   useEffect(load, [load]);
   const hasActive = orders?.some(isActive) ?? false;
+  // Après un paiement, la notification d'Easypay arrive quelques secondes plus tard : on rafraîchit plus souvent.
+  const awaitsPayment = orders?.some(order => order.status === 'pending' && order.paymentMethod === 'mobile_money' && order.paymentStatus === 'pending') ?? false;
   useEffect(() => {
     if (!hasActive) return;
-    const timer = window.setInterval(load, 15000);
+    const timer = window.setInterval(load, awaitsPayment ? 4000 : 15000);
     return () => window.clearInterval(timer);
-  }, [hasActive, load]);
+  }, [hasActive, awaitsPayment, load]);
+
+  const [params] = useSearchParams();
+  const paymentResult = params.get('paiement');
 
   function replace(updated: Order) {
     setOrders(previous => previous?.map(order => (order.id === updated.id ? { ...order, ...updated } : order)) ?? null);
@@ -104,6 +138,9 @@ export function MyOrdersPage() {
 
   return <section className="my-orders-page">
     <h1>Mes commandes</h1>
+    {paymentResult === 'succes' && <Alert kind="success">Paiement reçu. Votre commande sera confirmée dès que l’opérateur nous le notifie, quelques secondes au plus.</Alert>}
+    {paymentResult === 'annule' && <Alert kind="info">Paiement annulé. Votre commande reste en attente : vous pouvez payer à nouveau ou l’annuler.</Alert>}
+    {paymentResult === 'erreur' && <Alert>Le paiement a échoué. Votre commande reste en attente : vous pouvez réessayer ou l’annuler.</Alert>}
     <Alert>{error}</Alert>
     {orders === null ? <Spinner label="Chargement de vos commandes…" /> : orders.length === 0 && !error
       ? <Empty>Vous n’avez pas encore passé de commande.</Empty>
