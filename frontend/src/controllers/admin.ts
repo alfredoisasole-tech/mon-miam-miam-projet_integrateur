@@ -54,6 +54,9 @@ export const adminApi = {
   createStaff: (input: { name: string; email: string; phone: string; role: 'employee' | 'manager' }) =>
     api.post<{ account: StaffAccount; temporaryPassword: string }>('/staff/accounts', input),
   deactivateStaff: (id: string) => api.patch<{ id: string; status: 'inactive' }>(`/staff/accounts/${encodeURIComponent(id)}`, { status: 'inactive' }),
+  reactivateStaff: (id: string) => api.patch<{ id: string; status: 'active'; account: StaffAccount }>(`/staff/accounts/${encodeURIComponent(id)}`, { status: 'active' }),
+  updateStaff: (id: string, patch: { name?: string; phone?: string; role?: 'employee' | 'manager' }) =>
+    api.patch<{ account: StaffAccount }>(`/staff/accounts/${encodeURIComponent(id)}`, patch),
 
   listPromotions: () => api.get<AdminPromotion[]>('/admin/promotions'),
   createPromotion: (input: PromotionInput) => api.post<AdminPromotion>('/admin/promotions', input),
