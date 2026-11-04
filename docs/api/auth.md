@@ -89,7 +89,7 @@
 | 422 | `TERMS_NOT_ACCEPTED` | « Vous devez accepter les conditions d'utilisation » |
 | 429 | `TOO_MANY_ATTEMPTS` | « Trop de tentatives, réessayez dans X minutes » |
 
-**Effet de bord** : crée l'utilisateur et son adhésion au restaurant `:slug`. Si `referralCode` correspond à un étudiant actif, son identifiant est associé au nouveau compte. La récompense est enregistrée au restaurant de la première commande qualifiante terminée ; une simple inscription ne crée pas encore de transaction de parrainage.
+**Effet de bord** : crée l'utilisateur et son adhésion au restaurant `:slug`, qui n'est que son restaurant d'inscription : le compte est unique pour toute la plateforme et l'adhésion à un autre restaurant se crée automatiquement à la première commande qui y est passée. Le site n'affiche pas de choix de restaurant à l'inscription (il envoie le restaurant consulté, sinon le premier de la liste). Si `referralCode` correspond à un étudiant actif, son identifiant est associé au nouveau compte. La récompense est enregistrée au restaurant de la première commande qualifiante terminée ; une simple inscription ne crée pas encore de transaction de parrainage.
 
 ---
 

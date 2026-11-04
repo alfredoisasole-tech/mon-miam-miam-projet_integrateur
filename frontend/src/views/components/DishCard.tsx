@@ -6,9 +6,11 @@ interface DishCardProps {
   dish: MenuDish;
   isStudent: boolean;
   onAdd: (dish: MenuDish) => void;
+  /** Quantité de ce plat déjà dans le panier. */
+  quantityInCart?: number;
 }
 
-export const DishCard: React.FC<DishCardProps> = ({ dish, isStudent, onAdd }) => {
+export const DishCard: React.FC<DishCardProps> = ({ dish, isStudent, onAdd, quantityInCart = 0 }) => {
   return (
     <div className="dish-card" data-testid={`dish-${dish.id}`}>
       {dish.imageUrl && <img className="dish-photo" src={dish.imageUrl} alt={dish.name} loading="lazy" />}
@@ -18,6 +20,10 @@ export const DishCard: React.FC<DishCardProps> = ({ dish, isStudent, onAdd }) =>
       
       {!dish.isAvailable && (
         <span className="badge-epuise" data-testid="epuise-badge">Épuisé</span>
+      )}
+
+      {isStudent && quantityInCart > 0 && (
+        <span className="in-cart-badge" data-testid="in-cart-badge">{quantityInCart} dans le panier</span>
       )}
 
       {isStudent && dish.isAvailable && (

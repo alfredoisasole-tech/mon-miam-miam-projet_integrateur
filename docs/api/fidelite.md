@@ -71,11 +71,11 @@ Le solde porte sur **tous** les points du restaurant, pas seulement sur les 50 m
 | HTTP | Code | Cas |
 |---|---|---|
 | 401 | `UNAUTHORIZED` | Jeton absent ou invalide. |
-| 403 | `FORBIDDEN` | Rôle autre que `student`, ou étudiant non inscrit à ce restaurant. |
+| 403 | `FORBIDDEN` | Rôle autre que `student`. Un étudiant qui n'a pas encore commandé dans ce restaurant n'a pas d'adhésion : il reçoit un solde de 0 point (l'adhésion se crée à sa première commande). |
 | 404 | `NOT_FOUND` | Restaurant inconnu. |
 | 500 | `INTERNAL_ERROR` | Erreur inattendue. |
 
-**Scénarios couverts par les tests :** solde vide avec les règles, points expirés ignorés, reste de dépense reporté, isolation par restaurant et par étudiant, ordre et limite de 50 de l'historique sans données internes, 401, 403 (hors rôle et sans adhésion), 404.
+**Scénarios couverts par les tests :** solde vide avec les règles, points expirés ignorés, reste de dépense reporté, isolation par restaurant et par étudiant, ordre et limite de 50 de l'historique sans données internes, 401, 403 (hors rôle), solde de 0 point sans adhésion, 404.
 
 ## 2. Utiliser ses points et sécurité du solde
 

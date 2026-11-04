@@ -32,7 +32,6 @@ export const MAX_POINT_MOVEMENTS = 50;
 
 export interface LoyaltyRepository {
   findRestaurantBySlug(slug: string): Promise<Restaurant | null>;
-  hasRestaurantMembership(userId: string, restaurantId: string): Promise<boolean>;
   getAvailablePoints(userId: string, restaurantId: string, at: string): Promise<number>;
   getLoyaltyRemainderFc(userId: string, restaurantId: string): Promise<number>;
   getLoyaltyRules(restaurantId: string): Promise<LoyaltyRules>;

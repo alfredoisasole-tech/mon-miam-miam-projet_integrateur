@@ -164,7 +164,7 @@ Exemple de réponse `201` (la réponse `200` contient la commande d’origine) :
 |---|---|---|
 | 400 | `VALIDATION_ERROR` | JSON absent ou invalide, champ requis absent, type ou moyen de paiement inconnu, format de date invalide, clé `Idempotency-Key` absente ou invalide, quantité non entière ou hors limites, panier vide ou plus de 30 lignes. |
 | 401 | `UNAUTHORIZED` | Jeton absent ou invalide. |
-| 403 | `FORBIDDEN` | Rôle autre que `student` ou absence d’adhésion au restaurant choisi. |
+| 403 | `FORBIDDEN` | Rôle autre que `student`. L'absence d'adhésion au restaurant choisi n'est plus un motif de refus : la première commande dans un restaurant crée l'adhésion (même transaction que la commande ; une commande refusée n'en crée aucune). |
 | 404 | `NOT_FOUND` | Slug de restaurant inconnu. |
 | 404 | `RESTAURANT_INACTIVE` | Restaurant désactivé. |
 | 409 | `IDEMPOTENCY_KEY_REUSED` | Clé déjà utilisée pour une commande au contenu différent. |
