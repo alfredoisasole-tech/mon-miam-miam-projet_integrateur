@@ -53,33 +53,203 @@ export const LoginPage: React.FC = () => {
               gap: '0.5rem',
               color: 'var(--mm-muted)',
               textDecoration: 'none',
-              marginBottom: '1.75rem',
+              marginBottom: '1.25rem',
               fontWeight: 600,
-              fontSize: '0.9rem',
+              fontSize: '0.875rem',
             }}
           >
             ← Retour à l'accueil
           </Link>
-          <p className="eyebrow" style={{ color: 'var(--mm-accent)', marginBottom: '0.5rem' }}>
-            Le campus a du goût
-          </p>
-          <h2 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.5rem)', margin: '0 0 1rem', color: 'var(--mm-text)', lineHeight: 1.2 }}>
-            Heureux de vous retrouver à table.
-          </h2>
-          <p style={{ color: 'var(--mm-muted)', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: '2rem' }}>
-            Du premier cours à la dernière pause, retrouvez les saveurs qui vous font du bien.
-          </p>
+
+          {/* Pill Restauration Universitaire d'Excellence */}
           <div
             style={{
-              padding: '1.25rem',
-              background: 'var(--mm-surface)',
-              borderRadius: 'var(--mm-radius-sm)',
-              border: '1px solid var(--mm-line)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.35rem 0.85rem',
+              borderRadius: '9999px',
+              background: '#f4ede0',
+              border: '1px solid #e4dcc8',
+              color: '#6b5d3d',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              marginBottom: '1rem',
             }}
           >
-            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--mm-muted)', lineHeight: 1.5 }}>
-              Après connexion, vous rejoignez l'espace de votre rôle. Si vous êtes étudiant, votre panier vous attend là où vous l'avez laissé.
-            </p>
+            <span aria-hidden="true">🍴</span> Restauration Universitaire d'Excellence
+          </div>
+
+          <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.35rem)', margin: '0 0 1rem', color: 'var(--mm-text)', lineHeight: 1.25, fontWeight: 800 }}>
+            Retrouvez les saveurs de votre campus.
+          </h2>
+
+          <p style={{ color: 'var(--mm-muted)', fontSize: '0.975rem', lineHeight: 1.6, marginBottom: '1.75rem' }}>
+            Connectez-vous pour suivre votre commande en direct auprès de ZeDuc@Space &amp; Chez Léa, et cumulez vos points Miam Club à chaque repas.
+          </p>
+
+          {/* Carte Visuelle Chef Cuisto / Plat Signature */}
+          <div
+            className="login-dish-card"
+            style={{
+              background: '#ffffff',
+              border: '1px solid #e5e2db',
+              borderRadius: '16px',
+              padding: '0.85rem',
+              boxShadow: '0 8px 24px rgba(95, 90, 78, 0.07)',
+            }}
+          >
+            {/* Image avec Overlay */}
+            <div
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: '210px',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                background: '#1a1a1a',
+              }}
+            >
+              <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4TWuk6UBEMPrjtDPFUGiGP4SwCtpshtyD5BnGhL1jJ-E9tOCpvlClBJsyNgznrv_ePRNy0wdn2pZ7lWEExSHAE-MbX4x_zWteC_dxcliWIqwRLX6DHaXQRKd3Ox8h5eqrevFS8MCP9qAAcH-SObR60-Fr10WbVBRokfzlwM3Og2jtA_Qluadpho8p3z3-OHzEkxRaQxIhuJrxaEiq505kh7FvnyTZ_ugJKE6Ge1VLqksu96fjj8nOfQ"
+                alt="Poulet DG doré & Bissap frais pressé par nos chefs de campus"
+                loading="lazy"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.2) 50%, transparent 100%)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                  padding: '1rem',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'inline-block',
+                    background: 'rgba(0, 0, 0, 0.65)',
+                    backdropFilter: 'blur(4px)',
+                    color: '#ffffff',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '4px',
+                    width: 'fit-content',
+                    marginBottom: '0.35rem',
+                  }}
+                >
+                  Plat du jour signature
+                </span>
+                <span
+                  style={{
+                    color: '#ffffff',
+                    fontSize: '1.05rem',
+                    fontWeight: 700,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  Poulet DG doré &amp; Bissap frais pressé
+                </span>
+              </div>
+            </div>
+
+            {/* Badges de réassurance en bas de carte */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                gap: '0.65rem',
+                marginTop: '0.75rem',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.65rem',
+                  background: '#f6f3ec',
+                  border: '1px solid #e5e2db',
+                  borderRadius: '10px',
+                  padding: '0.65rem 0.75rem',
+                }}
+              >
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: '#cfbd97',
+                    color: '#000000',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    flexShrink: 0,
+                  }}
+                  aria-hidden="true"
+                >
+                  ★
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1c1c18', lineHeight: 1.2 }}>
+                    15 points = 3 000 FC
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#5f5a4e' }}>
+                    Réduction immédiate
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.65rem',
+                  background: '#f6f3ec',
+                  border: '1px solid #e5e2db',
+                  borderRadius: '10px',
+                  padding: '0.65rem 0.75rem',
+                }}
+              >
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: '#1c1c18',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    flexShrink: 0,
+                  }}
+                  aria-hidden="true"
+                >
+                  ⚡
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1c1c18', lineHeight: 1.2 }}>
+                    Zéro attente
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#5f5a4e' }}>
+                    Retrait prioritaire
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -87,7 +257,7 @@ export const LoginPage: React.FC = () => {
         <div className="login-card" style={{ width: '100%', margin: 0 }}>
           <header className="login-header">
             <h1 className="brand-title" style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>Connexion</h1>
-            <p className="subtitle" style={{ fontSize: '0.95rem' }}>Votre prochaine pause commence ici.</p>
+            <p className="subtitle" style={{ fontSize: '0.95rem' }}>Heureux de vous retrouver à table.</p>
           </header>
 
           <form onSubmit={handleSubmit} className="login-form" noValidate>
