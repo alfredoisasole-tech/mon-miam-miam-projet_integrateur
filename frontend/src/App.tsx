@@ -19,6 +19,8 @@ import { WeeklyStatsPage } from './views/pages/WeeklyStatsPage.tsx';
 import { ForgotPasswordPage } from './views/pages/ForgotPasswordPage.tsx';
 import { ProfilePage } from './views/pages/ProfilePage.tsx';
 import { LegalPage } from './views/pages/LegalPage.tsx';
+import { ClaimsPage } from './views/pages/ClaimsPage.tsx';
+import { StaffClaimsPage } from './views/pages/StaffClaimsPage.tsx';
 
 export function App() {
   return (
@@ -66,6 +68,22 @@ export function App() {
                   element={
                     <RequireRole allowedRoles={['student']}>
                       <LoyaltyPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/claims"
+                  element={
+                    <RequireRole allowedRoles={['student']}>
+                      <ClaimsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/staff/claims"
+                  element={
+                    <RequireRole allowedRoles={['employee', 'manager', 'admin']}>
+                      <StaffClaimsPage />
                     </RequireRole>
                   }
                 />

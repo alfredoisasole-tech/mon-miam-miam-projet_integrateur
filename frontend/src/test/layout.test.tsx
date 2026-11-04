@@ -7,10 +7,10 @@ import type { User } from '../models/types.ts';
 afterEach(cleanup);
 const cases: [User['role'], string[]][] = [
   [undefined, ['Accueil', 'Connexion', 'Inscription']],
-  ['student', ['Menu', 'Panier', 'Mes commandes', 'Mes points']],
-  ['employee', ['Commandes', 'Menu', 'Statistiques']],
-  ['manager', ['Commandes', 'Menu', 'Statistiques']],
-  ['admin', ['Commandes', 'Menu', 'Statistiques', 'Paramètres']],
+  ['student', ['Menu', 'Panier', 'Mes commandes', 'Mes points', 'Réclamations']],
+  ['employee', ['Commandes', 'Menu', 'Statistiques', 'Réclamations']],
+  ['manager', ['Commandes', 'Menu', 'Statistiques', 'Réclamations']],
+  ['admin', ['Commandes', 'Menu', 'Statistiques', 'Réclamations', 'Paramètres']],
   ['platform_admin', ['Restaurants']],
 ];
 function mount(role?: User['role'], extra = {}) {
