@@ -10,10 +10,10 @@ afterEach(() => {
 });
 
 it.each([
-  ['/staff/menu', 'employee', 'Gestion rapide du menu (Staff)'],
-  ['/staff/menu', 'manager', 'Gestion rapide du menu (Staff)'],
-  ['/staff/menu', 'admin', 'Gestion rapide du menu (Staff)'],
-  ['/admin/menu', 'admin', 'Administration du Menu'],
+  ['/staff/menu', 'employee', 'Disponibilité du menu'],
+  ['/staff/menu', 'manager', 'Disponibilité du menu'],
+  ['/staff/menu', 'admin', 'Disponibilité du menu'],
+  ['/admin/menu', 'admin', 'Menu du restaurant'],
 ])('ouvre %s pour %s et charge le menu avec un seul préfixe API', async (path, role, title) => {
   localStorage.setItem('mmm_token', 'menu-route-test');
   const fetchMock = vi.fn(async (url: string) => {
@@ -27,7 +27,7 @@ it.each([
   window.history.replaceState(null, '', path);
   render(<App />);
   expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument();
-  expect(await screen.findByText(/^Pondu(?: - 2500 FC)?$/)).toBeInTheDocument();
+  expect(await screen.findByText(/^Pondu$/)).toBeInTheDocument();
   expect(fetchMock).toHaveBeenCalledWith('/api/staff/menu', expect.objectContaining({ method: 'GET' }));
   expect(window.location.pathname).toBe(path);
 });
