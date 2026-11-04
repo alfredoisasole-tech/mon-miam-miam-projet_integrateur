@@ -6,7 +6,7 @@ Ce rapport répond au livrable « Rapport de test avec couverture des fonctionna
 
 | Partie | Outil | Tests | Résultat |
 |---|---|---|---|
-| Serveur (API, règles métier, base de données) | `node:test` | 363 | tous réussis |
+| Serveur (API, règles métier, base de données) | `node:test` | 364 | tous réussis |
 | Site (écrans, contrôleurs) | Vitest | 254 | tous réussis |
 | Typage | `tsc --noEmit` (serveur et site) | — | sans erreur |
 | Construction du site | `vite build` | — | réussie |

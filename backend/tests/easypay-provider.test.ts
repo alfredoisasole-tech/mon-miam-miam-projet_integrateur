@@ -58,7 +58,7 @@ describe('Adaptateur Easypay : démarrage du paiement', () => {
       description: 'Commande Mon Miam Miam',
       customer_name: 'Aline Mbuyi',
       language: 'FR',
-      channels: [{ channel: 'MOBILE MONEY' }],
+      channels: [{ channel: 'MOBILE MONEY' }, { channel: 'CREDIT CARD' }],
       success_url: 'https://site.exemple/orders?commande=ord_123&paiement=succes',
       cancel_url: 'https://site.exemple/orders?commande=ord_123&paiement=annule',
       error_url: 'https://site.exemple/orders?commande=ord_123&paiement=erreur',
@@ -72,6 +72,15 @@ describe('Adaptateur Easypay : démarrage du paiement', () => {
     const resultat = await creer(fetchImpl, 'v1').startPayment(DEMARRAGE);
     assert.equal(appels[0]!.url.pathname, '/v1/payment/initialization');
     assert.match(resultat.redirectUrl, /\/v1\/payment\/initialization\?reference=/);
+  });
+
+  it('ne propose la carte qu’au bac à sable : la production reste en Mobile Money seul', async () => {
+    const sandbox = faux([{ corps: JSON.stringify({ code: 1, reference: REFERENCE }) }]);
+    await creer(sandbox.fetchImpl, 'sandbox').startPayment(DEMARRAGE);
+    assert.deepEqual((sandbox.appels[0]!.body as { channels: unknown }).channels, [{ channel: 'MOBILE MONEY' }, { channel: 'CREDIT CARD' }]);
+    const production = faux([{ corps: JSON.stringify({ code: 1, reference: REFERENCE }) }]);
+    await creer(production.fetchImpl, 'v1').startPayment(DEMARRAGE);
+    assert.deepEqual((production.appels[0]!.body as { channels: unknown }).channels, [{ channel: 'MOBILE MONEY' }]);
   });
 
   it('reconstruit l’adresse de redirection d’une référence sans appeler Easypay', () => {
