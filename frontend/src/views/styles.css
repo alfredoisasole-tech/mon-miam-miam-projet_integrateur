@@ -33,12 +33,13 @@
   --mm-color-secondary: #000000;
   --mm-color-on-primary: #000000;
   --mm-color-on-secondary: #ffffff;
-  --mm-font-family: Poppins, 'Segoe UI', system-ui, sans-serif;
-  --mm-bg: #faf8f4;
+  --mm-font-family: 'Plus Jakarta Sans Variable', Poppins, 'Segoe UI', system-ui, sans-serif;
+  --mm-bg: #faf7f2;
   --mm-surface: #ffffff;
-  --mm-text: #1c1b19;
+  --mm-text: #1a1a1a;
+  --mm-heading: #0f172a;
   --mm-muted: #625e56;
-  --mm-line: #ded8ca;
+  --mm-line: #e7e0d2;
   --mm-brand: var(--mm-color-primary);
   --mm-on-brand: var(--mm-color-on-primary);
   --mm-header-bg: var(--mm-color-secondary);
@@ -51,8 +52,8 @@
   --mm-info: #23578a;
   --mm-info-bg: #edf4fb;
   --mm-disabled-bg: #eeece7;
-  --mm-radius: 12px;
-  --mm-shadow: 0 4px 18px #0000000a;
+  --mm-radius: 16px;
+  --mm-shadow: 0 8px 28px #0000000d;
 }
 
 .app-shell[data-mode='dark'] {
@@ -62,6 +63,7 @@
   --mm-muted: #b9b3a6;
   --mm-line: #3a372f;
   --mm-accent: #cfbd97;
+  --mm-heading: #f3efe6;
   --mm-danger: #ff9b9b;
   --mm-danger-bg: #3a1c1c;
   --mm-ok: #8fd6a3;
@@ -94,14 +96,14 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--mm-bg); color: var(--mm-text); font-family: var(--mm-font-family); line-height: 1.6; font-variant-numeric: lining-nums tabular-nums; }
-h1, h2, h3 { line-height: 1.25; margin: 0 0 .75rem; overflow-wrap: anywhere; }
-h1 { font-size: clamp(1.5rem, 4vw, 2.1rem); letter-spacing: -.03em; }
-h2 { font-size: 1.25rem; letter-spacing: -.02em; }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .75rem; overflow-wrap: anywhere; color: var(--mm-heading, inherit); }
+h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); letter-spacing: -.03em; font-weight: 800; }
+h2 { font-size: 1.3rem; letter-spacing: -.02em; font-weight: 800; }
 h3 { font-size: 1.05rem; }
 p { margin: 0 0 1rem; }
 a { color: inherit; text-underline-offset: .2em; }
 button, input, select, textarea { font: inherit; }
-button, .btn { min-height: 44px; padding: .6rem 1rem; border: 1px solid var(--mm-line); border-radius: 8px; background: var(--mm-surface); color: var(--mm-text); cursor: pointer; font-weight: 500; }
+button, .btn { min-height: 44px; padding: .6rem 1rem; border: 1px solid var(--mm-line); border-radius: 12px; background: var(--mm-surface); color: var(--mm-text); cursor: pointer; font-weight: 600; }
 button:hover:not(:disabled), .btn:hover { border-color: var(--mm-accent); }
 button:disabled, input:disabled, select:disabled, textarea:disabled { background: var(--mm-disabled-bg); color: var(--mm-muted); cursor: not-allowed; }
 :where(a, button, input, select, textarea, [tabindex]):focus-visible { outline: 3px solid var(--mm-accent); outline-offset: 3px; }
@@ -116,7 +118,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { background
 .grid, .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 1rem; }
 .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .grid > *, .two > *, .card, .field { min-width: 0; }
-.card, .dish-card { border: 1px solid var(--mm-line); border-radius: var(--mm-radius); background: var(--mm-surface); padding: clamp(1rem, 3vw, 1.5rem); overflow-wrap: anywhere; }
+.card, .dish-card { border: 1px solid var(--mm-line); border-radius: var(--mm-radius); background: var(--mm-surface); box-shadow: var(--mm-shadow); padding: clamp(1rem, 3vw, 1.5rem); overflow-wrap: anywhere; }
 .in-cart-badge { display: inline-block; margin: .25rem .5rem .25rem 0; padding: .15rem .6rem; border-radius: 999px; background: var(--mm-accent); color: var(--mm-on-accent, var(--mm-text)); font-size: .85rem; font-weight: 600; }
 .cart-summary { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1.5rem; padding: .75rem 1rem; border: 1px solid var(--mm-line); border-radius: var(--mm-radius); background: var(--mm-surface); box-shadow: 0 -2px 8px rgb(0 0 0 / .12); }
 .cart-summary details { flex: 1 1 14rem; min-width: 0; }
@@ -187,3 +189,5 @@ input[type='checkbox'], input[type='radio'] { width: 1.25rem; min-height: 1.25re
 /* Logos des restaurants (accueil, administration de la plateforme). */
 .restaurant-logo { display: block; width: 100%; max-width: 20rem; height: auto; max-height: 96px; object-fit: contain; border-radius: 12px; margin-bottom: .75rem; }
 .restaurant-monogram { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 14px; margin-bottom: .75rem; font-size: 1.5rem; font-weight: 700; }
+
+@media (prefers-color-scheme: dark) { .app-shell[data-mode='system'] { --mm-heading: #f3efe6; } }

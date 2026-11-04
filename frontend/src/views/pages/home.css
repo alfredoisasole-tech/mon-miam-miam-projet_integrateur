@@ -1,0 +1,37 @@
+/* Page d'accueil de la plateforme : charte fixe (crème, noir, or), indépendante de celle des restaurants. */
+.home-page { display: grid; gap: clamp(2rem, 6vw, 4rem); }
+.home-hero { display: grid; gap: 2rem; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; padding-top: clamp(.5rem, 3vw, 2rem); }
+.home-hero h1 { font-size: clamp(2.2rem, 6vw, 3.75rem); font-weight: 900; letter-spacing: -.035em; line-height: 1.05; margin: .4rem 0 1rem; }
+.home-lead { font-size: 1.1rem; color: var(--mm-muted); max-width: 36rem; }
+.home-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.5rem; }
+.home-actions .btn { padding-inline: 1.4rem; min-height: 52px; }
+.home-hero-visual { display: grid; place-items: center; gap: 1rem; padding: 2.5rem 1.5rem; border-radius: 28px; background: #000; color: #cfbd97; text-align: center; box-shadow: var(--mm-shadow); }
+.home-hero-visual img { width: min(55%, 9rem); height: auto; border-radius: 24px; }
+.home-hero-visual p { margin: 0; font-weight: 700; font-size: 1.1rem; }
+.eyebrow { color: var(--mm-muted); }
+.home-center { text-align: center; }
+.home-section h2 { font-size: clamp(1.6rem, 4vw, 2.2rem); letter-spacing: -.03em; font-weight: 900; }
+.home-section-intro { max-width: 40rem; }
+.restaurants-grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr)); margin-top: 1.25rem; }
+.restaurants-grid .card { display: flex; flex-direction: column; }
+.restaurant-card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: .5rem; margin-bottom: .5rem; }
+.restaurant-card-head h3 { margin: 0; font-size: 1.3rem; flex: 1 1 8rem; overflow-wrap: normal; font-weight: 800; }
+.restaurant-card-slogan { min-height: 2.5rem; }
+.restaurant-card-action { margin-top: auto; width: 100%; border: 1px solid #0f172a; background: #fff; color: #0f172a; }
+.restaurant-card-action:hover:not(:disabled) { background: #0f172a; color: #fff; border-color: #0f172a; }
+.home-steps { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+.home-steps li { padding: 1.5rem; border: 1px solid var(--mm-line); border-radius: var(--mm-radius); background: var(--mm-surface); box-shadow: var(--mm-shadow); }
+.home-steps h3 { font-weight: 800; }
+.home-steps p { margin: 0; color: var(--mm-muted); }
+.home-step-number { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; margin-bottom: .9rem; border-radius: 50%; background: #cfbd97; color: #000; font-weight: 800; }
+.home-loyalty { padding: clamp(1.75rem, 5vw, 3rem); border-radius: 28px; background: #000; color: #f5f1e8; }
+.home-loyalty h2 { color: #fff; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 900; letter-spacing: -.03em; }
+.home-loyalty .eyebrow { color: #cfbd97; }
+.home-loyalty p { max-width: 40rem; color: #d8d2c4; }
+.home-loyalty .home-loyalty-rule { display: inline-block; padding: .4rem .9rem; border: 1px solid #3a372f; border-radius: 999px; font-size: .85rem; color: #cfbd97; }
+.home-loyalty .btn-primary { display: flex; width: fit-content; margin-top: .5rem; }
+@media (max-width: 760px) {
+  .home-hero { grid-template-columns: minmax(0, 1fr); }
+  .home-hero-visual { padding: 1.5rem; grid-auto-flow: column; justify-content: center; }
+  .home-hero-visual img { width: 4.5rem; }
+}

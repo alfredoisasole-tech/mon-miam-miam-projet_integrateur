@@ -31,6 +31,7 @@ function onColor(color: string) {
   const luminance = channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
   return luminance > .179 ? 'var(--mm-color-secondary)' : 'var(--mm-color-on-secondary)';
 }
+const ROLE_LABEL: Record<string, string> = { employee: 'Employé', manager: 'Gérant', admin: 'Administrateur' };
 const FONTS = ['Poppins', 'Arial', 'Verdana', 'Trebuchet MS', 'Georgia', 'Tahoma', 'Times New Roman'];
 const MODES = ['light', 'dark', 'system'];
 function themeFor(restaurant?: RestaurantBrand | null): CSSProperties {
@@ -58,6 +59,8 @@ export interface LayoutViewProps {
   onLogout: () => void;
   /** Page de la plateforme (accueil, compte, pages légales) : charte fixe, jamais celle d'un restaurant. */
   platformStyle?: boolean;
+  /** Nom de la personne connectée, affiché dans l'espace du personnel. */
+  userName?: string;
   /** Restaurant dont l'espace est affiché (`/r/:slug/…`), ou null sur la plateforme et dans l'espace du personnel. */
   scopeSlug?: string | null;
   /** Nombre d'articles du panier, affiché sur le lien « Panier » des étudiants. */
@@ -77,7 +80,7 @@ function ScrollToTop() {
 }
 
 /** Vue partagée, sans appel API ; Layout raccorde la session et le profil public. */
-export function LayoutView({ role, loading = false, restaurant, onLogout, cartCount = 0, platformStyle = false, scopeSlug = null, children }: LayoutViewProps) {
+export function LayoutView({ role, loading = false, restaurant, onLogout, cartCount = 0, platformStyle = false, scopeSlug = null, userName, children }: LayoutViewProps) {
   const location = useLocation();
   const navId = useId();
   const toggle = useRef<HTMLButtonElement>(null);
@@ -89,29 +92,45 @@ export function LayoutView({ role, loading = false, restaurant, onLogout, cartCo
   const brand = platform ? 'Mon Miam Miam · Plateforme' : fixed ? 'Mon Miam Miam' : restaurant?.name ?? 'Mon Miam Miam';
   const mode = !fixed && restaurant?.defaultMode && MODES.includes(restaurant.defaultMode) ? restaurant.defaultMode : 'light';
   const logo = !fixed && restaurant?.logoUrl ? restaurant.logoUrl : null;
-  return <div className="app-shell" data-mode={fixed ? undefined : mode} style={fixed ? undefined : themeFor(restaurant)}>
+  const staff = role === 'employee' || role === 'manager' || role === 'admin';
+  const navigation = loading ? null : <nav id={navId} className={`main-nav${open ? ' open' : ''}`} aria-label="Navigation principale" onKeyDown={event => {
+    if (event.key === 'Escape') { setOpenedAt(null); toggle.current?.focus(); }
+  }}>
+    {linksFor(role, scopeSlug).map(([to, label]) => <NavLink key={to} to={to} end={to === '/'} onClick={() => setOpenedAt(null)}>
+      {label}
+      {to.endsWith('/cart') && cartCount > 0 && <span className="nav-badge" aria-label={`${cartCount} ${cartCount > 1 ? 'articles' : 'article'}`}>{cartCount}</span>}
+    </NavLink>)}
+    {role && !staff && <button type="button" className="logout" onClick={() => { setOpenedAt(null); onLogout(); }}>Déconnexion</button>}
+  </nav>;
+  const content = <main id="main-content" className="content shell-content" tabIndex={-1}>{children ?? <Outlet />}</main>;
+  return <div className="app-shell" data-mode={fixed ? undefined : mode} data-platform={fixed ? '' : undefined} data-staff={staff ? '' : undefined} style={fixed ? undefined : themeFor(restaurant)}>
     <ScrollToTop />
     <a className="skip-link" href="#main-content">Aller au contenu</a>
     <header className="topbar">
       <Link to={platform ? '/plateforme' : '/'} className="brand">{logo && <img className="brand-logo" src={assetUrl(logo)} alt={brand} />}{!logo && fixed && <img className="brand-mark" src="/mon-miam-miam.svg" alt="" />}{!logo && brand}</Link>
+      {staff && <span className="scope-pill">Espace de gestion du restaurant</span>}
       {role === 'student' && scopeSlug && cartCount > 0 && <Link to={`/r/${scopeSlug}/cart`} className="cart-shortcut" aria-label={`Voir le panier, ${cartCount} ${cartCount > 1 ? 'articles' : 'article'}`}>
         Panier <span className="nav-badge" aria-hidden="true">{cartCount}</span>
       </Link>}
       {loading ? <Spinner label="Chargement de la session…" /> : <>
+        {staff && <div className="user-chip">
+          <span className="user-avatar" aria-hidden="true">{(userName ?? '?').trim().charAt(0).toUpperCase()}</span>
+          <span className="user-meta"><strong>{userName}</strong><small>{ROLE_LABEL[role!]}</small></span>
+          <button type="button" className="logout" onClick={() => { setOpenedAt(null); onLogout(); }}>Déconnexion</button>
+        </div>}
         <button ref={toggle} className="burger" type="button" aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'} aria-expanded={open} aria-controls={navId} onClick={() => setOpenedAt(open ? null : location.key)}>☰</button>
-        <nav id={navId} className={`main-nav${open ? ' open' : ''}`} aria-label="Navigation principale" onKeyDown={event => {
-          if (event.key === 'Escape') { setOpenedAt(null); toggle.current?.focus(); }
-        }}>
-          {linksFor(role, scopeSlug).map(([to, label]) => <NavLink key={to} to={to} end={to === '/'} onClick={() => setOpenedAt(null)}>
-            {label}
-            {to.endsWith('/cart') && cartCount > 0 && <span className="nav-badge" aria-label={`${cartCount} ${cartCount > 1 ? 'articles' : 'article'}`}>{cartCount}</span>}
-          </NavLink>)}
-          {role && <button type="button" className="logout" onClick={() => { setOpenedAt(null); onLogout(); }}>Déconnexion</button>}
-        </nav>
+        {!staff && navigation}
       </>}
     </header>
-    <main id="main-content" className="content shell-content" tabIndex={-1}>{children ?? <Outlet />}</main>
+    {staff ? <div className="staff-body">
+      {navigation}
+      {content}
+    </div> : content}
     <footer className="shell-footer">
+      {fixed && <div className="footer-brand">
+        <img className="brand-mark" src="/mon-miam-miam.svg" alt="" />
+        <p><strong>Mon Miam Miam</strong><br />La plateforme de commande des restaurants du campus : un compte, plusieurs restaurants, des points de fidélité chez chacun.</p>
+      </div>}
       <nav className="footer-links" aria-label="Informations légales">
         {role && !platform && <Link to="/profile">Mon profil</Link>}
         {LEGAL_LINKS.map(([key, to, label]) => <Link key={key} to={to}>{label}</Link>)}
@@ -131,7 +150,7 @@ export function Layout({ children }: { children?: ReactNode }) {
   const { restaurant, error } = useRestaurantProfile(platformPage || user?.role === 'platform_admin' ? null : (staffSlug ?? urlSlug));
   const navigate = useNavigate();
   const { count } = useCart(urlSlug);
-  return <LayoutView role={user?.role} loading={loading} restaurant={restaurant} cartCount={count} scopeSlug={staffSlug ? null : urlSlug} platformStyle={platformPage} onLogout={() => { logout(); navigate('/', { replace: true }); }}>
+  return <LayoutView role={user?.role} loading={loading} restaurant={restaurant} userName={user?.name} cartCount={count} scopeSlug={staffSlug ? null : urlSlug} platformStyle={platformPage} onLogout={() => { logout(); navigate('/', { replace: true }); }}>
     {error && <Alert kind="info">{error}</Alert>}
     {children ?? <Outlet />}
   </LayoutView>;

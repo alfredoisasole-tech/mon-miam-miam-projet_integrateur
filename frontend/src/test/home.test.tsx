@@ -50,7 +50,7 @@ describe('HomePage (G-6 · feat(restaurants): liste des restaurants et selection
       </AuthProvider>
     );
 
-    expect(screen.getByText('Vos repas du campus, commandés en quelques clics')).toBeInTheDocument();
+    expect(screen.getByText('Les saveurs du campus à portée de main.')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('ZeDuc@Space')).toBeInTheDocument();
