@@ -23,7 +23,7 @@ describe('LoyaltyRedemption Component (Tâche B-9)', () => {
       balance: {
         availablePoints: 9,
         canRedeem: false,
-        rules: { pointsForReward: 15, rewardDiscountFc: 3000 }
+        rules: { pointsForReward: 15, rewardValueFc: 3000 }
       },
       isLoading: false,
     });
@@ -46,7 +46,7 @@ describe('LoyaltyRedemption Component (Tâche B-9)', () => {
       balance: {
         availablePoints: 30,
         canRedeem: true,
-        rules: { pointsForReward: 15, rewardDiscountFc: 3000 }
+        rules: { pointsForReward: 15, rewardValueFc: 3000 }
       },
       isLoading: false,
     });
@@ -79,7 +79,7 @@ describe('LoyaltyRedemption Component (Tâche B-9)', () => {
       balance: {
         availablePoints: 15,
         canRedeem: true,
-        rules: { pointsForReward: 15, rewardDiscountFc: 3000 }
+        rules: { pointsForReward: 15, rewardValueFc: 3000 }
       },
       isLoading: false,
     });
