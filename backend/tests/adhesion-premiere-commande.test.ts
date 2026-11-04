@@ -43,7 +43,7 @@ describe('[MM-COMPTE-UNIQUE] Adhésion à un restaurant à la première commande
     }));
     const menu = await call('GET', '/api/restaurants/chez-lea/menu');
     leaDish = (menu.body['categories'] as Array<{ items: Array<{ id: string }> }>).flatMap((category) => category.items)[0]!.id;
-    const registered = await call('POST', '/api/restaurants/zeduc-space/auth/register', {
+    const registered = await call('POST', '/api/auth/register', {
       name: 'Nouvel Étudiant', email: 'nouveau@example.com', phone: '+243990000111',
       password: 'Motdepasse1', confirmPassword: 'Motdepasse1', acceptTerms: true,
     });
@@ -52,16 +52,17 @@ describe('[MM-COMPTE-UNIQUE] Adhésion à un restaurant à la première commande
   });
   after(async () => { await server.fermer(); db.close(); });
 
-  it('à l’inscription, le compte n’a qu’une adhésion (le restaurant d’inscription)', () => {
-    assert.deepEqual(memberships().map((row) => row.slug), ['zeduc-space']);
+  it('à l’inscription, le compte n’est lié à aucun restaurant et n’a aucune adhésion', () => {
+    assert.deepEqual(memberships(), []);
+    assert.equal(db.get<{ restaurant_id: string | null }>("SELECT restaurant_id FROM users WHERE email = 'nouveau@example.com'")?.restaurant_id, null);
   });
 
-  it('la première commande dans un autre restaurant crée l’adhésion au lieu d’être refusée', async () => {
+  it('la première commande dans un restaurant crée l’adhésion à ce restaurant', async () => {
     const created = await call('POST', '/api/orders', {
       restaurant: 'chez-lea', type: 'dine_in', paymentMethod: 'cash', items: [{ menuItemId: leaDish, quantity: 1 }],
     }, { 'idempotency-key': 'adhesion-premiere-commande-1' });
     assert.equal(created.status, 201, JSON.stringify(created.body));
-    assert.deepEqual(memberships().map((row) => row.slug), ['chez-lea', 'zeduc-space']);
+    assert.deepEqual(memberships().map((row) => row.slug), ['chez-lea']);
   });
 
   it('rejouer la même commande ne crée pas de seconde adhésion ni de seconde commande', async () => {
@@ -69,7 +70,7 @@ describe('[MM-COMPTE-UNIQUE] Adhésion à un restaurant à la première commande
       restaurant: 'chez-lea', type: 'dine_in', paymentMethod: 'cash', items: [{ menuItemId: leaDish, quantity: 1 }],
     }, { 'idempotency-key': 'adhesion-premiere-commande-1' });
     assert.equal(replay.status, 200);
-    assert.equal(memberships().length, 2);
+    assert.equal(memberships().length, 1);
   });
 
   it('une commande refusée ne crée pas d’adhésion', async () => {
@@ -79,7 +80,22 @@ describe('[MM-COMPTE-UNIQUE] Adhésion à un restaurant à la première commande
     }, { 'idempotency-key': 'adhesion-refusee-2' });
     assert.equal(refused.status, 404);
     db.run("UPDATE restaurants SET status = 'active' WHERE slug = 'chez-lea'");
-    assert.equal(memberships().length, 2);
+    assert.equal(memberships().length, 1);
+  });
+
+  it('une commande sans restaurant indiqué est refusée : aucun restaurant par défaut', async () => {
+    const refused = await call('POST', '/api/orders', { type: 'dine_in', paymentMethod: 'cash', items: [{ menuItemId: leaDish, quantity: 1 }] }, { 'idempotency-key': 'sans-restaurant-3' });
+    assert.equal(refused.status, 422);
+    assert.equal(refused.body['error'].code, 'RESTAURANT_REQUIRED');
+  });
+
+  it('commander dans un second restaurant crée une seconde adhésion, séparée', async () => {
+    const zeducDish = ((await call('GET', '/api/restaurants/zeduc-space/menu')).body['categories'] as Array<{ items: Array<{ id: string }> }>).flatMap((category) => category.items)[0]!.id;
+    const created = await call('POST', '/api/orders', {
+      restaurant: 'zeduc-space', type: 'dine_in', paymentMethod: 'cash', items: [{ menuItemId: zeducDish, quantity: 1 }],
+    }, { 'idempotency-key': 'adhesion-second-restaurant-4' });
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+    assert.deepEqual(memberships().map((row) => row.slug), ['chez-lea', 'zeduc-space']);
   });
 
   it('le solde de points reste séparé par restaurant', async () => {

@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useRegister } from '../../controllers/auth';
-import { useRestaurants } from '../../controllers/restaurants';
-import { useAuth, useRestaurant } from '../../controllers/session';
+import { useAuth } from '../../controllers/session';
 import { homeFor } from './HomePage';
 import { normalizePhone } from '../../models/phone';
 
@@ -12,11 +11,6 @@ import { normalizePhone } from '../../models/phone';
 export function RegisterPage() {
   const { submit, submitting, errors } = useRegister();
   const { user } = useAuth();
-  const { slug } = useRestaurant();
-  const { restaurants } = useRestaurants();
-  // Le compte vaut pour tous les restaurants. L'API l'enregistre quand même auprès d'un premier restaurant :
-  // celui que le visiteur consultait, sinon le premier de la liste. Les autres adhésions se créent à la première commande.
-  const restaurant = slug ?? restaurants[0]?.slug ?? '';
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -43,7 +37,7 @@ export function RegisterPage() {
       confirmPassword,
       acceptTerms,
       referralCode: referral.trim() || undefined,
-    }, restaurant);
+    });
   }
 
   // Mêmes classes que les autres formulaires du site (couleurs du thème du restaurant).

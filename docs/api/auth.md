@@ -25,9 +25,11 @@
 
 ## 1. Inscription d'un étudiant
 
-### `POST /api/restaurants/:slug/auth/register`
+### `POST /api/auth/register`
 
 **Rôles autorisés** : public (visiteur).
+
+Le compte appartient à la plateforme : aucun restaurant n'est désigné et aucune adhésion n'est créée à l'inscription (elle l'est à la première commande dans chaque restaurant). L'ancienne adresse `POST /api/restaurants/:slug/auth/register` reste acceptée, le restaurant de l'adresse n'a plus aucun effet.
 
 **Entrée (JSON)** :
 

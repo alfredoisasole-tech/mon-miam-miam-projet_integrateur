@@ -108,7 +108,7 @@ describe('APP-78 — protection de l’administration et restaurant désactivé'
       assert.equal(blocked.status, 404);
       assert.equal((await blocked.json() as { error: { code: string } }).error.code, 'RESTAURANT_INACTIVE');
       const { restaurant: _restaurant, ...implicitRestaurant } = order;
-      assert.equal((await place('app78-default-selection', implicitRestaurant)).status, 404);
+      assert.equal((await place('app78-default-selection', implicitRestaurant)).status, 422);
       assert.equal(db.get<{ total: number }>('SELECT COUNT(*) AS total FROM orders')!.total, before);
       assert.ok(db.get('SELECT id FROM orders LIMIT 1'), 'Les commandes historiques sont conservées');
     } finally {

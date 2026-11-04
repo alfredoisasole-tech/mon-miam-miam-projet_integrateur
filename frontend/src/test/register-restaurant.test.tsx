@@ -3,19 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { register, login, setRestaurant, state } = vi.hoisted(() => ({
-  register: vi.fn(), login: vi.fn(), setRestaurant: vi.fn(),
-  state: { slug: null as string | null, restaurants: [] as Array<{ slug: string; name: string }> },
-}));
+const { register, login } = vi.hoisted(() => ({ register: vi.fn(), login: vi.fn() }));
 
-vi.mock('../controllers/session', () => ({
-  useAuth: () => ({ login }),
-  useRestaurant: () => ({ slug: state.slug, setRestaurant }),
-}));
+vi.mock('../controllers/session', () => ({ useAuth: () => ({ login }) }));
 vi.mock('../models/authApi', () => ({ authApi: { register } }));
-vi.mock('../controllers/restaurants', () => ({
-  useRestaurants: () => ({ restaurants: state.restaurants, isLoading: false, error: null, reload: vi.fn() }),
-}));
 
 import { RegisterPage } from '../views/pages/RegisterPage';
 
@@ -33,35 +24,21 @@ async function fillAndSubmit() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  state.slug = null;
-  state.restaurants = [{ slug: 'chez-lea', name: 'Chez Léa' }, { slug: 'zeduc-space', name: 'ZeDuc@Space' }];
   register.mockResolvedValue({ token: 't' });
 });
 afterEach(cleanup);
 
-describe('Inscription : un seul compte pour tous les restaurants', () => {
+describe('Inscription : un compte de la plateforme, sans restaurant', () => {
   it('ne demande pas de restaurant et explique que le compte vaut partout', () => {
     render(<MemoryRouter><RegisterPage /></MemoryRouter>);
     expect(screen.queryByLabelText('Restaurant')).toBeNull();
     expect(screen.getByText(/Un seul compte pour tous les restaurants/)).toBeInTheDocument();
   });
 
-  it('inscrit auprès du premier restaurant quand aucun n’a été consulté', async () => {
+  it('inscrit le compte sans désigner aucun restaurant, même quand aucun n’a été consulté', async () => {
     await fillAndSubmit();
-    await waitFor(() => expect(register).toHaveBeenCalledWith('chez-lea', expect.objectContaining({ email: 'alfredo@example.com' })));
+    await waitFor(() => expect(register).toHaveBeenCalledTimes(1));
+    expect(register).toHaveBeenCalledWith(expect.objectContaining({ email: 'alfredo@example.com' }));
     expect(login).toHaveBeenCalledWith('t');
-  });
-
-  it('inscrit auprès du restaurant que le visiteur consultait', async () => {
-    state.slug = 'zeduc-space';
-    await fillAndSubmit();
-    await waitFor(() => expect(register).toHaveBeenCalledWith('zeduc-space', expect.anything()));
-  });
-
-  it('explique le problème quand aucun restaurant n’est disponible', async () => {
-    state.restaurants = [];
-    await fillAndSubmit();
-    expect(await screen.findByText(/Aucun restaurant n’est disponible/)).toBeInTheDocument();
-    expect(register).not.toHaveBeenCalled();
   });
 });

@@ -159,7 +159,8 @@ export class OrdersService {
     const input = parseCreateOrderRequest(body, keyHeader);
     const student = await this.repository.findStudent(userId);
     if (!student) throw new AppError(404, 'NOT_FOUND', 'Profil étudiant introuvable.');
-    const restaurant = input.restaurant ? await this.repository.findRestaurantBySlug(input.restaurant) : await this.repository.findRestaurantById(student.restaurantId);
+    const restaurant = input.restaurant ? await this.repository.findRestaurantBySlug(input.restaurant) : student.restaurantId ? await this.repository.findRestaurantById(student.restaurantId) : null;
+    if (!input.restaurant && !student.restaurantId) throw new AppError(422, 'RESTAURANT_REQUIRED', 'Indiquez le restaurant dans lequel vous commandez.');
     const existing = await this.repository.findOrderByIdempotencyKey(userId, input.idempotencyKey);
     if (existing) {
       if (restaurant && canonicalizeOrder(existing) === canonicalizeRequest(input, restaurant.id, buildDeliveryDetails(input.delivery, student.phone))) return { order: serializeOrder(existing), replayed: true };

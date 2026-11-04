@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi, type RegisterInput } from '../models/authApi';
-import { useAuth, useRestaurant } from './session';
+import { useAuth } from './session';
 
 export interface FieldError {
   name?: string;
@@ -40,27 +40,17 @@ export function validateRegister(input: RegisterInput): FieldError {
 export function useRegister() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { slug, setRestaurant } = useRestaurant(); // slug est de type string | null
-
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldError>({});
 
-  // `chosen` : restaurant choisi dans le formulaire, prioritaire sur celui mémorisé par le site.
-  async function submit(input: RegisterInput, chosen?: string | null): Promise<boolean> {
+  async function submit(input: RegisterInput): Promise<boolean> {
     const localErrors = validateRegister(input);
     setErrors(localErrors);
     if (Object.keys(localErrors).length > 0) return false;
 
-    const target = chosen || slug;
-    if (!target) {
-      setErrors({ form: 'Aucun restaurant n’est disponible pour le moment. Réessayez dans un instant.' });
-      return false;
-    }
-
     setSubmitting(true);
     try {
-      const res = await authApi.register(target, input);
-      setRestaurant(target);
+      const res = await authApi.register(input);
 
       // CORRECTION 2 : login() ne prend que le token. 
       // session.tsx se chargera tout seul de faire api.get("/me") pour récupérer le user.
