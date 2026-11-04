@@ -10,7 +10,7 @@ const cases: [User['role'], string[]][] = [
   ['student', ['Menu', 'Panier', 'Mes commandes', 'Mes points']],
   ['employee', ['Commandes', 'Menu', 'Statistiques']],
   ['manager', ['Commandes', 'Menu', 'Statistiques']],
-  ['admin', ['Commandes', 'Menu', 'Statistiques']],
+  ['admin', ['Commandes', 'Menu', 'Statistiques', 'Paramètres']],
   ['platform_admin', ['Restaurants']],
 ];
 function mount(role?: User['role'], extra = {}) {
