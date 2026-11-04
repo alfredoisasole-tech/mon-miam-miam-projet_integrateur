@@ -10,6 +10,9 @@ export interface RestaurantStats {
   averageOrderFc: number;
   orders: { total: number; completed: number; active: number; cancelled: number };
   topItems: { name: string; quantity: number }[];
+  /** Fournis par le serveur depuis la PR des statistiques de fidélité ; absents d'un ancien serveur. */
+  loyalty?: { members: number; pointsEarned: number; pointsRedeemed: number };
+  referrals?: { rewarded: number; pointsGranted: number; pending: number };
 }
 export interface StatsState {
   data: RestaurantStats | null;
