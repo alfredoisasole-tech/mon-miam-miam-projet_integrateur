@@ -1,5 +1,5 @@
 import React, { useState, type FormEvent } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Navigate, useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../controllers/session";
 import { authApi } from "../../models/api";
 import { homeFor } from "./HomePage";
@@ -13,9 +13,11 @@ export const LoginPage: React.FC = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { user, login } = useAuth();
 
   const requested = (location.state as any)?.from?.pathname as string | undefined;
+  // Déjà connecté : inutile de montrer le formulaire.
+  if (user) return <Navigate to={requested ?? homeFor(user.role)} replace />;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

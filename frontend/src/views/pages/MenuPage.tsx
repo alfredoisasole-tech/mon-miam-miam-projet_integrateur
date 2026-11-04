@@ -47,6 +47,9 @@ export const MenuPage: React.FC = () => {
         </section>
       )}
       <h2>Notre Menu</h2>
+      {!user && <p className="muted" data-testid="visitor-hint">
+        Pour commander, <Link to="/login">connectez-vous</Link> ou <Link to="/register">créez un compte étudiant</Link>.
+      </p>}
       {menu.dailyItems.length > 0 && (
         <section aria-labelledby="daily-menu-heading">
           <h3 id="daily-menu-heading">Plats du jour</h3>
