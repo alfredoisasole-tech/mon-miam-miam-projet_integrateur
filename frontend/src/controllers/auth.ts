@@ -40,26 +40,28 @@ export function validateRegister(input: RegisterInput): FieldError {
 export function useRegister() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { slug } = useRestaurant(); // slug est de type string | null
-  
+  const { slug, setRestaurant } = useRestaurant(); // slug est de type string | null
+
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldError>({});
 
-  async function submit(input: RegisterInput): Promise<boolean> {
+  // `chosen` : restaurant choisi dans le formulaire, prioritaire sur celui mémorisé par le site.
+  async function submit(input: RegisterInput, chosen?: string | null): Promise<boolean> {
     const localErrors = validateRegister(input);
     setErrors(localErrors);
     if (Object.keys(localErrors).length > 0) return false;
 
-    // CORRECTION 1 : Vérifier que slug n'est pas null avant d'appeler l'API
-    if (!slug) {
-      setErrors({ form: "Aucun restaurant sélectionné. Veuillez revenir à l'accueil." });
+    const target = chosen || slug;
+    if (!target) {
+      setErrors({ form: 'Aucun restaurant n’est disponible pour le moment. Réessayez dans un instant.' });
       return false;
     }
 
     setSubmitting(true);
     try {
-      const res = await authApi.register(slug, input);
-      
+      const res = await authApi.register(target, input);
+      setRestaurant(target);
+
       // CORRECTION 2 : login() ne prend que le token. 
       // session.tsx se chargera tout seul de faire api.get("/me") pour récupérer le user.
       await login(res.token);

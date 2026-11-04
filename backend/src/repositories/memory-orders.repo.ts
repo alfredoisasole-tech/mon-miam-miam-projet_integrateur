@@ -45,12 +45,6 @@ export class MemoryOrdersRepository implements OrdersRepository {
     return [...this.restaurants.values()].find((restaurant) => restaurant.slug === slug) ?? null;
   }
 
-  async hasRestaurantMembership(userId: string, _restaurantId: string): Promise<boolean> {
-    // Le dépôt mémoire ne modélise pas les adhésions ; il reste volontairement
-    // permissif pour les tests unitaires du service.
-    return this.students.has(userId);
-  }
-
   async findMenuItemsByIds(ids: string[], _restaurantId: string): Promise<MenuItem[]> {
     return ids.flatMap((id) => {
       const item = this.menuItems.get(id);

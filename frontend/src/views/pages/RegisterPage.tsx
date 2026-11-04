@@ -1,12 +1,19 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useRegister } from '../../controllers/auth';
+import { useRestaurants } from '../../controllers/restaurants';
+import { useRestaurant } from '../../controllers/session';
 
-/* TODO: Dès que Emmanuel fusionne E-5, remplacer ces éléments HTML 
+/* TODO: Dès que Emmanuel fusionne E-5, remplacer ces éléments HTML
    par les composants importés de '../components/ui' (Field, Input, Alert, Spinner) */
 
 export function RegisterPage() {
   const { submit, submitting, errors } = useRegister();
+  const { slug } = useRestaurant();
+  const { restaurants } = useRestaurants();
+  // Le compte vaut pour tous les restaurants. L'API l'enregistre quand même auprès d'un premier restaurant :
+  // celui que le visiteur consultait, sinon le premier de la liste. Les autres adhésions se créent à la première commande.
+  const restaurant = slug ?? restaurants[0]?.slug ?? '';
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -30,7 +37,7 @@ export function RegisterPage() {
       confirmPassword,
       acceptTerms,
       referralCode: referral.trim() || undefined,
-    });
+    }, restaurant);
   }
 
   // Styles simples respectant la charte (#cfbd97 et #000000) en attendant E-5
@@ -44,6 +51,9 @@ export function RegisterPage() {
         <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#000' }}>Créez votre compte étudiant</h1>
         <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>
           Tous les champs sont requis, sauf mention « facultatif ».
+        </p>
+        <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+          Un seul compte pour tous les restaurants : vous choisirez où commander après votre inscription.
         </p>
       </header>
 

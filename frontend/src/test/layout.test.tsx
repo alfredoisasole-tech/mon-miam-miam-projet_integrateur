@@ -7,10 +7,10 @@ import type { User } from '../models/types.ts';
 afterEach(cleanup);
 const cases: [User['role'], string[]][] = [
   [undefined, ['Accueil', 'Connexion', 'Inscription']],
-  ['student', ['Menu', 'Panier', 'Mes commandes', 'Mes points']],
-  ['employee', ['Commandes', 'Menu', 'Statistiques']],
-  ['manager', ['Commandes', 'Menu', 'Statistiques']],
-  ['admin', ['Commandes', 'Menu', 'Statistiques']],
+  ['student', ['Menu', 'Panier', 'Mes commandes', 'Mes points', 'Communauté', 'Réclamations']],
+  ['employee', ['Commandes', 'Menu', 'Statistiques', 'Réclamations']],
+  ['manager', ['Commandes', 'Menu', 'Statistiques', 'Réclamations', 'Équipe']],
+  ['admin', ['Commandes', 'Menu', 'Statistiques', 'Réclamations', 'Équipe', 'Promotions', 'Paramètres']],
   ['platform_admin', ['Restaurants']],
 ];
 function mount(role?: User['role'], extra = {}) {
@@ -36,7 +36,7 @@ describe('Mise en page E-6', () => {
     expect(button).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(button);
     expect(button).toHaveAttribute('aria-expanded', 'true');
-    fireEvent.keyDown(screen.getByRole('navigation'), { key: 'Escape' });
+    fireEvent.keyDown(screen.getByRole('navigation', { name: 'Navigation principale' }), { key: 'Escape' });
     expect(button).toHaveAttribute('aria-expanded', 'false');
     expect(button).toHaveFocus();
   });
@@ -53,7 +53,7 @@ describe('Mise en page E-6', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Déconnexion' }));
     expect(logout).toHaveBeenCalledOnce();
     rerender(<MemoryRouter><LayoutView role="student" loading onLogout={logout} /></MemoryRouter>);
-    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Navigation principale' })).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Chargement');
   });
   it('la plateforme garde son identité et ignore les couleurs du restaurant', () => {

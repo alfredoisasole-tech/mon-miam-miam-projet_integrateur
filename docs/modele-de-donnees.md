@@ -80,7 +80,7 @@ Paramètres d’un restaurant : fidélité, livraison et horaires d’ouverture.
 
 Comptes des étudiants et du personnel. L’e-mail (sans distinction de casse) et le téléphone sont uniques sur toute la plateforme.
 
-`restaurant_id` est obligatoire : pour un membre du personnel, il indique son restaurant ; pour un étudiant, son restaurant d’origine. Ses autres restaurants figurent dans `memberships`. Les administrateurs de la plateforme sont enregistrés dans `platform_admins`, hors de tout restaurant.
+`restaurant_id` est obligatoire : pour un membre du personnel, il indique son restaurant ; pour un étudiant, son restaurant d’origine, c'est-à-dire celui auprès duquel l'inscription a été enregistrée (sans conséquence sur ses droits). Ses autres restaurants figurent dans `memberships` : une adhésion se crée à sa première commande dans chaque restaurant. Les administrateurs de la plateforme sont enregistrés dans `platform_admins`, hors de tout restaurant.
 
 | Attribut | Type | Obligatoire | Défaut | Clé |
 |---|---|---|---|---|

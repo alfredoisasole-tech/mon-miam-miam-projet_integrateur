@@ -209,12 +209,6 @@ export class SqliteOrdersRepository implements OrdersRepository, LoyaltyReposito
     return row ? mapRestaurant(row) : null;
   }
 
-  async hasRestaurantMembership(userId: string, restaurantId: string): Promise<boolean> {
-    return Boolean(this.db.get<{ found: number }>(`
-      SELECT 1 AS found FROM memberships WHERE user_id = ? AND restaurant_id = ?
-    `, [userId, restaurantId]));
-  }
-
   async findMenuItemsByIds(ids: string[], restaurantId: string): Promise<MenuItem[]> {
     if (ids.length === 0) return [];
     const placeholders = ids.map(() => '?').join(', ');
@@ -402,6 +396,10 @@ export class SqliteOrdersRepository implements OrdersRepository, LoyaltyReposito
       if (order.pointsRedeemed > 0 && this.availablePoints(order.userId, order.restaurantId, order.createdAt) < order.pointsRedeemed) {
         return { created: false, order, insufficientPoints: true };
       }
+
+      // Compte unique : la première commande dans un restaurant crée l'adhésion (points propres à ce restaurant).
+      this.db.run(`INSERT INTO memberships (user_id, restaurant_id, created_at) VALUES (?, ?, ?)
+        ON CONFLICT (user_id, restaurant_id) DO NOTHING`, [order.userId, order.restaurantId, order.createdAt]);
 
       const dayKey = order.orderNumber.split('-')[0] ?? '';
       const allocatedOrder = { ...order, orderNumber: `${dayKey}-${String(this.reserveOrderSequence(order.restaurantId, dayKey)).padStart(3, '0')}` };

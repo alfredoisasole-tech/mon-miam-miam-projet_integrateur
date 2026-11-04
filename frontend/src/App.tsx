@@ -14,6 +14,17 @@ import { StaffOrdersPage } from './views/pages/StaffOrdersPage.tsx';
 import { StatsPage } from './views/pages/StatsPage.tsx';
 import { StaffMenuPage } from './views/pages/StaffMenuPage.tsx';
 import { AdminMenuPage } from './views/pages/AdminMenuPage.tsx';
+import { AdminSettingsPage } from './views/pages/AdminSettingsPage.tsx';
+import { WeeklyStatsPage } from './views/pages/WeeklyStatsPage.tsx';
+import { ForgotPasswordPage } from './views/pages/ForgotPasswordPage.tsx';
+import { ProfilePage } from './views/pages/ProfilePage.tsx';
+import { LegalPage } from './views/pages/LegalPage.tsx';
+import { ClaimsPage } from './views/pages/ClaimsPage.tsx';
+import { StaffClaimsPage } from './views/pages/StaffClaimsPage.tsx';
+import { CommunityPage } from './views/pages/CommunityPage.tsx';
+import { StaffAccountsPage } from './views/pages/StaffAccountsPage.tsx';
+import { AdminPromotionsPage } from './views/pages/AdminPromotionsPage.tsx';
+import { PlatformPage } from './views/pages/PlatformPage.tsx';
 
 export function App() {
   return (
@@ -28,6 +39,18 @@ export function App() {
                 <Route path="/menu" element={<MenuPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/legal/mentions" element={<LegalPage page="mentions" />} />
+                <Route path="/legal/confidentialite" element={<LegalPage page="confidentialite" />} />
+                <Route path="/legal/conditions" element={<LegalPage page="conditions" />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <RequireRole allowedRoles={['student', 'employee', 'manager', 'admin']}>
+                      <ProfilePage />
+                    </RequireRole>
+                  }
+                />
                 <Route
                   path="/cart"
                   element={
@@ -53,6 +76,54 @@ export function App() {
                   }
                 />
                 <Route
+                  path="/community"
+                  element={
+                    <RequireRole allowedRoles={['student']}>
+                      <CommunityPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/staff/accounts"
+                  element={
+                    <RequireRole allowedRoles={['manager', 'admin']}>
+                      <StaffAccountsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/admin/promotions"
+                  element={
+                    <RequireRole allowedRoles={['admin']}>
+                      <AdminPromotionsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/plateforme"
+                  element={
+                    <RequireRole allowedRoles={['platform_admin']}>
+                      <PlatformPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/claims"
+                  element={
+                    <RequireRole allowedRoles={['student']}>
+                      <ClaimsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/staff/claims"
+                  element={
+                    <RequireRole allowedRoles={['employee', 'manager', 'admin']}>
+                      <StaffClaimsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
                   path="/staff/orders"
                   element={
                     <RequireRole allowedRoles={['employee', 'manager', 'admin']}>
@@ -73,6 +144,22 @@ export function App() {
                   element={
                     <RequireRole allowedRoles={['admin']}>
                       <AdminMenuPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/admin/settings"
+                  element={
+                    <RequireRole allowedRoles={['admin']}>
+                      <AdminSettingsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/staff/weekly"
+                  element={
+                    <RequireRole allowedRoles={['employee', 'manager', 'admin']}>
+                      <WeeklyStatsPage />
                     </RequireRole>
                   }
                 />

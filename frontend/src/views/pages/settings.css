@@ -1,0 +1,5 @@
+.settings-page { display: grid; gap: 1.25rem; max-width: 52rem; margin: 0 auto; }
+.settings-row { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+.settings-check { display: flex; align-items: center; gap: .6rem; min-height: 44px; }
+.settings-check input { width: auto; min-height: 0; }
+.settings-logo-note { margin: .25rem 0 0; }

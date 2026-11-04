@@ -8,6 +8,7 @@ export interface CreateDishPayload {
   category: 'plat' | 'boisson' | 'dessert' | 'snack';
   isDaily: boolean;
   isAvailable: boolean;
+  imageAssetId?: string;
 }
 
 export interface UpdateDishPayload {
