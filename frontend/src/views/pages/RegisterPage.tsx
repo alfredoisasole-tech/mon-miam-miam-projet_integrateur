@@ -39,104 +39,113 @@ export function RegisterPage() {
   const labelClass = "block text-sm font-medium text-gray-700 mt-4";
 
   return (
-    <div className="mm-page mm-auth" style={{ maxWidth: '480px', margin: '2rem auto', padding: '1.5rem' }}>
-      <header className="mm-auth__header" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#000' }}>Créez votre compte étudiant</h1>
-        <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-          Tous les champs sont requis, sauf mention « facultatif ».
-        </p>
-      </header>
+    <div className="mm-page mm-auth" style={{ maxWidth: '520px', margin: '2.5rem auto', padding: 'clamp(1rem, 4vw, 1.5rem)' }}>
+      <div
+        className="card"
+        style={{
+          padding: 'clamp(1.75rem, 5vw, 2.5rem)',
+          boxShadow: 'var(--mm-shadow)',
+        }}
+      >
+        <header className="mm-auth__header" style={{ marginBottom: '1.75rem', textAlign: 'center' }}>
+          <div className="eyebrow" style={{ color: 'var(--mm-accent)', marginBottom: '0.25rem' }}>Espace Étudiant</div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--mm-text)', margin: '0 0 0.5rem' }}>
+            Créez votre compte étudiant
+          </h1>
+          <p className="muted" style={{ fontSize: '0.925rem', margin: 0 }}>
+            Tous les champs sont requis, sauf mention « facultatif ».
+          </p>
+        </header>
 
-      {errors.form && (
-        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '0.75rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.9rem' }}>
-          {errors.form}
-        </div>
-      )}
+        {errors.form && (
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div className="alert alert-error">{errors.form}</div>
+          </div>
+        )}
 
-      <form className="mm-form" onSubmit={onSubmit} noValidate>
-        <div>
-          <label className={labelClass}>Nom complet</label>
-          <input type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} aria-invalid={!!errors.name} />
-          {errors.name && <p className={errorClass}>{errors.name}</p>}
-        </div>
+        <form className="mm-form" onSubmit={onSubmit} noValidate style={{ display: 'grid', gap: '1.25rem' }}>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field-label">Nom complet</label>
+            <input type="text" name="name" placeholder="Ex: Gloire Nkulu" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={!!errors.name} />
+            {errors.name && <p className="field-error" style={{ margin: '0.25rem 0 0', fontSize: '0.85rem' }}>{errors.name}</p>}
+          </div>
 
-        <div>
-          <label className={labelClass}>Adresse e-mail</label>
-          <input type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} aria-invalid={!!errors.email} />
-          {errors.email && <p className={errorClass}>{errors.email}</p>}
-        </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field-label">Adresse e-mail</label>
+            <input type="email" name="email" placeholder="etudiant@campus.cd" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={!!errors.email} />
+            {errors.email && <p className="field-error" style={{ margin: '0.25rem 0 0', fontSize: '0.85rem' }}>{errors.email}</p>}
+          </div>
 
-        <div>
-          <label className={labelClass}>Numéro de téléphone</label>
-          <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.25rem 0' }}>Pour vous joindre au sujet de votre commande.</p>
-          <input type="tel" name="phone" placeholder="+243..." value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} aria-invalid={!!errors.phone} />
-          {errors.phone && <p className={errorClass}>{errors.phone}</p>}
-        </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field-label">Numéro de téléphone</label>
+            <small className="muted" style={{ display: 'block', marginBottom: '0.35rem' }}>Pour vous joindre au sujet de votre commande.</small>
+            <input type="tel" name="phone" placeholder="+243..." value={phone} onChange={(e) => setPhone(e.target.value)} aria-invalid={!!errors.phone} />
+            {errors.phone && <p className="field-error" style={{ margin: '0.25rem 0 0', fontSize: '0.85rem' }}>{errors.phone}</p>}
+          </div>
 
-        <div>
-          <label className={labelClass}>Adresse de livraison habituelle <span style={{ fontWeight: 'normal', color: '#666' }}>(facultatif)</span></label>
-          <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.25rem 0' }}>Vous pourrez la modifier à chaque commande.</p>
-          <input type="text" name="deliveryAddress" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className={inputClass} />
-        </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field-label">Adresse de livraison habituelle <span className="muted" style={{ fontWeight: 'normal' }}>(facultatif)</span></label>
+            <small className="muted" style={{ display: 'block', marginBottom: '0.35rem' }}>Vous pourrez la modifier à chaque commande.</small>
+            <input type="text" name="deliveryAddress" placeholder="Ex: Campus UNIKIN, Home 10" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} />
+          </div>
 
-        <div>
-          <label className={labelClass}>Mot de passe</label>
-          <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.25rem 0' }}>8 caractères minimum, une majuscule, un chiffre.</p>
-          <input type="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} aria-invalid={!!errors.password} />
-          {errors.password && <p className={errorClass}>{errors.password}</p>}
-        </div>
+          <div className="two" style={{ gap: '1rem' }}>
+            <div className="field" style={{ margin: 0 }}>
+              <label className="field-label">Mot de passe</label>
+              <input type="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!errors.password} />
+              {errors.password && <p className="field-error" style={{ margin: '0.25rem 0 0', fontSize: '0.85rem' }}>{errors.password}</p>}
+            </div>
 
-        <div>
-          <label className={labelClass}>Confirmer le mot de passe</label>
-          <input type="password" name="confirmPassword" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={inputClass} aria-invalid={!!errors.confirmPassword} />
-          {errors.confirmPassword && <p className={errorClass}>{errors.confirmPassword}</p>}
-        </div>
+            <div className="field" style={{ margin: 0 }}>
+              <label className="field-label">Confirmer le mot de passe</label>
+              <input type="password" name="confirmPassword" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} aria-invalid={!!errors.confirmPassword} />
+              {errors.confirmPassword && <p className="field-error" style={{ margin: '0.25rem 0 0', fontSize: '0.85rem' }}>{errors.confirmPassword}</p>}
+            </div>
+          </div>
+          <small className="muted" style={{ marginTop: '-0.5rem', display: 'block' }}>8 caractères minimum, une majuscule, un chiffre.</small>
 
-        <div>
-          <label className={labelClass}>Code de parrainage <span style={{ fontWeight: 'normal', color: '#666' }}>(facultatif)</span></label>
-          <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.25rem 0' }}>Un ami vous a invité ? Saisissez son code.</p>
-          <input type="text" name="referral" value={referral} onChange={(e) => setReferral(e.target.value.toUpperCase())} className={inputClass} />
-        </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field-label">Code de parrainage <span className="muted" style={{ fontWeight: 'normal' }}>(facultatif)</span></label>
+            <small className="muted" style={{ display: 'block', marginBottom: '0.35rem' }}>Un ami vous a invité ? Saisissez son code.</small>
+            <input type="text" name="referral" placeholder="Ex: MIAM-ABC12" value={referral} onChange={(e) => setReferral(e.target.value.toUpperCase())} />
+          </div>
 
-        <div style={{ marginTop: '1rem' }}>
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.9rem' }}>
-            <input 
-              type="checkbox" 
-              checked={acceptTerms} 
-              onChange={(e) => setAcceptTerms(e.target.checked)} 
-              style={{ marginTop: '0.2rem' }} 
-            />
-            <span>
-              J'accepte les <Link to="/conditions" style={{ color: '#000', textDecoration: 'underline' }}>conditions d'utilisation</Link> et la <Link to="/confidentialite" style={{ color: '#000', textDecoration: 'underline' }}>politique de confidentialité</Link>.
-            </span>
-          </label>
-          {errors.acceptTerms && <p className={errorClass}>{errors.acceptTerms}</p>}
-        </div>
+          <div style={{ marginTop: '0.5rem' }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={acceptTerms} 
+                onChange={(e) => setAcceptTerms(e.target.checked)} 
+                style={{ marginTop: '0.2rem' }} 
+              />
+              <span>
+                J'accepte les <Link to="/conditions" style={{ color: 'var(--mm-text)', fontWeight: 600 }}>conditions d'utilisation</Link> et la <Link to="/confidentialite" style={{ color: 'var(--mm-text)', fontWeight: 600 }}>politique de confidentialité</Link>.
+              </span>
+            </label>
+            {errors.acceptTerms && <p className="field-error" style={{ margin: '0.25rem 0 0', fontSize: '0.85rem' }}>{errors.acceptTerms}</p>}
+          </div>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          style={{
-            width: '100%',
-            marginTop: '1.5rem',
-            padding: '0.75rem',
-            background: '#cfbd97',
-            color: '#000',
-            border: 'none',
-            borderRadius: '4px',
-            fontWeight: 'bold',
-            fontSize: '1rem',
-            cursor: submitting ? 'not-allowed' : 'pointer',
-            opacity: submitting ? 0.7 : 1
-          }}
-        >
-          {submitting ? 'Création du compte...' : 'Créer mon compte'}
-        </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn btn-primary"
+            style={{
+              width: '100%',
+              marginTop: '0.75rem',
+              padding: '0.85rem',
+              fontSize: '1rem',
+              fontWeight: 600,
+              boxShadow: 'var(--mm-shadow-sm)',
+            }}
+          >
+            {submitting ? 'Création du compte...' : 'Créer mon compte'}
+          </button>
 
-        <p style={{ textAlign: 'center', fontSize: '0.9rem', marginTop: '1.5rem' }}>
-          Déjà inscrit ? <Link to="/login" style={{ color: '#000', fontWeight: 'bold' }}>Se connecter</Link>
-        </p>
-      </form>
+          <p className="muted" style={{ textAlign: 'center', fontSize: '0.925rem', margin: '0.5rem 0 0' }}>
+            Déjà inscrit ? <Link to="/login" style={{ color: 'var(--mm-text)', fontWeight: 700 }}>Se connecter</Link>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

@@ -42,46 +42,64 @@ export const MyOrdersPage: React.FC = () => {
 
   return (
     <RequireRole allowedRoles={['student']}>
-      <div className="my-orders-page" data-testid="my-orders-page">
-        <h2>Mes Commandes</h2>
+      <div className="my-orders-page" data-testid="my-orders-page" style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <header style={{ borderBottom: '1px solid var(--mm-line)', paddingBottom: '1rem', marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.85rem', margin: '0 0 0.25rem' }}>Mes Commandes</h2>
+          <p className="muted" style={{ margin: 0, fontSize: '0.95rem' }}>
+            Retrouvez l'historique et le statut en temps réel de vos commandes sur le campus.
+          </p>
+        </header>
 
-        {isLoading && <p>Chargement de vos commandes...</p>}
+        {isLoading && <p className="muted">Chargement de vos commandes...</p>}
         
-        {error && <p role="alert" data-testid="error-message">{error}</p>}
+        {error && <p className="alert alert-error" role="alert" data-testid="error-message">{error}</p>}
 
         {!isLoading && !error && orders.length === 0 && (
-          <p data-testid="no-orders">Vous n'avez pas encore passé de commande.</p>
+          <div className="empty">
+            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📋</div>
+            <p data-testid="no-orders" style={{ color: 'var(--mm-muted)', margin: 0, fontSize: '1.05rem' }}>
+              Vous n'avez pas encore passé de commande.
+            </p>
+          </div>
         )}
 
         {!isLoading && !error && orders.length > 0 && (
-          <ul className="orders-list" data-testid="orders-list">
+          <ul className="orders-list" data-testid="orders-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '1.5rem' }}>
             {orders.map((order) => (
-              <li key={order.id} className="order-card" data-testid={`order-${order.id}`}>
-                <div className="order-header">
-                  <span className="order-restaurant">{order.restaurantName}</span>
+              <li key={order.id} className="order-card card" data-testid={`order-${order.id}`} style={{ padding: '1.5rem' }}>
+                <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <span className="order-restaurant" style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--mm-text)' }}>
+                    {order.restaurantName}
+                  </span>
                   <span 
-                    className="order-status" 
-                    style={{ color: getStatusColor(order.status), fontWeight: 'bold' }}
+                    className="order-status badge" 
+                    style={{
+                      color: getStatusColor(order.status),
+                      borderColor: getStatusColor(order.status),
+                      backgroundColor: 'var(--mm-surface-subtle)',
+                      fontWeight: 700,
+                      padding: '0.25rem 0.75rem',
+                    }}
                     data-testid={`status-${order.id}`}
                   >
                     {getStatusLabel(order.status)}
                   </span>
                 </div>
                 
-                <div className="order-date">
+                <div className="order-date muted" style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
                   Commandé le {formatDate(order.createdAt)}
                 </div>
 
-                <ul className="order-items">
+                <ul className="order-items" style={{ listStyle: 'none', padding: 0, margin: '0 0 1.25rem', borderTop: '1px solid var(--mm-surface-subtle)', borderBottom: '1px solid var(--mm-surface-subtle)', paddingBlock: '0.75rem' }}>
                   {order.items.map((item) => (
-                    <li key={item.id} className="order-item">
-                      {item.quantity}x {item.name} 
-                      <span className="item-price">{item.unitPriceFc} FC</span>
+                    <li key={item.id} className="order-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', fontSize: '0.95rem' }}>
+                      <span>{item.quantity}x {item.name}</span>
+                      <span className="item-price muted">{item.unitPriceFc} FC</span>
                     </li>
                   ))}
                 </ul>
 
-                <div className="order-total">
+                <div className="order-total" style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '1.1rem' }}>
                   <strong>Total : {order.totalFc} FC</strong>
                 </div>
               </li>

@@ -1,16 +1,17 @@
 .login-page-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 160px);
   display: grid;
   place-items: center;
-  padding: 1.5rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
 }
 
 .login-card {
   width: min(100%, 28rem);
-  padding: 2rem;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 8px 30px rgb(0 0 0 / 10%);
+  padding: clamp(1.75rem, 5vw, 2.5rem);
+  border-radius: var(--mm-radius);
+  background: var(--mm-surface);
+  border: 1px solid var(--mm-line);
+  box-shadow: var(--mm-shadow);
 }
 
 .login-header,
@@ -18,10 +19,21 @@
   text-align: center;
 }
 
+.login-header h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.login-header p {
+  color: var(--mm-muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
 .login-form {
   display: grid;
-  gap: 1rem;
-  margin: 1.5rem 0;
+  gap: 1.25rem;
+  margin: 1.75rem 0;
 }
 
 .form-group {
@@ -29,29 +41,70 @@
   gap: 0.4rem;
 }
 
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--mm-text);
+}
+
 .form-group input {
-  padding: 0.7rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  min-height: 46px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mm-line);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-surface);
+  color: var(--mm-text);
+  font-size: 1rem;
 }
 
-.btn-primary {
-  padding: 0.8rem;
+.form-group input:focus {
+  border-color: var(--mm-brand);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(207, 189, 151, 0.35);
+}
+
+.login-card .btn-primary {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem 1.25rem;
   border: 0;
-  border-radius: 6px;
-  background: #26734d;
-  color: #fff;
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-brand);
+  color: var(--mm-on-brand);
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: var(--mm-transition);
 }
 
-.btn-primary:disabled {
-  opacity: 0.6;
+.login-card .btn-primary:hover:not(:disabled) {
+  background: #c3b087;
+  box-shadow: var(--mm-shadow-sm);
+}
+
+.login-card .btn-primary:disabled {
+  opacity: 0.65;
   cursor: wait;
 }
 
 .error-banner {
-  padding: 0.75rem;
-  border-radius: 6px;
-  background: #fee;
-  color: #900;
+  padding: 0.85rem 1rem;
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-danger-bg);
+  border: 1px solid var(--mm-danger-border);
+  color: var(--mm-danger);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.login-footer {
+  font-size: 0.9rem;
+  color: var(--mm-muted);
+  border-top: 1px solid var(--mm-line);
+  padding-top: 1.25rem;
+}
+
+.login-footer a {
+  color: var(--mm-text);
+  font-weight: 600;
 }

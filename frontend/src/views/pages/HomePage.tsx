@@ -25,30 +25,38 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="home-page" data-testid="home-page">
-      <header className="hero-section" style={{ marginBottom: '2rem' }}>
-        <p style={{ textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', fontSize: '0.875rem' }}>
+      <header
+        className="hero-section"
+        style={{
+          marginBottom: '2.5rem',
+          padding: 'clamp(2rem, 5vw, 3.5rem)',
+          background: 'var(--mm-surface)',
+          border: '1px solid var(--mm-line)',
+          borderRadius: 'var(--mm-radius-lg)',
+          boxShadow: 'var(--mm-shadow-sm)',
+        }}
+      >
+        <p className="eyebrow" style={{ color: 'var(--mm-accent)', marginBottom: '0.75rem' }}>
           Le campus a du goût
         </p>
-        <h1 style={{ fontSize: '2.25rem', margin: '0.5rem 0 0.5rem' }}>
+        <h1 style={{ margin: '0 0 0.5rem', color: 'var(--mm-text)' }}>
           Mon Miam Miam
         </h1>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#374151', margin: '0 0 1rem' }}>
+        <h2 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 600, color: 'var(--mm-muted)', margin: '0 0 1.25rem' }}>
           Vos repas du campus, commandés en quelques clics
         </h2>
-        <p style={{ color: '#4b5563', maxWidth: '640px', lineHeight: 1.6, marginBottom: '1rem' }}>
+        <p style={{ color: 'var(--mm-muted)', maxWidth: '640px', fontSize: '1.05rem', lineHeight: 1.65, marginBottom: '1.75rem' }}>
           Commandez votre repas dans le restaurant de votre choix. Sur place ou en livraison, cumulez des points de fidélité à chaque commande.
         </p>
-        <div style={{ marginBottom: '1.5rem' }}>
+        <div>
           <Link
             to="/register"
+            className="btn btn-primary"
             style={{
-              display: 'inline-block',
-              padding: '0.5rem 1rem',
-              backgroundColor: 'var(--mm-color-primary, #cfbd97)',
-              color: 'var(--mm-color-secondary, #000000)',
-              borderRadius: '0.375rem',
-              textDecoration: 'none',
-              fontWeight: 600,
+              padding: '0.75rem 1.5rem',
+              fontSize: '1rem',
+              borderRadius: 'var(--mm-radius-sm)',
+              boxShadow: 'var(--mm-shadow-sm)',
             }}
           >
             Créer un compte étudiant
@@ -57,9 +65,14 @@ export const HomePage: React.FC = () => {
       </header>
 
       <section aria-labelledby="restaurants-heading">
-        <h2 id="restaurants-heading" style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>
-          Nos restaurants
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+          <h2 id="restaurants-heading" style={{ margin: 0 }}>
+            Nos restaurants
+          </h2>
+          <span style={{ fontSize: '0.9rem', color: 'var(--mm-muted)' }}>
+            Sélectionnez votre table
+          </span>
+        </div>
 
         {isLoading && <Spinner label="Chargement des restaurants..." />}
 
@@ -70,22 +83,14 @@ export const HomePage: React.FC = () => {
         )}
 
         {!isLoading && !error && restaurants.length === 0 && (
-          <div>
-            <p>Aucun restaurant disponible pour le moment.</p>
+          <div className="empty">
+            <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Aucun restaurant disponible pour le moment.</p>
             {user && (
               <button
                 type="button"
+                className="btn btn-primary"
                 onClick={() => reload()}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: 'var(--mm-color-primary, #cfbd97)',
-                  color: 'var(--mm-color-secondary, #000000)',
-                  border: 'none',
-                  borderRadius: '0.375rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  marginTop: '0.5rem',
-                }}
+                style={{ marginTop: '0.5rem' }}
               >
                 Explorer nos restaurants
               </button>
@@ -98,38 +103,58 @@ export const HomePage: React.FC = () => {
             className="restaurants-grid"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
               gap: '1.5rem',
             }}
           >
             {restaurants.map((r: RestaurantItem) => (
               <Card key={r.slug} data-testid={`restaurant-card-${r.slug}`}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{r.name}</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <div
+                      style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: 'var(--mm-radius-sm)',
+                        background: r.colors?.primary ?? 'var(--mm-color-primary)',
+                        color: r.colors?.secondary ?? '#000000',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 700,
+                        fontSize: '1.1rem',
+                        boxShadow: 'var(--mm-shadow-sm)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {r.name.slice(0, 1).toUpperCase()}
+                    </div>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', letterSpacing: '-0.01em' }}>{r.name}</h3>
+                  </div>
                   <Badge kind={r.isOpenNow ? 'success' : 'neutral'}>
                     {r.isOpenNow ? 'Ouvert' : 'Fermé'}
                   </Badge>
                 </div>
 
                 {r.slogan && (
-                  <p style={{ color: '#6b7280', fontSize: '0.925rem', marginBottom: '1rem', minHeight: '2.5rem' }}>
+                  <p style={{ color: 'var(--mm-muted)', fontSize: '0.925rem', lineHeight: 1.5, marginBottom: '1.5rem', minHeight: '2.8rem' }}>
                     {r.slogan}
                   </p>
                 )}
 
-                <div style={{ marginTop: '1rem' }}>
+                <div style={{ marginTop: 'auto', paddingTop: '0.5rem' }}>
                   <button
                     type="button"
+                    className="btn btn-primary"
                     onClick={() => handleSelectRestaurant(r.slug)}
                     style={{
                       width: '100%',
-                      padding: '0.625rem 1rem',
-                      borderRadius: '0.375rem',
+                      padding: '0.75rem 1rem',
+                      borderRadius: 'var(--mm-radius-sm)',
                       backgroundColor: r.colors?.primary ?? 'var(--mm-color-primary, #cfbd97)',
                       color: r.colors?.secondary ?? 'var(--mm-color-secondary, #000000)',
-                      border: 'none',
                       fontWeight: 600,
-                      cursor: 'pointer',
+                      boxShadow: 'var(--mm-shadow-sm)',
                     }}
                     data-testid={`select-restaurant-${r.slug}`}
                   >

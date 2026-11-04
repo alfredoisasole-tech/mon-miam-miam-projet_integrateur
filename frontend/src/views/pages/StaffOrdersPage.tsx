@@ -67,28 +67,23 @@ export const StaffOrdersPage: React.FC = () => {
   };
 
   return (
-    <div className="staff-orders-page" data-testid="staff-orders-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+    <div className="staff-orders-page" data-testid="staff-orders-page" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--mm-line)', paddingBottom: '1.25rem', marginBottom: '2rem' }}>
         <div>
-          <h2 style={{ margin: '0 0 0.5rem' }}>Les commandes du service</h2>
-          <p style={{ margin: 0, color: '#6b7280' }}>
+          <div className="eyebrow" style={{ color: 'var(--mm-accent)', marginBottom: '0.25rem' }}>Espace Cuisine & Service</div>
+          <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.85rem' }}>Les commandes du service</h2>
+          <p className="muted" style={{ margin: 0, fontSize: '0.95rem' }}>
             Gestion en direct des commandes du restaurant.
           </p>
         </div>
         <button
           type="button"
           onClick={() => reload()}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#f3f4f6',
-            border: '1px solid #d1d5db',
-            borderRadius: '0.375rem',
-            cursor: 'pointer',
-            fontWeight: 500,
-          }}
+          className="btn btn-outline"
           data-testid="refresh-button"
+          style={{ gap: '0.5rem' }}
         >
-          Actualiser
+          <span>↻</span> Actualiser
         </button>
       </div>
 
@@ -96,21 +91,15 @@ export const StaffOrdersPage: React.FC = () => {
       <div
         role="tablist"
         aria-label="Filtrer les commandes"
-        style={{ display: 'flex', gap: '0.5rem', borderBottom: '2px solid #e5e7eb', marginBottom: '1.5rem' }}
+        className="tabs"
+        style={{ marginBottom: '2rem' }}
       >
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === 'active'}
           onClick={() => setActiveTab('active')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            border: 'none',
-            background: 'none',
-            borderBottom: activeTab === 'active' ? '3px solid var(--mm-color-primary, #cfbd97)' : '3px solid transparent',
-            fontWeight: activeTab === 'active' ? 'bold' : 'normal',
-            cursor: 'pointer',
-          }}
+          className={`tab ${activeTab === 'active' ? 'active' : ''}`}
           data-testid="tab-active"
         >
           En cours ({activeOrders.length})
@@ -121,14 +110,7 @@ export const StaffOrdersPage: React.FC = () => {
           role="tab"
           aria-selected={activeTab === 'completed'}
           onClick={() => setActiveTab('completed')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            border: 'none',
-            background: 'none',
-            borderBottom: activeTab === 'completed' ? '3px solid var(--mm-color-primary, #cfbd97)' : '3px solid transparent',
-            fontWeight: activeTab === 'completed' ? 'bold' : 'normal',
-            cursor: 'pointer',
-          }}
+          className={`tab ${activeTab === 'completed' ? 'active' : ''}`}
           data-testid="tab-completed"
         >
           Terminées ({completedOrders.length})
@@ -139,14 +121,7 @@ export const StaffOrdersPage: React.FC = () => {
           role="tab"
           aria-selected={activeTab === 'cancelled'}
           onClick={() => setActiveTab('cancelled')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            border: 'none',
-            background: 'none',
-            borderBottom: activeTab === 'cancelled' ? '3px solid var(--mm-color-primary, #cfbd97)' : '3px solid transparent',
-            fontWeight: activeTab === 'cancelled' ? 'bold' : 'normal',
-            cursor: 'pointer',
-          }}
+          className={`tab ${activeTab === 'cancelled' ? 'active' : ''}`}
           data-testid="tab-cancelled"
         >
           Annulées ({cancelledOrders.length})
@@ -154,13 +129,13 @@ export const StaffOrdersPage: React.FC = () => {
       </div>
 
       {actionError && (
-        <div style={{ marginBottom: '1rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <Alert kind="error">{actionError}</Alert>
         </div>
       )}
 
       {error && (
-        <div style={{ marginBottom: '1rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <Alert kind="error">{error}</Alert>
         </div>
       )}
@@ -168,244 +143,263 @@ export const StaffOrdersPage: React.FC = () => {
       {isLoading && orders.length === 0 ? (
         <Spinner label="Chargement des commandes..." />
       ) : displayedOrders.length === 0 ? (
-        <Card>
-          <p style={{ color: '#6b7280', textAlign: 'center', margin: '2rem 0' }}>
+        <div className="empty">
+          <p style={{ color: 'var(--mm-muted)', margin: 0, fontSize: '1.05rem' }}>
             Aucune commande dans cet onglet.
           </p>
-        </Card>
+        </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table
-            style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              backgroundColor: '#fff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '0.5rem',
-            }}
-          >
-            <thead>
-              <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
-                <th style={{ padding: '0.75rem 1rem' }}>Numéro</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Service</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Articles</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Total</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Paiement</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Statut</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayedOrders.map((order: StaffOrder) => {
-                const isBusy = updatingId === order.id;
+        <Card>
+          <div style={{ overflowX: 'auto' }}>
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                textAlign: 'left',
+              }}
+            >
+              <thead>
+                <tr style={{ borderBottom: '1.5px solid var(--mm-line)', color: 'var(--mm-muted)', fontSize: '0.85rem' }}>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Numéro</th>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Service</th>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Articles</th>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Total</th>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Paiement</th>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Statut</th>
+                  <th style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayedOrders.map((order: StaffOrder) => {
+                  const isBusy = updatingId === order.id;
 
-                return (
-                  <tr
-                    key={order.id}
-                    data-testid={`order-row-${order.id}`}
-                    style={{ borderBottom: '1px solid #e5e7eb' }}
-                  >
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>
-                      {order.orderNumber}
-                    </td>
+                  return (
+                    <tr
+                      key={order.id}
+                      data-testid={`order-row-${order.id}`}
+                      style={{ borderBottom: '1px solid var(--mm-surface-subtle)', transition: 'background-color 0.15s ease' }}
+                    >
+                      <td style={{ padding: '1rem', fontWeight: 700, fontSize: '0.95rem', color: 'var(--mm-text)' }}>
+                        {order.orderNumber}
+                      </td>
 
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      {order.type === 'dine_in' ? 'Sur place' : 'Livraison'}
-                      {order.arrivalTime && (
-                        <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                          Arrivée : {new Date(order.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <td style={{ padding: '1rem', fontSize: '0.9rem' }}>
+                        <div style={{ fontWeight: 600 }}>{order.type === 'dine_in' ? 'Sur place' : 'Livraison'}</div>
+                        {order.arrivalTime && (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--mm-muted)' }}>
+                            Arrivée : {new Date(order.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        )}
+                        {order.delivery?.commune && (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--mm-muted)' }}>
+                            {order.delivery.commune}
+                          </div>
+                        )}
+                      </td>
+
+                      <td style={{ padding: '1rem', fontSize: '0.9rem', maxWidth: '280px' }}>
+                        <div style={{ fontWeight: 500 }}>
+                          {order.items.map((i) => `${i.name} × ${i.quantity}`).join(', ')}
                         </div>
-                      )}
-                    </td>
+                      </td>
 
-                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem' }}>
-                      {order.items.map((i) => `${i.name} × ${i.quantity}`).join(', ')}
-                    </td>
+                      <td style={{ padding: '1rem', fontWeight: 700, fontSize: '1rem' }}>
+                        {formatPrice(order.totalFc)}
+                      </td>
 
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>
-                      {formatPrice(order.totalFc)}
-                    </td>
+                      <td style={{ padding: '1rem' }}>
+                        <Badge kind={order.paymentStatus === 'paid' ? 'success' : 'neutral'}>
+                          {PAYMENT_LABELS[order.paymentStatus] ?? order.paymentStatus}
+                        </Badge>
+                      </td>
 
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <Badge kind={order.paymentStatus === 'paid' ? 'success' : 'neutral'}>
-                        {PAYMENT_LABELS[order.paymentStatus] ?? order.paymentStatus}
-                      </Badge>
-                    </td>
+                      <td style={{ padding: '1rem' }}>
+                        <Badge kind={order.status === 'completed' ? 'success' : order.status === 'cancelled' ? 'neutral' : 'info'}>
+                          {STATUS_LABELS[order.status] ?? order.status}
+                        </Badge>
+                      </td>
 
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <Badge kind={order.status === 'completed' ? 'success' : order.status === 'cancelled' ? 'neutral' : 'info'}>
-                        {STATUS_LABELS[order.status] ?? order.status}
-                      </Badge>
-                    </td>
-
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        {order.status === 'pending' && (
-                          <>
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => handleAction(order.id, 'confirmed')}
-                              style={{
-                                padding: '0.375rem 0.75rem',
-                                backgroundColor: '#10b981',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '0.25rem',
-                                cursor: 'pointer',
-                                fontWeight: 500,
-                              }}
-                              data-testid={`btn-confirm-${order.id}`}
-                            >
-                              Confirmer
-                            </button>
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => handleAction(order.id, 'cancelled')}
-                              style={{
-                                padding: '0.375rem 0.75rem',
-                                backgroundColor: '#ef4444',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '0.25rem',
-                                cursor: 'pointer',
-                                fontWeight: 500,
-                              }}
-                              data-testid={`btn-cancel-${order.id}`}
-                            >
-                              Annuler
-                            </button>
-                          </>
-                        )}
-
-                        {order.status === 'confirmed' && (
-                          <>
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => handleAction(order.id, 'preparing')}
-                              style={{
-                                padding: '0.375rem 0.75rem',
-                                backgroundColor: '#3b82f6',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '0.25rem',
-                                cursor: 'pointer',
-                                fontWeight: 500,
-                              }}
-                              data-testid={`btn-preparing-${order.id}`}
-                            >
-                              En préparation
-                            </button>
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => handleAction(order.id, 'cancelled')}
-                              style={{
-                                padding: '0.375rem 0.75rem',
-                                backgroundColor: '#ef4444',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '0.25rem',
-                                cursor: 'pointer',
-                                fontWeight: 500,
-                              }}
-                              data-testid={`btn-cancel-${order.id}`}
-                            >
-                              Annuler
-                            </button>
-                          </>
-                        )}
-
-                        {order.status === 'preparing' && (
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => handleAction(order.id, 'ready')}
-                            style={{
-                              padding: '0.375rem 0.75rem',
-                              backgroundColor: '#8b5cf6',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: '0.25rem',
-                              cursor: 'pointer',
-                              fontWeight: 500,
-                            }}
-                            data-testid={`btn-ready-${order.id}`}
-                          >
-                            Prête
-                          </button>
-                        )}
-
-                        {order.status === 'ready' && (
-                          <>
-                            {order.type === 'delivery' && (
+                      <td style={{ padding: '1rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          {order.status === 'pending' && (
+                            <>
                               <button
                                 type="button"
                                 disabled={isBusy}
-                                onClick={() => handleAction(order.id, 'out_for_delivery')}
+                                onClick={() => handleAction(order.id, 'confirmed')}
+                                className="btn btn-primary"
                                 style={{
-                                  padding: '0.375rem 0.75rem',
-                                  backgroundColor: '#f59e0b',
-                                  color: '#fff',
-                                  border: 'none',
-                                  borderRadius: '0.25rem',
-                                  cursor: 'pointer',
-                                  fontWeight: 500,
+                                  padding: '0.35rem 0.85rem',
+                                  fontSize: '0.85rem',
+                                  minHeight: '34px',
+                                  borderRadius: 'var(--mm-radius-sm)',
                                 }}
-                                data-testid={`btn-delivery-${order.id}`}
+                                data-testid={`btn-confirm-${order.id}`}
                               >
-                                En livraison
+                                Confirmer
                               </button>
-                            )}
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => handleAction(order.id, 'cancelled')}
+                                style={{
+                                  padding: '0.35rem 0.85rem',
+                                  fontSize: '0.85rem',
+                                  minHeight: '34px',
+                                  borderRadius: 'var(--mm-radius-sm)',
+                                  background: 'var(--mm-danger-bg)',
+                                  color: 'var(--mm-danger)',
+                                  border: '1px solid var(--mm-danger-border)',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
+                                data-testid={`btn-cancel-${order.id}`}
+                              >
+                                Annuler
+                              </button>
+                            </>
+                          )}
+
+                          {order.status === 'confirmed' && (
+                            <>
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => handleAction(order.id, 'preparing')}
+                                style={{
+                                  padding: '0.35rem 0.85rem',
+                                  fontSize: '0.85rem',
+                                  minHeight: '34px',
+                                  borderRadius: 'var(--mm-radius-sm)',
+                                  background: 'var(--mm-info-bg)',
+                                  color: 'var(--mm-info)',
+                                  border: '1px solid var(--mm-info-border)',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
+                                data-testid={`btn-preparing-${order.id}`}
+                              >
+                                En préparation
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => handleAction(order.id, 'cancelled')}
+                                style={{
+                                  padding: '0.35rem 0.85rem',
+                                  fontSize: '0.85rem',
+                                  minHeight: '34px',
+                                  borderRadius: 'var(--mm-radius-sm)',
+                                  background: 'var(--mm-danger-bg)',
+                                  color: 'var(--mm-danger)',
+                                  border: '1px solid var(--mm-danger-border)',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
+                                data-testid={`btn-cancel-${order.id}`}
+                              >
+                                Annuler
+                              </button>
+                            </>
+                          )}
+
+                          {order.status === 'preparing' && (
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => handleAction(order.id, 'ready')}
+                              style={{
+                                padding: '0.35rem 0.85rem',
+                                fontSize: '0.85rem',
+                                minHeight: '34px',
+                                borderRadius: 'var(--mm-radius-sm)',
+                                background: 'var(--mm-ready-bg)',
+                                color: 'var(--mm-ready)',
+                                border: '1px solid var(--mm-ready-border)',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                              data-testid={`btn-ready-${order.id}`}
+                            >
+                              Prête
+                            </button>
+                          )}
+
+                          {order.status === 'ready' && (
+                            <>
+                              {order.type === 'delivery' && (
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() => handleAction(order.id, 'out_for_delivery')}
+                                  style={{
+                                    padding: '0.35rem 0.85rem',
+                                    fontSize: '0.85rem',
+                                    minHeight: '34px',
+                                    borderRadius: 'var(--mm-radius-sm)',
+                                    background: 'var(--mm-pending-bg)',
+                                    color: 'var(--mm-pending)',
+                                    border: '1px solid var(--mm-pending-border)',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                  }}
+                                  data-testid={`btn-delivery-${order.id}`}
+                                >
+                                  En livraison
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => handleAction(order.id, 'completed')}
+                                style={{
+                                  padding: '0.35rem 0.85rem',
+                                  fontSize: '0.85rem',
+                                  minHeight: '34px',
+                                  borderRadius: 'var(--mm-radius-sm)',
+                                  background: 'var(--mm-ok-bg)',
+                                  color: 'var(--mm-ok)',
+                                  border: '1px solid var(--mm-ok-border)',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
+                                data-testid={`btn-complete-${order.id}`}
+                              >
+                                Terminée
+                              </button>
+                            </>
+                          )}
+
+                          {order.status === 'out_for_delivery' && (
                             <button
                               type="button"
                               disabled={isBusy}
                               onClick={() => handleAction(order.id, 'completed')}
                               style={{
-                                padding: '0.375rem 0.75rem',
-                                backgroundColor: '#10b981',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '0.25rem',
+                                padding: '0.35rem 0.85rem',
+                                fontSize: '0.85rem',
+                                minHeight: '34px',
+                                borderRadius: 'var(--mm-radius-sm)',
+                                background: 'var(--mm-ok-bg)',
+                                color: 'var(--mm-ok)',
+                                border: '1px solid var(--mm-ok-border)',
+                                fontWeight: 600,
                                 cursor: 'pointer',
-                                fontWeight: 500,
                               }}
                               data-testid={`btn-complete-${order.id}`}
                             >
                               Terminée
                             </button>
-                          </>
-                        )}
-
-                        {order.status === 'out_for_delivery' && (
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => handleAction(order.id, 'completed')}
-                            style={{
-                              padding: '0.375rem 0.75rem',
-                              backgroundColor: '#10b981',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: '0.25rem',
-                              cursor: 'pointer',
-                              fontWeight: 500,
-                            }}
-                            data-testid={`btn-complete-${order.id}`}
-                          >
-                            Terminée
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
     </div>
   );
