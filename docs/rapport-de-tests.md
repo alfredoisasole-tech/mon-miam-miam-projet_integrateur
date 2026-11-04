@@ -6,12 +6,12 @@ Ce rapport répond au livrable « Rapport de test avec couverture des fonctionna
 
 | Partie | Outil | Tests | Résultat |
 |---|---|---|---|
-| Serveur (API, règles métier, base de données) | `node:test` | 351 | tous réussis |
-| Site (écrans, contrôleurs) | Vitest | 223 | tous réussis |
+| Serveur (API, règles métier, base de données) | `node:test` | 358 | tous réussis |
+| Site (écrans, contrôleurs) | Vitest | 233 | tous réussis |
 | Typage | `tsc --noEmit` (serveur et site) | — | sans erreur |
 | Construction du site | `vite build` | — | réussie |
 
-Ces nombres sont ceux de la branche qui empile toutes les évolutions (voir les pull requests ouvertes). Ils sont recalculés à chaque envoi de code par l'intégration continue (voir [ci-cd.md](ci-cd.md)).
+Ces nombres sont ceux de `dev` après fusion de toutes les évolutions de la version complète. Ils sont recalculés à chaque envoi de code par l'intégration continue (voir [ci-cd.md](ci-cd.md)).
 
 ## Relancer les tests
 
