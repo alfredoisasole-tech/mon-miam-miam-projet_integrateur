@@ -67,7 +67,7 @@ export interface LayoutViewProps {
 
 /** Pages de la plateforme : charte fixe. Le reste (menu, panier, commandes, points, personnel…) prend la charte du restaurant. */
 const PLATFORM_PATHS = new Set(['/', '/orders', '/login', '/register', '/forgot-password', '/profile', '/plateforme']);
-export const isPlatformPage = (pathname: string) => PLATFORM_PATHS.has(pathname) || pathname.startsWith('/legal');
+export const isPlatformPage = (pathname: string) => PLATFORM_PATHS.has(pathname) || pathname.startsWith('/legal') || pathname.startsWith('/paiement');
 
 /** Revient en haut de page à chaque changement de page, comme sur un site classique. */
 function ScrollToTop() {
