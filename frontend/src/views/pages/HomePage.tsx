@@ -4,6 +4,7 @@ import { useRestaurants, type RestaurantItem } from '../../controllers/restauran
 import { useAuth, useRestaurant } from '../../controllers/session.tsx';
 import { Alert, Badge, Card, Spinner } from '../components/ui.tsx';
 import { RestaurantLogo } from '../components/RestaurantLogo.tsx';
+import './home.css';
 
 function useOptionalAuth() {
   try {
@@ -36,123 +37,79 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="home-page" data-testid="home-page">
-      <header className="hero-section" style={{ marginBottom: '2rem' }}>
-        <p style={{ textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--mm-muted)', fontSize: '0.875rem' }}>
-          Le campus a du goût
-        </p>
-        <h1 style={{ fontSize: '2.25rem', margin: '0.5rem 0 0.5rem' }}>
-          Mon Miam Miam
-        </h1>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--mm-text)', margin: '0 0 1rem' }}>
-          Vos repas du campus, commandés en quelques clics
-        </h2>
-        <p style={{ color: 'var(--mm-muted)', maxWidth: '640px', lineHeight: 1.6, marginBottom: '1rem' }}>
-          Commandez votre repas dans le restaurant de votre choix. Sur place ou en livraison, cumulez des points de fidélité à chaque commande.
-        </p>
-        {!user && <div style={{ marginBottom: '1.5rem' }}>
-          <Link
-            to="/register"
-            style={{
-              display: 'inline-block',
-              padding: '0.5rem 1rem',
-              backgroundColor: 'var(--mm-brand)',
-              color: 'var(--mm-on-brand)',
-              borderRadius: '0.375rem',
-              textDecoration: 'none',
-              fontWeight: 600,
-            }}
-          >
-            Créer un compte étudiant
-          </Link>
-        </div>}
-      </header>
+      <section className="home-hero" aria-labelledby="home-title">
+        <div className="home-hero-text">
+          <p className="eyebrow">La pause qui fait du bien</p>
+          <h1 id="home-title">Les saveurs du campus à portée de main.</h1>
+          <p className="home-lead">
+            Commandez auprès de vos restaurants préférés, retirez sans file d’attente ou faites-vous livrer sur le campus.
+            Sur place ou en livraison, cumulez des points de fidélité à chaque commande.
+          </p>
+          <div className="home-actions">
+            <a className="btn btn-primary" href="#restaurants">Découvrir les restaurants →</a>
+            {!user && <Link className="btn" to="/register">Créer un compte étudiant</Link>}
+          </div>
+        </div>
+        <div className="home-hero-visual" aria-hidden="true">
+          <img src="/mon-miam-miam.svg" alt="" />
+          <p>Un compte, plusieurs restaurants.</p>
+        </div>
+      </section>
 
-      <section aria-labelledby="restaurants-heading">
-        <h2 id="restaurants-heading" style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>
-          Nos restaurants
-        </h2>
+      <section id="restaurants" aria-labelledby="restaurants-heading" className="home-section">
+        <p className="eyebrow">Les adresses du campus</p>
+        <h2 id="restaurants-heading">Nos restaurants</h2>
+        <p className="muted home-section-intro">Chaque restaurant prépare ses plats en direct et garde son identité, son menu et son panier.</p>
 
         {isLoading && <Spinner label="Chargement des restaurants..." />}
 
-        {error && (
-          <Alert kind="error">
-            {error}
-          </Alert>
-        )}
+        {error && <Alert kind="error">{error}</Alert>}
 
         {!isLoading && !error && restaurants.length === 0 && (
           <div>
             <p>Aucun restaurant disponible pour le moment.</p>
-            <button
-                type="button"
-                onClick={() => reload()}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: 'var(--mm-brand)',
-                  color: 'var(--mm-on-brand)',
-                  border: 'none',
-                  borderRadius: '0.375rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  marginTop: '0.5rem',
-                }}
-              >
-                Réessayer
-              </button>
+            <button type="button" className="btn btn-primary" onClick={() => reload()}>Réessayer</button>
           </div>
         )}
 
         {!isLoading && !error && restaurants.length > 0 && (
-          <div
-            className="restaurants-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '1.5rem',
-            }}
-          >
+          <div className="restaurants-grid">
             {restaurants.map((r: RestaurantItem) => (
               <Card key={r.slug} data-testid={`restaurant-card-${r.slug}`}>
                 <RestaurantLogo name={r.name} logoUrl={r.logoUrl} primary={r.colors?.primary} secondary={r.colors?.secondary} />
-                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.25rem', flex: '1 1 8rem', overflowWrap: 'normal' }}>{r.name}</h3>
+                <div className="restaurant-card-head">
+                  <h3>{r.name}</h3>
                   <span>
                     {user && slug === r.slug && <Badge kind="info">Dernier visité</Badge>}{' '}
-                    <Badge kind={r.isOpenNow ? 'success' : 'neutral'}>
-                      {r.isOpenNow ? 'Ouvert' : 'Fermé'}
-                    </Badge>
+                    <Badge kind={r.isOpenNow ? 'success' : 'neutral'}>{r.isOpenNow ? 'Ouvert' : 'Fermé'}</Badge>
                   </span>
                 </div>
-
-                {r.slogan && (
-                  <p style={{ color: 'var(--mm-muted)', fontSize: '0.925rem', marginBottom: '1rem', minHeight: '2.5rem' }}>
-                    {r.slogan}
-                  </p>
-                )}
-
-                <div style={{ marginTop: '1rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectRestaurant(r.slug)}
-                    style={{
-                      width: '100%',
-                      padding: '0.625rem 1rem',
-                      borderRadius: '0.375rem',
-                      backgroundColor: r.colors?.primary ?? 'var(--mm-brand)',
-                      color: r.colors?.secondary ?? 'var(--mm-on-brand)',
-                      border: 'none',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                    data-testid={`select-restaurant-${r.slug}`}
-                  >
-                    Voir le menu
-                  </button>
-                </div>
+                {r.slogan && <p className="muted restaurant-card-slogan">{r.slogan}</p>}
+                <button type="button" className="btn restaurant-card-action" onClick={() => handleSelectRestaurant(r.slug)} data-testid={`select-restaurant-${r.slug}`}>
+                  Voir le menu
+                </button>
               </Card>
             ))}
           </div>
         )}
+      </section>
+
+      <section className="home-section" aria-labelledby="how-heading">
+        <p className="eyebrow home-center">Le service en 3 étapes</p>
+        <h2 id="how-heading" className="home-center">Comment ça marche ?</h2>
+        <ol className="home-steps">
+          <li><span className="home-step-number" aria-hidden="true">1</span><h3>Choisissez vos plats</h3><p>Menus du jour, spécialités locales et boissons fraîches préparés par vos restaurateurs.</p></li>
+          <li><span className="home-step-number" aria-hidden="true">2</span><h3>Payez comme vous voulez</h3><p>Par Mobile Money dès la commande, ou en espèces au retrait ou à la livraison.</p></li>
+          <li><span className="home-step-number" aria-hidden="true">3</span><h3>Retirez ou faites-vous livrer</h3><p>Présentez votre numéro de commande au comptoir ou recevez votre repas directement sur le campus.</p></li>
+        </ol>
+      </section>
+
+      <section className="home-loyalty" aria-labelledby="loyalty-heading">
+        <p className="eyebrow">Programme de fidélité</p>
+        <h2 id="loyalty-heading">Vos pauses ont de la valeur</h2>
+        <p>Gagnez des points à chaque repas, dans chaque restaurant, et profitez de réductions sur vos prochaines commandes. Les règles (dépense par point, valeur de la récompense) sont propres à chaque restaurant.</p>
+        <p className="home-loyalty-rule">Parrainez vos amis : le code personnel se trouve dans votre compte.</p>
+        {!user && <Link className="btn btn-primary" to="/register">Rejoindre le programme</Link>}
       </section>
     </div>
   );
