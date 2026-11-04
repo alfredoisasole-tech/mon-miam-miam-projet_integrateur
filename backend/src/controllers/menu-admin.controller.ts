@@ -41,8 +41,11 @@ function validateFields(body: Record<string, unknown>, fields: Set<string>, part
   if (!keys.length || keys.some((key) => !fields.has(key))) {
     throw new AppError(400, 'INVALID_BODY', 'Les champs de modification du plat sont invalides.');
   }
-  if (!partial && [...fields].some((field) => !(field in body))) {
+  if (!partial && [...fields].some((field) => field !== 'imageAssetId' && !(field in body))) {
     throw new AppError(400, 'INVALID_BODY', 'Tous les champs du plat sont obligatoires.');
+  }
+  if ('imageAssetId' in body && body['imageAssetId'] !== null && (typeof body['imageAssetId'] !== 'string' || !body['imageAssetId'].trim())) {
+    throw new AppError(400, 'INVALID_BODY', 'imageAssetId doit être un identifiant d’image ou null.');
   }
   if ('name' in body && (typeof body['name'] !== 'string' || body['name'].trim().length < 2 || body['name'].trim().length > 80)) {
     throw new AppError(400, 'INVALID_BODY', 'Le nom du plat doit contenir de 2 à 80 caractères.');
@@ -76,6 +79,16 @@ function menuDish(row: MenuDishRow) {
       ? `/api/restaurants/${encodeURIComponent(row.restaurant_slug)}/assets/${encodeURIComponent(row.image_asset_id)}`
       : null,
   };
+}
+
+/** Une image de plat doit avoir été envoyée par le même restaurant (type « menu »). */
+function requireMenuImage(db: Database, restaurantId: string, assetId: unknown): string | null {
+  if (typeof assetId !== 'string') return null;
+  const id = assetId.trim();
+  if (!db.get("SELECT 1 AS found FROM assets WHERE id = ? AND restaurant_id = ? AND kind = 'menu'", [id, restaurantId])) {
+    throw new AppError(422, 'ASSET_NOT_FOUND', 'Image introuvable pour ce restaurant : envoyez-la d’abord.');
+  }
+  return id;
 }
 
 function findDish(db: Database, restaurantId: string, id: string): MenuDishRow | undefined {
@@ -139,7 +152,8 @@ export function registerMenuAdminRoutes(
     if (!user) return;
     try {
       const body = requestObject(req.body);
-      validateFields(body, new Set(['name', 'description', 'priceFc', 'category', 'isDaily', 'isAvailable']), false);
+      validateFields(body, new Set(['name', 'description', 'priceFc', 'category', 'isDaily', 'isAvailable', 'imageAssetId']), false);
+      const imageAssetId = requireMenuImage(db, user.restaurantId, body['imageAssetId']);
       const id = `itm_${randomUUID()}`;
       const timestamp = now();
       db.transaction(() => {
@@ -149,11 +163,11 @@ export function registerMenuAdminRoutes(
         `, [user.restaurantId])?.next_position ?? 0;
         db.run(`
           INSERT INTO menu_items (
-            id, restaurant_id, name, description, price_fc, category, is_daily, is_available, position, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            id, restaurant_id, name, description, price_fc, category, is_daily, is_available, position, image_asset_id, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [id, user.restaurantId, (body['name'] as string).trim(),
           (body['description'] as string).trim() || null, body['priceFc'] as number, body['category'] as string,
-          body['isDaily'] ? 1 : 0, body['isAvailable'] ? 1 : 0, position, timestamp, timestamp]);
+          body['isDaily'] ? 1 : 0, body['isAvailable'] ? 1 : 0, position, imageAssetId, timestamp, timestamp]);
       });
       const row = findDish(db, user.restaurantId, id);
       if (!row) throw new Error('Le plat créé ne peut pas être relu.');
@@ -166,12 +180,13 @@ export function registerMenuAdminRoutes(
     if (!user) return;
     try {
       const body = requestObject(req.body);
-      validateFields(body, new Set(['name', 'description', 'priceFc', 'category', 'isDaily', 'isAvailable']), true);
+      validateFields(body, new Set(['name', 'description', 'priceFc', 'category', 'isDaily', 'isAvailable', 'imageAssetId']), true);
       const id = req.params['id'];
       if (typeof id !== 'string') throw new AppError(404, 'MENU_ITEM_NOT_FOUND', 'Plat introuvable.');
+      if ('imageAssetId' in body) body['imageAssetId'] = requireMenuImage(db, user.restaurantId, body['imageAssetId']);
       const columns: Record<string, string> = {
         name: 'name', description: 'description', priceFc: 'price_fc', category: 'category',
-        isDaily: 'is_daily', isAvailable: 'is_available',
+        isDaily: 'is_daily', isAvailable: 'is_available', imageAssetId: 'image_asset_id',
       };
       const sets: string[] = [];
       const values: Array<string | number | null> = [];
