@@ -117,6 +117,11 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { background
 .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .grid > *, .two > *, .card, .field { min-width: 0; }
 .card, .dish-card { border: 1px solid var(--mm-line); border-radius: var(--mm-radius); background: var(--mm-surface); padding: clamp(1rem, 3vw, 1.5rem); overflow-wrap: anywhere; }
+.in-cart-badge { display: inline-block; margin: .25rem .5rem .25rem 0; padding: .15rem .6rem; border-radius: 999px; background: var(--mm-accent); color: var(--mm-on-accent, var(--mm-text)); font-size: .85rem; font-weight: 600; }
+.cart-summary { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1.5rem; padding: .75rem 1rem; border: 1px solid var(--mm-line); border-radius: var(--mm-radius); background: var(--mm-surface); box-shadow: 0 -2px 8px rgb(0 0 0 / .12); }
+.cart-summary details { flex: 1 1 14rem; min-width: 0; }
+.cart-summary summary { cursor: pointer; }
+.cart-summary-lines { margin: .5rem 0 0; padding-left: 1.1rem; }
 .card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .75rem; margin-bottom: 1rem; }
 .card-head h2 { margin: 0; }
 .field { display: grid; gap: .4rem; margin-bottom: 1rem; }
