@@ -5,6 +5,9 @@ export interface RestaurantBrand {
   slug: string;
   name: string;
   colors: { primary: string; secondary: string };
+  logoUrl?: string | null;
+  fontFamily?: string;
+  defaultMode?: 'light' | 'dark' | 'system';
 }
 
 export function useRestaurantProfile(slug: string | null) {
