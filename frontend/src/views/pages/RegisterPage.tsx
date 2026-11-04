@@ -1,12 +1,19 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useRegister } from '../../controllers/auth';
+import { useRestaurants } from '../../controllers/restaurants';
+import { useRestaurant } from '../../controllers/session';
 
-/* TODO: Dès que Emmanuel fusionne E-5, remplacer ces éléments HTML 
+/* TODO: Dès que Emmanuel fusionne E-5, remplacer ces éléments HTML
    par les composants importés de '../components/ui' (Field, Input, Alert, Spinner) */
 
 export function RegisterPage() {
   const { submit, submitting, errors } = useRegister();
+  const { slug } = useRestaurant();
+  const { restaurants } = useRestaurants();
+  // Le restaurant mémorisé par le site, sinon le seul restaurant disponible, sinon à choisir.
+  const [chosenRestaurant, setChosenRestaurant] = useState<string>(slug ?? '');
+  const restaurant = chosenRestaurant || (restaurants.length === 1 ? restaurants[0]!.slug : '');
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -30,7 +37,7 @@ export function RegisterPage() {
       confirmPassword,
       acceptTerms,
       referralCode: referral.trim() || undefined,
-    });
+    }, restaurant);
   }
 
   // Styles simples respectant la charte (#cfbd97 et #000000) en attendant E-5
@@ -54,6 +61,16 @@ export function RegisterPage() {
       )}
 
       <form className="mm-form" onSubmit={onSubmit} noValidate>
+        {restaurants.length > 0 && (
+          <div>
+            <label className={labelClass} htmlFor="register-restaurant">Restaurant</label>
+            <select id="register-restaurant" name="restaurant" value={restaurant} onChange={(e) => setChosenRestaurant(e.target.value)} className={inputClass}>
+              <option value="">Choisissez un restaurant</option>
+              {restaurants.map((item) => <option key={item.slug} value={item.slug}>{item.name}</option>)}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className={labelClass}>Nom complet</label>
           <input type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} aria-invalid={!!errors.name} />
