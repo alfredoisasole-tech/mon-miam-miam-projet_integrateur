@@ -147,8 +147,8 @@ export const CartPage: React.FC = () => {
               style={{
                 display: 'inline-block',
                 padding: '0.625rem 1.25rem',
-                backgroundColor: 'var(--mm-color-primary, #cfbd97)',
-                color: 'var(--mm-color-secondary, #000000)',
+                backgroundColor: 'var(--mm-brand)',
+                color: 'var(--mm-on-brand)',
                 textDecoration: 'none',
                 borderRadius: '0.375rem',
                 fontWeight: 600,
@@ -165,7 +165,7 @@ export const CartPage: React.FC = () => {
               style={{
                 padding: '0.625rem 1.25rem',
                 backgroundColor: 'transparent',
-                border: '1px solid #d1d5db',
+                border: '1px solid var(--mm-line)',
                 borderRadius: '0.375rem',
                 cursor: 'pointer',
               }}
@@ -181,9 +181,9 @@ export const CartPage: React.FC = () => {
   if (cart.lines.length === 0) {
     return (
       <div className="cart-page empty-cart" data-testid="empty-cart">
-        <h2>Votre panier</h2>
+        <h1>Votre panier</h1>
         <Card>
-          <p style={{ color: '#6b7280', fontSize: '1.1rem', margin: '1rem 0' }}>
+          <p style={{ color: 'var(--mm-muted)', fontSize: '1.1rem', margin: '1rem 0' }}>
             Votre panier est vide pour le moment.
           </p>
           <Link
@@ -191,8 +191,8 @@ export const CartPage: React.FC = () => {
             style={{
               display: 'inline-block',
               padding: '0.625rem 1.25rem',
-              backgroundColor: 'var(--mm-color-primary, #cfbd97)',
-              color: 'var(--mm-color-secondary, #000000)',
+              backgroundColor: 'var(--mm-brand)',
+              color: 'var(--mm-on-brand)',
               borderRadius: '0.375rem',
               textDecoration: 'none',
               fontWeight: 600,
@@ -207,7 +207,7 @@ export const CartPage: React.FC = () => {
 
   return (
     <div className="cart-page" data-testid="cart-page">
-      <h2>Votre panier</h2>
+      <h1>Votre panier</h1>
 
       {submitError && (
         <Alert kind="error">
@@ -226,7 +226,7 @@ export const CartPage: React.FC = () => {
                 data-testid={`cart-line-${line.id}`}
                 style={{
                   padding: '1rem 0',
-                  borderBottom: '1px solid #e5e7eb',
+                  borderBottom: '1px solid var(--mm-line)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
@@ -234,7 +234,7 @@ export const CartPage: React.FC = () => {
               >
                 <div>
                   <h4 style={{ margin: '0 0 0.25rem', fontSize: '1rem' }}>{line.name}</h4>
-                  <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
+                  <p style={{ margin: 0, color: 'var(--mm-muted)', fontSize: '0.875rem' }}>
                     {formatPrice(line.unitPriceFc)} × {line.quantity} = {formatPrice(line.unitPriceFc * line.quantity)}
                   </p>
                 </div>
@@ -253,8 +253,8 @@ export const CartPage: React.FC = () => {
                       width: '2rem',
                       height: '2rem',
                       borderRadius: '0.25rem',
-                      border: '1px solid #d1d5db',
-                      backgroundColor: '#f9fafb',
+                      border: '1px solid var(--mm-line)',
+                      backgroundColor: 'var(--mm-bg)',
                       cursor: 'pointer',
                       fontWeight: 'bold',
                     }}
@@ -273,8 +273,8 @@ export const CartPage: React.FC = () => {
                       width: '2rem',
                       height: '2rem',
                       borderRadius: '0.25rem',
-                      border: '1px solid #d1d5db',
-                      backgroundColor: '#f9fafb',
+                      border: '1px solid var(--mm-line)',
+                      backgroundColor: 'var(--mm-bg)',
                       cursor: 'pointer',
                       fontWeight: 'bold',
                     }}
@@ -290,7 +290,7 @@ export const CartPage: React.FC = () => {
                       marginLeft: '0.5rem',
                       background: 'none',
                       border: 'none',
-                      color: '#ef4444',
+                      color: 'var(--mm-danger)',
                       cursor: 'pointer',
                       fontSize: '0.875rem',
                     }}
@@ -352,10 +352,10 @@ export const CartPage: React.FC = () => {
                     type="time"
                     value={arrivalTime}
                     onChange={(e) => setArrivalTime(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid var(--mm-line)' }}
                     data-testid="input-arrival-time"
                   />
-                  <small style={{ color: '#6b7280' }}>Optionnel — délai recommandé : 20 min</small>
+                  <small style={{ color: 'var(--mm-muted)' }}>Optionnel — délai recommandé : 20 min</small>
                 </div>
               ) : (
                 <div style={{ marginBottom: '1.25rem' }}>
@@ -366,7 +366,7 @@ export const CartPage: React.FC = () => {
                     id="delivery-commune"
                     value={commune}
                     onChange={(e) => setCommune(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', marginBottom: '0.75rem' }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid var(--mm-line)', marginBottom: '0.75rem' }}
                     data-testid="select-commune"
                   >
                     {KINSHASA_COMMUNES.map((c) => (
@@ -385,7 +385,7 @@ export const CartPage: React.FC = () => {
                     placeholder="Bâtiment, chambre ou repère connu"
                     value={landmark}
                     onChange={(e) => setLandmark(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid var(--mm-line)' }}
                     data-testid="input-landmark"
                   />
                 </div>
@@ -426,18 +426,18 @@ export const CartPage: React.FC = () => {
               )}
 
               {/* Récapitulatif du total */}
-              <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', marginBottom: '1.25rem' }}>
+              <div style={{ padding: '1rem', backgroundColor: 'var(--mm-bg)', borderRadius: '0.375rem', marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                   <span>Sous-total :</span>
                   <span>{formatPrice(totalFc)}</span>
                 </div>
                 {redeemPoints && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a', marginBottom: '0.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--mm-ok)', marginBottom: '0.25rem' }}>
                     <span>Réduction fidélité :</span>
                     <span>− {formatPrice(discountFc)}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1rem', marginTop: '0.5rem', borderTop: '1px solid #e5e7eb', paddingTop: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1rem', marginTop: '0.5rem', borderTop: '1px solid var(--mm-line)', paddingTop: '0.5rem' }}>
                   <span>Total à payer :</span>
                   <span data-testid="net-total">{formatPrice(netTotalFc)}</span>
                 </div>
@@ -449,8 +449,8 @@ export const CartPage: React.FC = () => {
                 style={{
                   width: '100%',
                   padding: '0.75rem',
-                  backgroundColor: 'var(--mm-color-primary, #cfbd97)',
-                  color: 'var(--mm-color-secondary, #000000)',
+                  backgroundColor: 'var(--mm-brand)',
+                  color: 'var(--mm-on-brand)',
                   border: 'none',
                   borderRadius: '0.375rem',
                   fontWeight: 'bold',
