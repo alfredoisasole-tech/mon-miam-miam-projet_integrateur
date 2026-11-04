@@ -7,11 +7,10 @@ export function registerAuthRoutes(
   authenticate: RequestHandler,
   sendPasswordResetCode?: (identifier: string, code: string) => Promise<void>,
 ): void {
-  app.post('/api/restaurants/:slug/auth/register', (req, res, next) => {
-    try {
-      const body = req.body && typeof req.body === 'object' ? { ...req.body, restaurant: req.params['slug'] } : req.body;
-      res.status(201).json(service.register(body, req.ip ?? 'unknown'));
-    } catch (error) { next(error); }
+  // Inscription à la plateforme. L'ancienne adresse par restaurant reste acceptée mais le restaurant n'a plus aucun effet.
+  app.post(['/api/auth/register', '/api/restaurants/:slug/auth/register'], (req, res, next) => {
+    try { res.status(201).json(service.register(req.body as unknown, req.ip ?? 'unknown')); }
+    catch (error) { next(error); }
   });
   app.post('/api/auth/login', (req: Request, res, next) => {
     try { res.status(200).json(service.login(req.body?.identifier, req.body?.password, req.ip ?? 'unknown')); }

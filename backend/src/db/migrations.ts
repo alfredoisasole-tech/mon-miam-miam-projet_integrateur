@@ -44,6 +44,66 @@ export const migrations: Migration[] = [
     ALTER TABLE payments ADD COLUMN provider_reference TEXT;
     CREATE UNIQUE INDEX idx_payments_provider_reference ON payments (provider_reference) WHERE provider_reference IS NOT NULL;
   ` },
+  // Un compte étudiant appartient à la plateforme, plus à un restaurant : `users.restaurant_id` devient facultatif
+  // (obligatoire seulement pour le personnel) et les étudiants existants perdent leur « restaurant d'origine ».
+  // Leurs adhésions (`memberships`) restent : elles ne portent plus que les points de chaque restaurant.
+  // SQLite ne sait pas retirer un NOT NULL : la table est reconstruite (copie, suppression, recréation, recopie ;
+  // les contrôles de clés étrangères attendent la fin de la transaction), ses index et son déclencheur recréés.
+  { id: '006_students_belong_to_platform', sql: `
+    PRAGMA defer_foreign_keys = ON;
+    CREATE TEMP TABLE users_backup AS SELECT * FROM users;
+    DROP TABLE users;
+    CREATE TABLE users (
+      id TEXT PRIMARY KEY,
+      restaurant_id TEXT REFERENCES restaurants(id),
+      role TEXT NOT NULL CHECK (role IN ('student', 'employee', 'manager', 'admin')),
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      commune TEXT,
+      quartier TEXT,
+      address TEXT,
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'deleted')),
+      must_change_password INTEGER NOT NULL DEFAULT 0 CHECK (must_change_password IN (0, 1)),
+      referral_code TEXT UNIQUE,
+      referred_by TEXT REFERENCES users(id),
+      accepted_terms_at TEXT,
+      created_at TEXT NOT NULL,
+      last_login_at TEXT,
+      auth_version INTEGER NOT NULL DEFAULT 0,
+      UNIQUE (phone),
+      CHECK (role = 'student' OR restaurant_id IS NOT NULL)
+    );
+    INSERT INTO users (id, restaurant_id, role, name, email, phone, password_hash, commune, quartier, address, status,
+      must_change_password, referral_code, referred_by, accepted_terms_at, created_at, last_login_at, auth_version)
+    SELECT id, CASE WHEN role = 'student' THEN NULL ELSE restaurant_id END, role, name, email, phone, password_hash, commune,
+      quartier, address, status, must_change_password, referral_code, referred_by, accepted_terms_at, created_at, last_login_at, auth_version
+    FROM users_backup;
+    DROP TABLE users_backup;
+    CREATE UNIQUE INDEX idx_users_email_global ON users (lower(email));
+    CREATE INDEX idx_users_restaurant_role ON users (restaurant_id, role);
+    CREATE TRIGGER user_role_with_orders_guard
+    BEFORE UPDATE OF role ON users
+    WHEN NEW.role <> 'student' AND EXISTS (SELECT 1 FROM orders o WHERE o.user_id = OLD.id)
+    BEGIN SELECT RAISE(ABORT, 'an account with orders cannot stop being a student'); END;
+    DROP TRIGGER order_events_restaurant_insert;
+    DROP TRIGGER order_events_restaurant_update;
+    CREATE TRIGGER order_events_restaurant_insert
+    BEFORE INSERT ON order_events
+    WHEN NEW.user_id IS NOT NULL AND NOT EXISTS (
+      SELECT 1 FROM orders o JOIN users u ON u.id = NEW.user_id
+      WHERE o.id = NEW.order_id AND (o.restaurant_id = u.restaurant_id OR (u.role = 'student' AND o.user_id = u.id))
+    )
+    BEGIN SELECT RAISE(ABORT, 'order event actor must belong to the order restaurant'); END;
+    CREATE TRIGGER order_events_restaurant_update
+    BEFORE UPDATE OF order_id, user_id ON order_events
+    WHEN NEW.user_id IS NOT NULL AND NOT EXISTS (
+      SELECT 1 FROM orders o JOIN users u ON u.id = NEW.user_id
+      WHERE o.id = NEW.order_id AND (o.restaurant_id = u.restaurant_id OR (u.role = 'student' AND o.user_id = u.id))
+    )
+    BEGIN SELECT RAISE(ABORT, 'order event actor must belong to the order restaurant'); END;
+  ` },
 ];
 
 export function migrate(db: Database): void {

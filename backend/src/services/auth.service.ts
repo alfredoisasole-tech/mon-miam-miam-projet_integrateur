@@ -85,6 +85,7 @@ export class AuthService {
     return { id: account.id, role: account.role, restaurantId: account.restaurantId, status: account.status };
   }
 
+  /** Un compte client appartient à la plateforme : aucun restaurant à choisir, l'adhésion se crée à la première commande de chaque restaurant. */
   register(input: unknown, ip = 'unknown'): {
     token: string;
     user: ReturnType<typeof publicAccount> & { memberships: Array<{ restaurant: string; since: string }> };
@@ -114,7 +115,6 @@ export class AuthService {
     if (typeof password !== 'string' || password.length === 0) {
       throw new AppError(400, 'INVALID_BODY', 'Le champ password est obligatoire.');
     }
-    const slug = this.requiredText(body['restaurant'], 'restaurant');
     if (body['confirmPassword'] !== undefined && body['confirmPassword'] !== password) {
       throw new AppError(400, 'INVALID_BODY', 'La confirmation du mot de passe ne correspond pas.');
     }
@@ -123,8 +123,6 @@ export class AuthService {
     }
     if (!PASSWORD_PATTERN.test(password)) throw new AppError(400, 'WEAK_PASSWORD', 'Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.');
     if (body['acceptTerms'] !== true) throw new AppError(422, 'TERMS_NOT_ACCEPTED', 'Vous devez accepter les conditions d’utilisation.');
-    const restaurant = this.db.get<{ id: string }>("SELECT id FROM restaurants WHERE slug = ? AND status = 'active'", [slug]);
-    if (!restaurant) throw new AppError(404, 'RESTAURANT_NOT_FOUND', 'Restaurant introuvable ou désactivé.');
     if (this.db.get('SELECT id FROM users WHERE lower(email) = lower(?)', [email])
       || this.db.get('SELECT id FROM platform_admins WHERE lower(email) = lower(?)', [email])) {
       throw new AppError(409, 'EMAIL_TAKEN', 'Un compte existe déjà avec cet e-mail ; connectez-vous.');
@@ -152,12 +150,11 @@ export class AuthService {
         throw new AppError(409, 'PHONE_TAKEN', 'Un compte existe déjà avec ce téléphone ; connectez-vous.');
       }
       this.db.run(`INSERT INTO users (id, restaurant_id, role, name, email, phone, password_hash, commune, quartier, address, referral_code, accepted_terms_at, created_at, referred_by)
-        VALUES (?, ?, 'student', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, restaurant.id, name, email, phone, passwordHash,
+        VALUES (?, NULL, 'student', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, name, email, phone, passwordHash,
         this.optionalText(body['commune']), this.optionalText(body['quartier']),
         this.optionalText(body['deliveryAddress'] ?? body['adresse']),
         ownReferralCode, createdAt, createdAt, referrer?.id ?? null]);
-      this.db.run('INSERT INTO memberships (user_id, restaurant_id, created_at) VALUES (?, ?, ?)', [id, restaurant.id, createdAt]);
     });
     const account = this.findAccount(id);
     if (!account) throw new Error('Le compte vient d’être créé mais ne peut pas être relu.');

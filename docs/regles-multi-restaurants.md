@@ -23,7 +23,7 @@ Une adresse e-mail correspond à un seul compte utilisateur pour toute la platef
 
 L'utilisateur choisit un restaurant dans la liste, puis consulte le menu et les promotions de celui-ci. L'interface indique le restaurant sélectionné pour que l'étudiant sache où il commande. Changer de restaurant ne crée pas un nouveau compte et ne transfère ni commandes ni points. L'étudiant ne consulte que ses propres commandes.
 
-**Création de l'adhésion :** l'étudiant s'inscrit une seule fois, sans choisir de restaurant. L'adhésion à un restaurant se crée automatiquement à la **première commande** qu'il y passe, dans la même transaction que la commande (une commande refusée n'en crée aucune). Avant cela, il consulte le menu du restaurant et voit un solde de 0 point. Techniquement, l'inscription rattache le compte à un restaurant d'origine (celui qui était consulté, sinon le premier de la liste) ; cela n'ouvre aucun droit particulier.
+**Création de l'adhésion :** l'étudiant s'inscrit une seule fois, sans choisir de restaurant. L'adhésion à un restaurant se crée automatiquement à la **première commande** qu'il y passe, dans la même transaction que la commande (une commande refusée n'en crée aucune). Avant cela, il consulte le menu du restaurant et voit un solde de 0 point. Un compte client n'est lié à aucun restaurant : il peut commander dans n'importe lequel.
 
 **Exemple :** un étudiant déjà inscrit commande chez A puis chez B avec le même e-mail et le même mot de passe, tout en conservant deux adhésions et deux soldes de points distincts.
 

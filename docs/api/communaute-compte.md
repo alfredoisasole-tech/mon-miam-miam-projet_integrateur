@@ -8,7 +8,7 @@ Le code de parrainage est **unique et global** : il fonctionne à l'inscription 
 
 ### À l'inscription
 
-`POST /api/restaurants/:slug/auth/register` accepte `referralCode` (facultatif, majuscules ou minuscules). Un code inconnu est refusé : `422 INVALID_REFERRAL_CODE`, aucun compte n'est créé.
+`POST /api/auth/register` accepte `referralCode` (facultatif, majuscules ou minuscules). Un code inconnu est refusé : `422 INVALID_REFERRAL_CODE`, aucun compte n'est créé.
 
 ### `GET /api/restaurants/:slug/referral`
 

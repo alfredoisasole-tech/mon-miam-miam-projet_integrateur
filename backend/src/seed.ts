@@ -63,7 +63,7 @@ export function seedDemoData(db: Database, credentials: SeedCredentials): 'creat
     for (const account of accounts) db.run(`INSERT INTO users (
       id, restaurant_id, role, name, email, phone, password_hash, accepted_terms_at, created_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [account.id, account.restaurant, account.role, account.name, account.email, account.phone, hashPassword(account.password), now, now]);
+    [account.id, account.role === 'student' ? null : account.restaurant, account.role, account.name, account.email, account.phone, hashPassword(account.password), now, now]);
 
     for (const restaurant of restaurantRows) db.run(
       'INSERT INTO memberships (user_id, restaurant_id, created_at) VALUES (?, ?, ?)',

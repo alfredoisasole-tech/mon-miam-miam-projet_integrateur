@@ -165,7 +165,7 @@ describe('Numéros de téléphone', () => {
     await userEvent.type(screen.getByLabelText('Confirmer le mot de passe'), 'Motdepasse1');
     await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: /créer mon compte/i }));
-    await waitFor(() => expect(register).toHaveBeenCalledWith('chez-lea', expect.objectContaining({ phone: '+243990001111' })));
+    await waitFor(() => expect(register).toHaveBeenCalledWith(expect.objectContaining({ phone: '+243990001111' })));
   });
 });
 

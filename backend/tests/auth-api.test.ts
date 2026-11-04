@@ -32,8 +32,8 @@ describe('API des comptes', () => {
 
   after(async () => { await server.fermer(); db.close(); });
 
-  it('inscrit un étudiant, crée son adhésion, permet la connexion et protège son profil', async () => {
-    const registration = await fetch(`${server.base}/api/restaurants/auth-demo/auth/register`, {
+  it('inscrit un étudiant sans restaurant ni adhésion, permet la connexion et protège son profil', async () => {
+    const registration = await fetch(`${server.base}/api/auth/register`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -54,10 +54,11 @@ describe('API des comptes', () => {
     };
     oldToken = registered.token;
     assert.equal(registered.user.role, 'student');
-    assert.equal(registered.user.memberships.length, 1);
+    assert.equal(registered.user.memberships.length, 0);
     assert.equal(db.get<{ total: number }>('SELECT COUNT(*) AS total FROM memberships WHERE user_id = ?', [
       registered.user.id,
-    ])?.total, 1);
+    ])?.total, 0);
+    assert.equal(db.get<{ restaurant_id: string | null }>('SELECT restaurant_id FROM users WHERE id = ?', [registered.user.id])?.restaurant_id, null);
     assert.equal(db.get<{ address: string }>('SELECT address FROM users WHERE id = ?', [registered.user.id])?.address, '12 avenue de la Paix');
     assert.equal(db.get<{ referred_by: string }>('SELECT referred_by FROM users WHERE id = ?', [registered.user.id])?.referred_by, 'referrer-auth');
     assert.equal(db.get<{ total: number }>('SELECT COUNT(*) AS total FROM referrals')?.total, 0);
