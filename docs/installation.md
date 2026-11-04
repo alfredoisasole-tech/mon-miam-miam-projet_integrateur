@@ -124,6 +124,7 @@ Le script crée les tables si nécessaire, puis ajoute :
 | Donnée | Contenu |
 |---|---|
 | Restaurants | `zeduc-space` (ZeDuc@Space) et `chez-lea` (Chez Léa) |
+| Identité visuelle | un **logo** (PNG dessiné pour la démonstration, dans `backend/assets/demo-logos/`) et une charte propre à chaque restaurant : Chez Léa en terracotta et crème, police Georgia, mode clair ; ZeDuc@Space en vert nuit, police Trebuchet MS, mode sombre |
 | Menu | 10 plats par restaurant |
 | Comptes | un administrateur par restaurant, un employé, un étudiant (inscrit aux deux restaurants) et un administrateur de la plateforme |
 

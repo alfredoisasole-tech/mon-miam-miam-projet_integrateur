@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useRestaurants, type RestaurantItem } from '../../controllers/restaurants.ts';
 import { useAuth, useRestaurant } from '../../controllers/session.tsx';
 import { Alert, Badge, Card, Spinner } from '../components/ui.tsx';
+import { RestaurantLogo } from '../components/RestaurantLogo.tsx';
 
 function useOptionalAuth() {
   try {
@@ -112,6 +113,7 @@ export const HomePage: React.FC = () => {
           >
             {restaurants.map((r: RestaurantItem) => (
               <Card key={r.slug} data-testid={`restaurant-card-${r.slug}`}>
+                <RestaurantLogo name={r.name} logoUrl={r.logoUrl} primary={r.colors?.primary} secondary={r.colors?.secondary} />
                 <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.75rem' }}>
                   <h3 style={{ margin: 0, fontSize: '1.25rem', flex: '1 1 8rem', overflowWrap: 'normal' }}>{r.name}</h3>
                   <span>

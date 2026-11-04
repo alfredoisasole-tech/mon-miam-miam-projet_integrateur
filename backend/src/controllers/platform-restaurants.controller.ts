@@ -18,8 +18,8 @@ export function registerPlatformRestaurantRoutes(app: Express, db: Database, aut
   app.get('/api/platform/restaurants', authenticate, (_req, res, next) => {
     if (!platformAdmin(res, next)) return;
     try {
-      const restaurants = db.all<{ id: string; slug: string; name: string; status: string; created_at: string; students: number }>(
-        `SELECT r.id, r.slug, r.name, r.status, r.created_at,
+      const restaurants = db.all<{ id: string; slug: string; name: string; status: string; created_at: string; students: number; logo_asset_id: string | null; primary_color: string; secondary_color: string }>(
+        `SELECT r.id, r.slug, r.name, r.status, r.created_at, r.logo_asset_id, r.primary_color, r.secondary_color,
           (SELECT COUNT(*) FROM memberships m JOIN users u ON u.id = m.user_id
             WHERE m.restaurant_id = r.id AND u.role = 'student' AND u.status <> 'deleted') AS students
          FROM restaurants r ORDER BY r.created_at ASC, r.slug ASC`,
@@ -30,6 +30,8 @@ export function registerPlatformRestaurantRoutes(app: Express, db: Database, aut
       res.status(200).json({
         items: restaurants.map((row) => ({
           slug: row.slug, name: row.name, status: row.status, createdAt: row.created_at, students: Number(row.students),
+          logoUrl: row.logo_asset_id ? `/api/restaurants/${row.slug}/assets/${row.logo_asset_id}` : null,
+          colors: { primary: row.primary_color, secondary: row.secondary_color },
           administrators: admins.filter((admin) => admin.restaurant_id === row.id).map((admin) => ({ name: admin.name, email: admin.email })),
         })),
       });

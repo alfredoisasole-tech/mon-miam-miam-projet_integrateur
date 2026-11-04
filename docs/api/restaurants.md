@@ -250,7 +250,7 @@ Ces règles sont implémentées côté React, pas côté API :
 
 Les routes suivantes exigent un jeton d’un compte `platform_admin`.
 
-- `GET /api/platform/restaurants` liste **tous** les restaurants, y compris désactivés, du plus ancien au plus récent : `{ "items": [{ "slug", "name", "status", "createdAt", "students", "administrators": [{ "name", "email" }] }] }`. Aucun mot de passe ni téléphone n'est renvoyé.
+- `GET /api/platform/restaurants` liste **tous** les restaurants, y compris désactivés, du plus ancien au plus récent : `{ "items": [{ "slug", "name", "status", "createdAt", "students", "administrators": [{ "name", "email" }], "logoUrl", "colors": { "primary", "secondary" } }] }` (`logoUrl` vaut `null` sans logo). Aucun mot de passe ni téléphone n'est renvoyé.
 - `POST /api/platform/restaurants` crée un restaurant et son premier compte administrateur dans une transaction. Corps attendu : `{ "slug", "name", "admin": { "name", "email", "phone", "password" } }`. Les champs visuels sont facultatifs ; les horaires initiaux sont 08 h–22 h, tous les jours.
 - `PATCH /api/platform/restaurants/:slug/status` accepte `{ "status": "active" }` ou `{ "status": "inactive" }`. Les routes publiques masquent ensuite un restaurant inactif.
 

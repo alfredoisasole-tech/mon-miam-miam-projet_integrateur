@@ -211,20 +211,75 @@ describe('Barre de navigation étudiante', () => {
   });
 });
 
-describe('Charte graphique du personnel', () => {
-  it('applique la charte et le nom du restaurant du personnel, même sans restaurant choisi', async () => {
-    localStorage.setItem('mmm_token', 'fake-token');
-    vi.spyOn(api, 'get').mockImplementation(async (path: string) => {
-      if (path === '/me') return { id: 'a1', name: 'Admin', role: 'admin', restaurant: { slug: 'zeduc-space', name: 'ZeDuc@Space' } } as never;
-      if (path === '/restaurants/zeduc-space') return { slug: 'zeduc-space', name: 'ZeDuc@Space', colors: { primary: '#2e7d32', secondary: '#102a12' }, fontFamily: 'Georgia', defaultMode: 'dark' } as never;
-      return { items: [], total: 0, page: 1, pageSize: 20 } as never;
+const brandProfile = { slug: 'zeduc-space', name: 'ZeDuc@Space', logoUrl: '/api/restaurants/zeduc-space/assets/ast_1', colors: { primary: '#2e7d32', secondary: '#14301a' }, fontFamily: 'Georgia', defaultMode: 'dark' };
+
+function mountLayoutAt(path: string, role: 'student' | 'admin' | null) {
+  if (role) localStorage.setItem('mmm_token', 'fake-token');
+  localStorage.setItem('mmm_restaurant', 'zeduc-space');
+  vi.spyOn(api, 'get').mockImplementation(async (apiPath: string) => {
+    if (apiPath === '/me') return { id: 'u1', name: 'Alex', role, restaurant: role === 'admin' ? { slug: 'zeduc-space', name: 'ZeDuc@Space' } : null } as never;
+    if (apiPath === '/restaurants/zeduc-space') return brandProfile as never;
+    return { items: [], total: 0, page: 1, pageSize: 20 } as never;
+  });
+  render(<MemoryRouter initialEntries={[path]}><AuthProvider><RestaurantProvider><CartProvider><Routes>
+    <Route element={<Layout />}><Route path="*" element={<p>Contenu</p>} /></Route>
+  </Routes></CartProvider></RestaurantProvider></AuthProvider></MemoryRouter>);
+  return () => document.querySelector('.app-shell') as HTMLElement;
+}
+
+describe('Charte graphique : plateforme fixe, restaurant propre à chaque restaurant', () => {
+  it('applique la charte et le logo du restaurant à ses écrans, pour son personnel même sans restaurant choisi', async () => {
+    const shell = mountLayoutAt('/staff/orders', 'admin');
+    expect(await screen.findByRole('img', { name: 'ZeDuc@Space' })).toBeInTheDocument();
+    expect(shell()).toHaveAttribute('data-mode', 'dark');
+    expect(shell().style.getPropertyValue('--mm-brand')).toBe('#2e7d32');
+  });
+
+  it.each(['/menu', '/cart', '/orders', '/loyalty', '/community', '/claims'])('applique la charte du restaurant consulté sur %s', async (path) => {
+    const shell = mountLayoutAt(path, 'student');
+    expect(await screen.findByRole('img', { name: 'ZeDuc@Space' })).toBeInTheDocument();
+    expect(shell().style.getPropertyValue('--mm-brand')).toBe('#2e7d32');
+  });
+
+  it.each(['/', '/login', '/register', '/forgot-password', '/profile', '/legal/mentions', '/legal/conditions'])(
+    'garde la charte de la plateforme, fixe, sur %s même avec un restaurant choisi', async (path) => {
+      const shell = mountLayoutAt(path, 'student');
+      const home = await screen.findByRole('link', { name: /Mon Miam Miam/ });
+      expect(home).toBeInTheDocument();
+      await waitFor(() => expect(api.get).toHaveBeenCalled());
+      expect(screen.queryByRole('img', { name: 'ZeDuc@Space' })).toBeNull();
+      expect(shell()).not.toHaveAttribute('data-mode', 'dark');
+      expect(shell().style.getPropertyValue('--mm-brand')).toBe('');
+      expect(shell().style.getPropertyValue('--mm-font-family')).toBe('');
     });
-    render(<MemoryRouter><AuthProvider><RestaurantProvider><CartProvider><Routes>
-      <Route element={<Layout />}><Route path="/" element={<p>Contenu</p>} /></Route>
-    </Routes></CartProvider></RestaurantProvider></AuthProvider></MemoryRouter>);
-    expect(await screen.findByRole('link', { name: 'ZeDuc@Space' })).toBeInTheDocument();
-    const shell = document.querySelector('.app-shell') as HTMLElement;
-    expect(shell).toHaveAttribute('data-mode', 'dark');
-    expect(shell.style.getPropertyValue('--mm-brand')).toBe('#2e7d32');
+
+  it('garde aussi la charte de la plateforme pour un visiteur et pour son administrateur', () => {
+    const { unmount } = render(<MemoryRouter><LayoutView role={undefined} platformStyle restaurant={brandProfile as never} onLogout={vi.fn()}><h1>Contenu</h1></LayoutView></MemoryRouter>);
+    expect(screen.getByRole('banner')).toHaveTextContent('Mon Miam Miam');
+    expect(screen.getByRole('banner')).not.toHaveTextContent('ZeDuc@Space');
+    expect((document.querySelector('.app-shell') as HTMLElement).style.getPropertyValue('--mm-brand')).toBe('');
+    unmount();
+  });
+});
+
+describe('Logos des restaurants', () => {
+  const withLogo = { slug: 'chez-lea', name: 'Chez Léa', slogan: null, logoUrl: '/api/restaurants/chez-lea/assets/ast_1', colors: { primary: '#c4552d', secondary: '#3b1f14' }, isOpenNow: true };
+  const withoutLogo = { slug: 'nouveau', name: 'Nouveau Resto', slogan: null, logoUrl: null, colors: { primary: '#1f6f43', secondary: '#ffffff' }, isOpenNow: true };
+
+  it('affiche le logo de chaque restaurant sur l’accueil, ou une pastille avec son initiale à défaut', async () => {
+    vi.spyOn(api, 'get').mockResolvedValue({ items: [withLogo, withoutLogo], total: 2, page: 1, pageSize: 20 } as never);
+    routes('/');
+    const logoCard = (await screen.findByRole('heading', { name: 'Chez Léa' })).closest('section') as HTMLElement;
+    expect(logoCard.querySelector('img.restaurant-logo')).toHaveAttribute('src', '/api/restaurants/chez-lea/assets/ast_1');
+    const plainCard = screen.getByRole('heading', { name: 'Nouveau Resto' }).closest('section') as HTMLElement;
+    expect(plainCard.querySelector('img')).toBeNull();
+    expect(plainCard.querySelector('.restaurant-monogram')).toHaveTextContent('N');
+    expect((plainCard.querySelector('.restaurant-monogram') as HTMLElement).style.background).toContain('rgb(31, 111, 67)');
+  });
+
+  it('garde le nom de chaque restaurant écrit à côté de son logo (accessibilité)', async () => {
+    vi.spyOn(api, 'get').mockResolvedValue({ items: [withLogo], total: 1, page: 1, pageSize: 20 } as never);
+    routes('/');
+    expect(await screen.findByRole('heading', { name: 'Chez Léa' })).toBeInTheDocument();
   });
 });
