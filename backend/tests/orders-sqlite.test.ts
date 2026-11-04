@@ -201,11 +201,13 @@ describe('Commandes SQLite — APP-21', () => {
     assert.equal((await response.json() as { pointsRedeemed: number }).pointsRedeemed, 15);
   });
 
-  it('refuse un restaurant sans adhésion et permet mobile money sans simuler un paiement réussi', async () => {
+  it('crée l’adhésion à la première commande dans un restaurant et laisse mobile money impayé', async () => {
     const betaOrder = { ...DINE_IN_ORDER, restaurant: 'beta', paymentMethod: 'mobile_money', items: [{ menuItemId: 'beta-dish', quantity: 1 }] };
-    const rejected = await postOrder(betaOrder, 'student-2-token', 'no-membership-001');
-    assert.equal(rejected.status, 403);
-    assert.equal((await rejected.json() as { error: { code: string } }).error.code, 'FORBIDDEN');
+    const memberOfBeta = (user: string) => database.get('SELECT 1 FROM memberships WHERE user_id = ? AND restaurant_id = (SELECT id FROM restaurants WHERE slug = ?)', [user, 'beta']);
+    assert.equal(memberOfBeta('student-2'), undefined);
+    const first = await postOrder(betaOrder, 'student-2-token', 'no-membership-001');
+    assert.equal(first.status, 201);
+    assert.ok(memberOfBeta('student-2'));
 
     const accepted = await postOrder(betaOrder, 'student-1-token', 'mobile-money-01');
     assert.equal(accepted.status, 201);
