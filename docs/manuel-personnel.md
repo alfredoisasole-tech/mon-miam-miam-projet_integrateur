@@ -151,6 +151,8 @@ Cliquez sur **Paramètres** (`/admin/settings`). Chaque restaurant choisit lui-m
 - **Livraison** : activée ou non, frais en FC, communes desservies ;
 - **Fidélité** : dépense pour 1 point (3 000 FC par défaut), points pour une récompense (15), valeur de la récompense (3 000 FC), validité en mois (12).
 
+**Où s'applique cette identité.** La charte du restaurant (logo, couleurs, police, mode) habille les écrans propres au restaurant : menu, panier, commandes, points, réclamations, communauté et tous les écrans du personnel. Elle s'applique aussitôt après l'enregistrement, sans recharger la page. La plateforme garde sa propre charte, **fixe** (noir et doré, avec son logo) : accueil, connexion, inscription, profil, pages légales et espace de la plateforme ne changent jamais d'aspect d'un restaurant à l'autre. Sur l'accueil, chaque restaurant apparaît avec son logo et ses couleurs.
+
 Cliquez sur **Enregistrer** : seuls les blocs modifiés sont envoyés. Les nouvelles règles de fidélité s’appliquent aux prochaines commandes ; les points déjà gagnés gardent leur date d’expiration. Les autres restaurants ne sont jamais affectés.
 
 ### Administrateur de la plateforme

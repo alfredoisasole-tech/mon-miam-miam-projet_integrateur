@@ -38,6 +38,8 @@ export interface PlatformRestaurant {
   createdAt: string;
   students: number;
   administrators: Array<{ name: string; email: string }>;
+  logoUrl?: string | null;
+  colors?: { primary: string; secondary: string };
 }
 
 export interface NewRestaurant {
