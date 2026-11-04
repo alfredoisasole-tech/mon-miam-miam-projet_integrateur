@@ -84,19 +84,69 @@ export class StaffAccountsService {
     };
   }
 
-  deactivate(user: AuthenticatedUser & { restaurantId: string }, id: string, input: unknown): { id: string; status: 'inactive' } {
+  /**
+   * Modifie un compte du personnel de son restaurant. Deux formes de corps, jamais mélangées :
+   * - `{ status: 'inactive' | 'active' }` désactive ou réactive le compte ;
+   * - `{ name?, phone?, role? }` (au moins un champ) change son nom, son téléphone ou son rôle (employé ou gérant).
+   * L'e-mail est l'identifiant de connexion et ne change pas. Un administrateur ne touche ni à son propre rôle ni à son propre état.
+   */
+  update(user: AuthenticatedUser & { restaurantId: string }, id: string, input: unknown) {
     const body = input as Record<string, unknown> | null;
-    if (!body || typeof body !== 'object' || Array.isArray(body)
-      || Object.keys(body).length !== 1 || body['status'] !== 'inactive') {
-      throw new AppError(400, 'INVALID_BODY', 'La seule modification permise est la désactivation du compte.');
+    if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length === 0) {
+      throw new AppError(400, 'INVALID_BODY', 'Indiquez ce qu’il faut modifier : l’état, ou le nom, le téléphone, le rôle.');
     }
-    if (id === user.id) throw new AppError(400, 'INVALID_BODY', 'Vous ne pouvez pas désactiver votre propre compte.');
-    const result = this.db.run(
-      `UPDATE users SET status = 'inactive', auth_version = auth_version + 1
-       WHERE id = ? AND restaurant_id = ? AND role IN ('employee', 'manager', 'admin') AND status = 'active'`,
+    const target = this.db.get<StaffAccountRow>(
+      `SELECT id, name, email, phone, role, status, must_change_password, created_at FROM users
+       WHERE id = ? AND restaurant_id = ? AND role IN ('employee', 'manager', 'admin') AND status <> 'deleted'`,
       [id, user.restaurantId],
     );
-    if (!Number(result.changes)) throw new AppError(404, 'STAFF_ACCOUNT_NOT_FOUND', 'Compte du personnel introuvable.');
-    return { id, status: 'inactive' };
+    if (!target) throw new AppError(404, 'STAFF_ACCOUNT_NOT_FOUND', 'Compte du personnel introuvable.');
+    if ('status' in body) return this.changeStatus(user, target, body);
+
+    if (Object.keys(body).some((key) => !['name', 'phone', 'role'].includes(key))) {
+      throw new AppError(400, 'INVALID_BODY', 'Seuls le nom, le téléphone et le rôle peuvent être modifiés.');
+    }
+    const next = { name: target.name, phone: target.phone, role: target.role };
+    if ('name' in body) {
+      const name = typeof body['name'] === 'string' ? body['name'].trim() : '';
+      if (name.length < 2 || name.length > 80) throw new AppError(400, 'INVALID_BODY', 'Le nom doit contenir de 2 à 80 caractères.');
+      next.name = name;
+    }
+    if ('phone' in body) {
+      const phone = normalizePhone(body['phone']);
+      if (!phone) throw new AppError(400, 'INVALID_BODY', 'Le numéro de téléphone est invalide.');
+      next.phone = phone;
+    }
+    if ('role' in body) {
+      if (body['role'] !== 'employee' && body['role'] !== 'manager') {
+        throw new AppError(400, 'INVALID_BODY', 'Le rôle doit être « employee » ou « manager ».');
+      }
+      if (id === user.id) throw new AppError(400, 'INVALID_BODY', 'Vous ne pouvez pas modifier votre propre rôle.');
+      if (target.role === 'admin') throw new AppError(400, 'INVALID_BODY', 'Le rôle d’un administrateur ne peut pas être modifié ici.');
+      next.role = body['role'];
+    }
+    // Changer le rôle ou le téléphone oblige à se reconnecter ; un simple changement de nom garde la session.
+    const revoke = next.role !== target.role || next.phone !== target.phone;
+    this.db.transaction(() => {
+      if (next.phone !== target.phone && this.db.get('SELECT id FROM users WHERE phone = ? AND id <> ?', [next.phone, id])) {
+        throw new AppError(409, 'ACCOUNT_TAKEN', 'Un compte existe déjà avec ce téléphone.');
+      }
+      this.db.run(`UPDATE users SET name = ?, phone = ?, role = ?${revoke ? ', auth_version = auth_version + 1' : ''} WHERE id = ?`,
+        [next.name, next.phone, next.role, id]);
+    });
+    return { account: staffOutput({ ...target, ...next }) };
+  }
+
+  private changeStatus(user: AuthenticatedUser & { restaurantId: string }, target: StaffAccountRow, body: Record<string, unknown>) {
+    if (Object.keys(body).length !== 1 || (body['status'] !== 'inactive' && body['status'] !== 'active')) {
+      throw new AppError(400, 'INVALID_BODY', 'L’état se change seul, vers « inactive » ou « active ».');
+    }
+    if (target.id === user.id) throw new AppError(400, 'INVALID_BODY', 'Vous ne pouvez pas modifier l’état de votre propre compte.');
+    const status = body['status'];
+    if (target.status !== status) {
+      // La révocation des jetons couvre aussi la réactivation : l'ancienne session ne revient pas.
+      this.db.run('UPDATE users SET status = ?, auth_version = auth_version + 1 WHERE id = ?', [status, target.id]);
+    }
+    return { id: target.id, status, account: staffOutput({ ...target, status }) };
   }
 }
