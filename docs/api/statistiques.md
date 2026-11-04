@@ -38,9 +38,13 @@ La période des compteurs de commandes et des plats vendus est fondée sur la da
   "averageOrderFc": 4000,
   "topItems": [
     { "name": "Poulet mayonnaise", "quantity": 2, "revenueFc": 5000 }
-  ]
+  ],
+  "loyalty": { "members": 48, "pointsEarned": 12, "pointsRedeemed": 15 },
+  "referrals": { "rewarded": 1, "pointsGranted": 2, "pending": 3 }
 }
 ```
+
+`loyalty` décrit l'usage du programme de fidélité : `members` est le nombre total d'étudiants inscrits au restaurant, `pointsEarned` et `pointsRedeemed` les points gagnés par commande et les points utilisés pendant la période. `referrals` décrit le parrainage : `rewarded` et `pointsGranted` comptent les récompenses attribuées pendant la période, `pending` les filleuls inscrits qui n'ont pas encore passé de commande qualifiante. Tout est limité au restaurant du jeton.
 
 `total`, `completed`, `active` et `cancelled` correspondent aux commandes créées dans la période, regroupées selon leur état actuel. `active` regroupe `pending`, `confirmed`, `preparing`, `ready` et `out_for_delivery`. `topItems` est classé par quantité vendue décroissante, puis par revenu décroissant. `revenueFc` additionne les lignes avant remise globale de la commande.
 
