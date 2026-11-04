@@ -112,3 +112,29 @@ describe('RequireRole Component', () => {
     expect(screen.queryByTestId('secret-content')).not.toBeInTheDocument();
   });
 });
+
+describe('RequireRole : mot de passe temporaire', () => {
+  function mountAt(path: string) {
+    (useAuth as any).mockReturnValue({
+      user: { id: '1', name: 'Chef', role: 'employee', mustChangePassword: true },
+      loading: false,
+    });
+    return render(
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/profile" element={<RequireRole allowedRoles={['employee']}><p data-testid="profile">Profil</p></RequireRole>} />
+          <Route path="/staff/orders" element={<RequireRole allowedRoles={['employee']}><p data-testid="orders">Commandes</p></RequireRole>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+  it('renvoie vers le profil tant que le mot de passe temporaire n’est pas changé', () => {
+    mountAt('/staff/orders');
+    expect(screen.queryByTestId('orders')).toBeNull();
+    expect(screen.getByTestId('profile')).toBeInTheDocument();
+  });
+  it('laisse accéder au profil pour changer le mot de passe', () => {
+    mountAt('/profile');
+    expect(screen.getByTestId('profile')).toBeInTheDocument();
+  });
+});
