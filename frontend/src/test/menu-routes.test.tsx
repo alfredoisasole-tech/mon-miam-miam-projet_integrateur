@@ -38,7 +38,10 @@ it.each([
   ['/admin/menu', 'student'], ['/admin/menu', 'platform_admin'],
 ])('refuse %s à %s avant tout chargement du menu', async (path, role) => {
   localStorage.setItem('mmm_token', 'menu-route-test');
-  const fetchMock = vi.fn(async () => Response.json({ id: 'user', name: 'Démo', role }));
+  // Seul /me renvoie l'utilisateur ; les pages d'arrivée (restaurants, plateforme) reçoivent une liste vide valide.
+  const fetchMock = vi.fn(async (input: unknown) => String(input).endsWith('/me')
+    ? Response.json({ id: 'user', name: 'Démo', role })
+    : Response.json({ items: [], total: 0, page: 1, pageSize: 20 }));
   vi.stubGlobal('fetch', fetchMock);
   window.history.replaceState(null, '', path);
   render(<App />);
