@@ -21,6 +21,7 @@ import { ProfilePage } from './views/pages/ProfilePage.tsx';
 import { LegalPage } from './views/pages/LegalPage.tsx';
 import { ClaimsPage } from './views/pages/ClaimsPage.tsx';
 import { StaffClaimsPage } from './views/pages/StaffClaimsPage.tsx';
+import { CommunityPage } from './views/pages/CommunityPage.tsx';
 
 export function App() {
   return (
@@ -68,6 +69,14 @@ export function App() {
                   element={
                     <RequireRole allowedRoles={['student']}>
                       <LoyaltyPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/community"
+                  element={
+                    <RequireRole allowedRoles={['student']}>
+                      <CommunityPage />
                     </RequireRole>
                   }
                 />
