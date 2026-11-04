@@ -6,6 +6,7 @@ import { useRestaurantProfile } from '../../controllers/useRestaurantProfile.ts'
 import type { RestaurantBrand } from '../../controllers/useRestaurantProfile.ts';
 import type { User } from '../../models/types.ts';
 import { Alert, Spinner } from './ui.tsx';
+import { Footer } from './Footer.tsx';
 import './layout.css';
 
 const publicLinks = [['/', 'Accueil'], ['/login', 'Connexion'], ['/register', 'Inscription']];
@@ -71,7 +72,7 @@ export function LayoutView({ role, loading = false, restaurant, onLogout, childr
       </>}
     </header>
     <main id="main-content" className="content shell-content" tabIndex={-1}>{children ?? <Outlet />}</main>
-    <footer className="shell-footer">© {new Date().getFullYear()} Mon Miam Miam · Vos repas sur le campus</footer>
+    <Footer />
   </div>;
 }
 
