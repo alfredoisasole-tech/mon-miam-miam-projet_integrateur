@@ -42,8 +42,11 @@ it.each([
   vi.stubGlobal('fetch', fetchMock);
   window.history.replaceState(null, '', path);
   render(<App />);
-  await waitFor(() => expect(window.location.pathname).toBe('/'));
-  expect(fetchMock.mock.calls).toHaveLength(1);
+  // Un utilisateur refusé revient à sa page d'arrivée : l'accueil pour un étudiant, son tableau de bord pour le personnel.
+  const landing = { student: '/', employee: '/staff/orders', manager: '/staff/orders', platform_admin: '/plateforme' }[role];
+  await waitFor(() => expect(window.location.pathname).toBe(landing));
+  const urls = (fetchMock.mock.calls as unknown as Array<[unknown]>).map(([url]) => String(url));
+  expect(urls.some(url => url.endsWith('/menu') || url.includes('/staff/menu'))).toBe(false);
 });
 
 it.each(['/staff/menu', '/admin/menu'])('demande une connexion pour %s sans appeler le menu', async (path) => {

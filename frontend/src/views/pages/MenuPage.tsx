@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth, useRestaurant } from '../../controllers/session.tsx';
 import { useCart } from '../../controllers/useCart.ts';
 import { useMenu, type MenuDish } from '../../controllers/useMenu.ts';
@@ -23,7 +24,10 @@ export const MenuPage: React.FC = () => {
     });
   };
 
-  if (!slug) return <p>Choisissez un restaurant pour afficher son menu.</p>;
+  if (!slug) return <div>
+    <p>Choisissez un restaurant pour afficher son menu.</p>
+    <Link className="btn btn-primary" to="/">Voir les restaurants</Link>
+  </div>;
   if (isLoading) return <p>Chargement du menu...</p>;
   if (error) return <p role="alert">{error}</p>;
   if (!menu || (menu.dailyItems.length === 0 && menu.categories.length === 0)) {

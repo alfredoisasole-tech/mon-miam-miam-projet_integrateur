@@ -4,6 +4,7 @@
 .brand { font-weight: 700; font-size: 1.1rem; text-decoration: none; overflow-wrap: anywhere; max-width: 100%; }
 .main-nav { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
 .main-nav a { padding: .6rem .75rem; min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; border-bottom: 3px solid transparent; }
+.nav-badge { margin-left: .4rem; min-width: 1.4rem; padding: 0 .4rem; border-radius: 999px; background: var(--mm-brand); color: var(--mm-on-brand); font-size: .8rem; font-weight: 700; line-height: 1.4rem; text-align: center; }
 .main-nav a[aria-current='page'] { border-bottom-color: currentColor; font-weight: 700; }
 .topbar :focus-visible { outline-color: currentColor; }
 .burger, .logout { background: transparent; color: inherit; border: 1px solid currentColor; }

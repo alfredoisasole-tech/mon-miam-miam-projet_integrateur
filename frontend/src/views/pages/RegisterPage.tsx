@@ -117,7 +117,7 @@ export function RegisterPage() {
               style={{ marginTop: '0.2rem' }} 
             />
             <span>
-              J'accepte les <Link to="/conditions" style={{ color: '#000', textDecoration: 'underline' }}>conditions d'utilisation</Link> et la <Link to="/confidentialite" style={{ color: '#000', textDecoration: 'underline' }}>politique de confidentialité</Link>.
+              J'accepte les <Link to="/legal/conditions" style={{ color: '#000', textDecoration: 'underline' }}>conditions d'utilisation</Link> et la <Link to="/legal/confidentialite" style={{ color: '#000', textDecoration: 'underline' }}>politique de confidentialité</Link>.
             </span>
           </label>
           {errors.acceptTerms && <p className={errorClass}>{errors.acceptTerms}</p>}
