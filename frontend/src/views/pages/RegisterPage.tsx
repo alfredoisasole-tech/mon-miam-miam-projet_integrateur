@@ -1,14 +1,17 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useRegister } from '../../controllers/auth';
 import { useRestaurants } from '../../controllers/restaurants';
-import { useRestaurant } from '../../controllers/session';
+import { useAuth, useRestaurant } from '../../controllers/session';
+import { homeFor } from './HomePage';
+import { normalizePhone } from '../../models/phone';
 
 /* TODO: Dès que Emmanuel fusionne E-5, remplacer ces éléments HTML
    par les composants importés de '../components/ui' (Field, Input, Alert, Spinner) */
 
 export function RegisterPage() {
   const { submit, submitting, errors } = useRegister();
+  const { user } = useAuth();
   const { slug } = useRestaurant();
   const { restaurants } = useRestaurants();
   // Le compte vaut pour tous les restaurants. L'API l'enregistre quand même auprès d'un premier restaurant :
@@ -24,9 +27,12 @@ export function RegisterPage() {
   const [referral, setReferral] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
 
+  // Déjà connecté : pas de seconde inscription.
+  if (user) return <Navigate to={homeFor(user.role)} replace />;
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    const normalizedPhone = phone.startsWith('+') ? phone : `+243${phone.replace(/\D/g, '')}`;
+    const normalizedPhone = normalizePhone(phone);
     
     await submit({
       name,
@@ -65,47 +71,47 @@ export function RegisterPage() {
 
       <form className="mm-form" onSubmit={onSubmit} noValidate>
         <div>
-          <label className={labelClass}>Nom complet</label>
-          <input type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} aria-invalid={!!errors.name} />
+          <label className={labelClass} htmlFor="register-name">Nom complet</label>
+          <input id="register-name" type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} aria-invalid={!!errors.name} />
           {errors.name && <p className={errorClass}>{errors.name}</p>}
         </div>
 
         <div>
-          <label className={labelClass}>Adresse e-mail</label>
-          <input type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} aria-invalid={!!errors.email} />
+          <label className={labelClass} htmlFor="register-email">Adresse e-mail</label>
+          <input id="register-email" type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} aria-invalid={!!errors.email} />
           {errors.email && <p className={errorClass}>{errors.email}</p>}
         </div>
 
         <div>
-          <label className={labelClass}>Numéro de téléphone</label>
+          <label className={labelClass} htmlFor="register-phone">Numéro de téléphone</label>
           <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.25rem 0' }}>Pour vous joindre au sujet de votre commande.</p>
-          <input type="tel" name="phone" placeholder="+243..." value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} aria-invalid={!!errors.phone} />
+          <input id="register-phone" type="tel" name="phone" placeholder="+243..." value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} aria-invalid={!!errors.phone} />
           {errors.phone && <p className={errorClass}>{errors.phone}</p>}
         </div>
 
         <div>
-          <label className={labelClass}>Adresse de livraison habituelle <span style={{ fontWeight: 'normal', color: '#666' }}>(facultatif)</span></label>
+          <label className={labelClass} htmlFor="register-deliveryAddress">Adresse de livraison habituelle <span style={{ fontWeight: 'normal', color: '#666' }}>(facultatif)</span></label>
           <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.25rem 0' }}>Vous pourrez la modifier à chaque commande.</p>
-          <input type="text" name="deliveryAddress" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className={inputClass} />
+          <input id="register-deliveryAddress" type="text" name="deliveryAddress" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className={inputClass} />
         </div>
 
         <div>
-          <label className={labelClass}>Mot de passe</label>
+          <label className={labelClass} htmlFor="register-password">Mot de passe</label>
           <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.25rem 0' }}>8 caractères minimum, une majuscule, un chiffre.</p>
-          <input type="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} aria-invalid={!!errors.password} />
+          <input id="register-password" type="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} aria-invalid={!!errors.password} />
           {errors.password && <p className={errorClass}>{errors.password}</p>}
         </div>
 
         <div>
-          <label className={labelClass}>Confirmer le mot de passe</label>
-          <input type="password" name="confirmPassword" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={inputClass} aria-invalid={!!errors.confirmPassword} />
+          <label className={labelClass} htmlFor="register-confirmPassword">Confirmer le mot de passe</label>
+          <input id="register-confirmPassword" type="password" name="confirmPassword" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={inputClass} aria-invalid={!!errors.confirmPassword} />
           {errors.confirmPassword && <p className={errorClass}>{errors.confirmPassword}</p>}
         </div>
 
         <div>
-          <label className={labelClass}>Code de parrainage <span style={{ fontWeight: 'normal', color: '#666' }}>(facultatif)</span></label>
+          <label className={labelClass} htmlFor="register-referral">Code de parrainage <span style={{ fontWeight: 'normal', color: '#666' }}>(facultatif)</span></label>
           <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.25rem 0' }}>Un ami vous a invité ? Saisissez son code.</p>
-          <input type="text" name="referral" value={referral} onChange={(e) => setReferral(e.target.value.toUpperCase())} className={inputClass} />
+          <input id="register-referral" type="text" name="referral" value={referral} onChange={(e) => setReferral(e.target.value.toUpperCase())} className={inputClass} />
         </div>
 
         <div style={{ marginTop: '1rem' }}>
