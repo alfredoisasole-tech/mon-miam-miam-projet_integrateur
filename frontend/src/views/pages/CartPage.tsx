@@ -6,6 +6,8 @@ import { api } from '../../models/http.ts';
 import { formatPrice } from '../../models/format.ts';
 import { Alert, Card, Spinner } from '../components/ui.tsx';
 import { PaymentChoice, type PaymentMethod } from '../components/PaymentChoice.tsx';
+import { PaymentDetails, isValidPaymentPhone, normalizePaymentPhone } from '../components/PaymentDetails.tsx';
+import { paymentApi, type PaymentOperator } from '../../controllers/payment.ts';
 
 const KINSHASA_COMMUNES = [
   'Bandalungwa', 'Barumbu', 'Bumbu', 'Gombe', 'Kalamu', 'Kasa-Vubu', 'Kimbanseke',
@@ -30,11 +32,27 @@ export const CartPage: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [confirmedOrder, setConfirmedOrder] = useState<{ id: string; orderNumber: string } | null>(null);
+  const [confirmedOrder, setConfirmedOrder] = useState<{ id: string; orderNumber: string; paymentError?: string } | null>(null);
+  const [payOperator, setPayOperator] = useState<PaymentOperator>('mpesa');
+  const [payPhone, setPayPhone] = useState('');
+  const [payPhoneError, setPayPhoneError] = useState<string | null>(null);
 
   // Calcul indicatif avec réduction de points (3 000 FC max sur les plats)
   const discountFc = redeemPoints ? Math.min(3000, totalFc) : 0;
   const netTotalFc = Math.max(0, totalFc - discountFc);
+  // Un total à 0 FC (payé en points) n'a rien à régler chez l'opérateur.
+  const needsOnlinePayment = paymentMethod === 'mobile_money' && netTotalFc > 0;
+
+  /** Démarre le paiement chez Easypay puis quitte le site pour sa page de paiement. */
+  async function startPayment(orderId: string): Promise<string | null> {
+    try {
+      const payment = await paymentApi.startPayment(orderId, { operator: payOperator, phone: normalizePaymentPhone(payPhone) });
+      window.location.assign(payment.redirectUrl);
+      return null;
+    } catch (err: unknown) {
+      return err instanceof Error ? err.message : 'Le paiement n’a pas pu démarrer.';
+    }
+  }
 
   const handleConfirmOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +64,11 @@ export const CartPage: React.FC = () => {
     }
 
     setSubmitError(null);
+    setPayPhoneError(null);
+    if (needsOnlinePayment && !isValidPaymentPhone(payPhone)) {
+      setPayPhoneError('Indiquez un numéro Mobile Money valide, par exemple +243991234567.');
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -87,7 +110,8 @@ export const CartPage: React.FC = () => {
       });
 
       clearCart();
-      setConfirmedOrder({ id: res.id, orderNumber: res.orderNumber });
+      const paymentError = needsOnlinePayment ? await startPayment(res.id) : null;
+      setConfirmedOrder({ id: res.id, orderNumber: res.orderNumber, ...(paymentError ? { paymentError } : {}) });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Impossible d’enregistrer la commande.';
       setSubmitError(msg);
@@ -104,6 +128,9 @@ export const CartPage: React.FC = () => {
           <p>
             Numéro de commande : <strong>{confirmedOrder.orderNumber}</strong>
           </p>
+          {confirmedOrder.paymentError && (
+            <Alert>{`Le paiement n’a pas pu démarrer : ${confirmedOrder.paymentError} Vous pourrez le relancer depuis « Mes commandes ».`}</Alert>
+          )}
           <p>
             {orderType === 'dine_in'
               ? 'Présentez-vous au comptoir à l’heure de retrait choisie.'
@@ -365,6 +392,10 @@ export const CartPage: React.FC = () => {
                   selectedMethod={paymentMethod}
                   onChange={(method) => setPaymentMethod(method)}
                 />
+                {needsOnlinePayment && (
+                  <PaymentDetails operator={payOperator} phone={payPhone} error={payPhoneError}
+                    onOperatorChange={setPayOperator} onPhoneChange={setPayPhone} />
+                )}
               </div>
 
               {/* Remise fidélité */}
