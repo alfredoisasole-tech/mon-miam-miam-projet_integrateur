@@ -14,6 +14,8 @@ import { StaffOrdersPage } from './views/pages/StaffOrdersPage.tsx';
 import { StatsPage } from './views/pages/StatsPage.tsx';
 import { StaffMenuPage } from './views/pages/StaffMenuPage.tsx';
 import { AdminMenuPage } from './views/pages/AdminMenuPage.tsx';
+import { AdminSettingsPage } from './views/pages/AdminSettingsPage.tsx';
+import { WeeklyStatsPage } from './views/pages/WeeklyStatsPage.tsx';
 
 export function App() {
   return (
@@ -73,6 +75,22 @@ export function App() {
                   element={
                     <RequireRole allowedRoles={['admin']}>
                       <AdminMenuPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/admin/settings"
+                  element={
+                    <RequireRole allowedRoles={['admin']}>
+                      <AdminSettingsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/staff/weekly"
+                  element={
+                    <RequireRole allowedRoles={['employee', 'manager', 'admin']}>
+                      <WeeklyStatsPage />
                     </RequireRole>
                   }
                 />
