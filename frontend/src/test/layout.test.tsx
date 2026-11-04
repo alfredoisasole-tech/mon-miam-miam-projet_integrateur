@@ -9,8 +9,8 @@ const cases: [User['role'], string[]][] = [
   [undefined, ['Accueil', 'Connexion', 'Inscription']],
   ['student', ['Menu', 'Panier', 'Mes commandes', 'Mes points', 'Communauté', 'Réclamations']],
   ['employee', ['Commandes', 'Menu', 'Statistiques', 'Réclamations']],
-  ['manager', ['Commandes', 'Menu', 'Statistiques', 'Réclamations']],
-  ['admin', ['Commandes', 'Menu', 'Statistiques', 'Réclamations', 'Paramètres']],
+  ['manager', ['Commandes', 'Menu', 'Statistiques', 'Réclamations', 'Équipe']],
+  ['admin', ['Commandes', 'Menu', 'Statistiques', 'Réclamations', 'Équipe', 'Promotions', 'Paramètres']],
   ['platform_admin', ['Restaurants']],
 ];
 function mount(role?: User['role'], extra = {}) {

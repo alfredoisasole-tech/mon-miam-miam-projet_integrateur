@@ -2,6 +2,8 @@ export interface User {
   id: string;
   name: string;
   role?: "student" | "employee" | "manager" | "admin" | "platform_admin";
+  /** Vrai pour un compte du personnel créé avec un mot de passe temporaire. */
+  mustChangePassword?: boolean;
 }
 
 /** Erreur renvoyée par le client HTTP : réponse d'erreur de l'API ou problème de réseau. */

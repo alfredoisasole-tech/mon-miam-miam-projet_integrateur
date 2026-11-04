@@ -44,6 +44,7 @@ export function ProfilePage() {
   return <section className="profile-page">
     <h1>Mon profil</h1>
     <p>{user?.name}</p>
+    {user?.mustChangePassword && <Alert kind="info">Votre mot de passe est temporaire : choisissez-en un nouveau pour accéder au reste du site.</Alert>}
 
     <Card title="Changer mon mot de passe">
       <Alert kind={passwordFeedback?.kind ?? 'info'}>{passwordFeedback?.text}</Alert>

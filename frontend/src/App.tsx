@@ -22,6 +22,9 @@ import { LegalPage } from './views/pages/LegalPage.tsx';
 import { ClaimsPage } from './views/pages/ClaimsPage.tsx';
 import { StaffClaimsPage } from './views/pages/StaffClaimsPage.tsx';
 import { CommunityPage } from './views/pages/CommunityPage.tsx';
+import { StaffAccountsPage } from './views/pages/StaffAccountsPage.tsx';
+import { AdminPromotionsPage } from './views/pages/AdminPromotionsPage.tsx';
+import { PlatformPage } from './views/pages/PlatformPage.tsx';
 
 export function App() {
   return (
@@ -77,6 +80,30 @@ export function App() {
                   element={
                     <RequireRole allowedRoles={['student']}>
                       <CommunityPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/staff/accounts"
+                  element={
+                    <RequireRole allowedRoles={['manager', 'admin']}>
+                      <StaffAccountsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/admin/promotions"
+                  element={
+                    <RequireRole allowedRoles={['admin']}>
+                      <AdminPromotionsPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="/plateforme"
+                  element={
+                    <RequireRole allowedRoles={['platform_admin']}>
+                      <PlatformPage />
                     </RequireRole>
                   }
                 />
