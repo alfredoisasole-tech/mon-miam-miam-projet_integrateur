@@ -4,8 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CartPage } from '../views/pages/CartPage.tsx';
 import { MyOrdersPage } from '../views/pages/MyOrdersPage.tsx';
-import { CartProvider } from '../controllers/cart.tsx';
-import { AuthProvider } from '../controllers/session.tsx';
+import { AtRestaurant } from './AtRestaurant.tsx';
 import { api } from '../models/http.ts';
 import { ordersApi, canPay } from '../controllers/orders.ts';
 import type { Order } from '../controllers/orders.ts';
@@ -66,7 +65,7 @@ describe('Panier : paiement mobile money', () => {
       ? { id: 'student-1', name: 'Alex', email: 'alex@example.com', role: 'student' }
       : { restaurant: { slug: 'chez-lea', name: 'Chez Léa' }, availablePoints: 0, remainderFc: 0, canRedeem: false,
         rules: { spendPerPointFc: 3000, pointsForReward: 15, rewardValueFc: 3000, validityMonths: 12 }, movements: [] }) as never);
-    render(<AuthProvider><CartProvider><MemoryRouter><CartPage /></MemoryRouter></CartProvider></AuthProvider>);
+    render(<AtRestaurant slug="chez-lea"><CartPage /></AtRestaurant>);
     await screen.findByTestId('confirm-order-button');
   }
 

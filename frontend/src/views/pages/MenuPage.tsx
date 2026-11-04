@@ -71,15 +71,7 @@ export const MenuPage: React.FC = () => {
           </section>
       ))} 
       {cart.error && <p role="alert">{cart.error}</p>}
-      {isStudent && <CartSummaryBar lines={cart.cart.lines} count={cart.count} totalFc={cart.totalFc}
-        otherRestaurant={cart.cart.restaurantSlug !== null && cart.cart.restaurantSlug !== menu.restaurant} />}
-      {cart.pendingRestaurantChange && (
-        <div role="alertdialog" aria-label="Confirmer le changement de restaurant">
-          <p>Vous avez des articles dans votre panier actuel. Voulez-vous changer de restaurant ? Votre panier sera vidé.</p>
-          <button onClick={cart.confirmRestaurantChange}>Confirmer le changement</button>
-          <button onClick={cart.cancelRestaurantChange}>Garder le panier</button>
-        </div>
-      )}
+      {isStudent && <CartSummaryBar lines={cart.cart.lines} count={cart.count} totalFc={cart.totalFc} cartPath={`/r/${slug}/cart`} />}
     </div>
   );
 };

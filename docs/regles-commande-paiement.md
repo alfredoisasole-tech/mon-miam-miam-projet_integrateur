@@ -15,8 +15,8 @@ Une commande peut être passée de deux manières :
   Le téléphone de livraison est celui du compte par défaut.
 
 **Règle fondamentale du panier** : un panier ne contient que les plats d'un
-**seul restaurant**. Si l'étudiant change de restaurant, le panier est vidé
-(avec confirmation).
+**seul restaurant**. Chaque restaurant a son propre panier : passer d'un restaurant
+à l'autre ne vide aucun panier.
 
 Les étapes d'une commande sont :
 `en attente → confirmée → en préparation → prête → (en livraison) → terminée`.
