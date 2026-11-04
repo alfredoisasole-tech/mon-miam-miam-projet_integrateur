@@ -5,6 +5,7 @@ import { useAuth, useRestaurant } from '../../controllers/session.tsx';
 import { useRestaurantProfile } from '../../controllers/useRestaurantProfile.ts';
 import type { RestaurantBrand } from '../../controllers/useRestaurantProfile.ts';
 import type { User } from '../../models/types.ts';
+import { assetUrl } from '../../models/http.ts';
 import { Alert, Spinner } from './ui.tsx';
 import './layout.css';
 
@@ -14,7 +15,7 @@ function linksFor(role: User['role']) {
     case 'student': return [['/menu', 'Menu'], ['/cart', 'Panier'], ['/orders', 'Mes commandes'], ['/loyalty', 'Mes points']];
     case 'employee': return [['/staff/orders', 'Commandes'], ['/staff/menu', 'Menu'], ['/staff/weekly', 'Statistiques']];
     case 'manager': return [['/staff/orders', 'Commandes'], ['/staff/menu', 'Menu'], ['/staff/overview', 'Statistiques']];
-    case 'admin': return [['/staff/orders', 'Commandes'], ['/admin/menu', 'Menu'], ['/staff/overview', 'Statistiques']];
+    case 'admin': return [['/staff/orders', 'Commandes'], ['/admin/menu', 'Menu'], ['/staff/overview', 'Statistiques'], ['/admin/settings', 'Paramètres']];
     case 'platform_admin': return [['/plateforme', 'Restaurants']];
     default: return publicLinks;
   }
@@ -24,6 +25,8 @@ function onColor(color: string) {
   const luminance = channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
   return luminance > .179 ? 'var(--mm-color-secondary)' : 'var(--mm-color-on-secondary)';
 }
+const FONTS = ['Poppins', 'Arial', 'Verdana', 'Trebuchet MS', 'Georgia', 'Tahoma', 'Times New Roman'];
+const MODES = ['light', 'dark', 'system'];
 function themeFor(restaurant?: RestaurantBrand | null): CSSProperties {
   const style: Record<string, string> = {};
   const primary = restaurant?.colors?.primary;
@@ -35,6 +38,9 @@ function themeFor(restaurant?: RestaurantBrand | null): CSSProperties {
   if (secondary && /^#[\da-f]{6}$/i.test(secondary)) {
     style['--mm-header-bg'] = secondary;
     style['--mm-on-header'] = onColor(secondary);
+  }
+  if (restaurant?.fontFamily && FONTS.includes(restaurant.fontFamily)) {
+    style['--mm-font-family'] = `'${restaurant.fontFamily}', 'Segoe UI', system-ui, sans-serif`;
   }
   return style as CSSProperties;
 }
@@ -56,10 +62,12 @@ export function LayoutView({ role, loading = false, restaurant, onLogout, childr
   const open = openedAt === location.key;
   const platform = role === 'platform_admin';
   const brand = platform ? 'Mon Miam Miam · Plateforme' : restaurant?.name ?? 'Mon Miam Miam';
-  return <div className="app-shell" style={platform ? undefined : themeFor(restaurant)}>
+  const mode = !platform && restaurant?.defaultMode && MODES.includes(restaurant.defaultMode) ? restaurant.defaultMode : 'light';
+  const logo = !platform && restaurant?.logoUrl ? restaurant.logoUrl : null;
+  return <div className="app-shell" data-mode={platform ? undefined : mode} style={platform ? undefined : themeFor(restaurant)}>
     <a className="skip-link" href="#main-content">Aller au contenu</a>
     <header className="topbar">
-      <Link to={platform ? '/plateforme' : '/'} className="brand">{brand}</Link>
+      <Link to={platform ? '/plateforme' : '/'} className="brand">{logo && <img className="brand-logo" src={assetUrl(logo)} alt={brand} />}{!logo && brand}</Link>
       {loading ? <Spinner label="Chargement de la session…" /> : <>
         <button ref={toggle} className="burger" type="button" aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'} aria-expanded={open} aria-controls={navId} onClick={() => setOpenedAt(open ? null : location.key)}>☰</button>
         <nav id={navId} className={`main-nav${open ? ' open' : ''}`} aria-label="Navigation principale" onKeyDown={event => {
