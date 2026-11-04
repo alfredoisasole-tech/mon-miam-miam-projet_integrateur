@@ -40,7 +40,7 @@ export function validateRegister(input: RegisterInput): FieldError {
 export function useRegister() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { slug } = useRestaurant(); // slug est de type string | null
+  const { slug, setRestaurant } = useRestaurant(); // slug est de type string | null
   
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldError>({});
@@ -50,21 +50,18 @@ export function useRegister() {
     setErrors(localErrors);
     if (Object.keys(localErrors).length > 0) return false;
 
-    // CORRECTION 1 : Vérifier que slug n'est pas null avant d'appeler l'API
-    if (!slug) {
-      setErrors({ form: "Aucun restaurant sélectionné. Veuillez revenir à l'accueil." });
-      return false;
-    }
+    // Si aucun restaurant n'est présélectionné, on rattache au restaurant principal du campus
+    const targetSlug = slug || 'zeduc-space';
 
     setSubmitting(true);
     try {
-      const res = await authApi.register(slug, input);
+      const res = await authApi.register(targetSlug, input);
+      setRestaurant(targetSlug);
       
-      // CORRECTION 2 : login() ne prend que le token. 
       // session.tsx se chargera tout seul de faire api.get("/me") pour récupérer le user.
       await login(res.token);
       
-      navigate('/'); // Redirection vers le menu du restaurant
+      navigate('/'); // Redirection vers l'accueil ou le menu
       return true;
       
     } catch (err: any) {
