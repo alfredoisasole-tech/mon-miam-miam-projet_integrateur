@@ -16,8 +16,8 @@ function linksFor(role: User['role']) {
   switch (role) {
     case 'student': return [['/menu', 'Menu'], ['/cart', 'Panier'], ['/orders', 'Mes commandes'], ['/loyalty', 'Mes points'], ['/community', 'Communauté'], ['/claims', 'Réclamations']];
     case 'employee': return [['/staff/orders', 'Commandes'], ['/staff/menu', 'Menu'], ['/staff/weekly', 'Statistiques'], ['/staff/claims', 'Réclamations']];
-    case 'manager': return [['/staff/orders', 'Commandes'], ['/staff/menu', 'Menu'], ['/staff/overview', 'Statistiques'], ['/staff/claims', 'Réclamations']];
-    case 'admin': return [['/staff/orders', 'Commandes'], ['/admin/menu', 'Menu'], ['/staff/overview', 'Statistiques'], ['/staff/claims', 'Réclamations'], ['/admin/settings', 'Paramètres']];
+    case 'manager': return [['/staff/orders', 'Commandes'], ['/staff/menu', 'Menu'], ['/staff/overview', 'Statistiques'], ['/staff/claims', 'Réclamations'], ['/staff/accounts', 'Équipe']];
+    case 'admin': return [['/staff/orders', 'Commandes'], ['/admin/menu', 'Menu'], ['/staff/overview', 'Statistiques'], ['/staff/claims', 'Réclamations'], ['/staff/accounts', 'Équipe'], ['/admin/promotions', 'Promotions'], ['/admin/settings', 'Paramètres']];
     case 'platform_admin': return [['/plateforme', 'Restaurants']];
     default: return publicLinks;
   }
