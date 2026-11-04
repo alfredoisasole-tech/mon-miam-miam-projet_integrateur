@@ -88,5 +88,5 @@ export const api = {
   patch: <T>(chemin: string, corps?: unknown) =>
     requete<T>(chemin, { methode: "PATCH", corps }),
 
-  delete: <T>(chemin: string) => requete<T>(chemin, { methode: "DELETE" }),
+  delete: <T>(chemin: string, corps?: unknown) => requete<T>(chemin, { methode: "DELETE", corps }),
 };
