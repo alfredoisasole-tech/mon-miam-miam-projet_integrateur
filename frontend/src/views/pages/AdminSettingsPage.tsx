@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { DAYS, FONTS, MAX_LOGO_BYTES, settingsApi } from '../../controllers/settings.ts';
 import type { Settings, SettingsPatch } from '../../controllers/settings.ts';
+import { announceRestaurantUpdated } from '../../controllers/useRestaurantProfile.ts';
 import { Alert, Card, Input, Select, Spinner } from '../components/ui.tsx';
 import './settings.css';
 
@@ -126,6 +127,7 @@ export function AdminSettingsPage() {
     setSaving(true);
     try {
       load(await settingsApi.update(patch));
+      announceRestaurantUpdated();
       setMessage({ kind: 'success', text: 'Les paramètres sont enregistrés.' });
     } catch (error) {
       setMessage({ kind: 'error', text: error instanceof Error ? error.message : 'Enregistrement impossible.' });

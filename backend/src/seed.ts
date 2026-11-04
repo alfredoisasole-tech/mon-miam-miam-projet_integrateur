@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import type { Database } from './db/database.ts';
 import { hashPassword } from './services/auth.service.ts';
 
@@ -10,6 +12,11 @@ export interface SeedCredentials {
 }
 
 const DEMO_IDS = ['demo-restaurant-zeduc', 'demo-restaurant-lea'];
+
+/** Logo de démonstration d'un restaurant, lu dans backend/assets ; absent, le restaurant n'a simplement pas de logo. */
+function demoLogo(file: string): Buffer | null {
+  try { return readFileSync(fileURLToPath(new URL(`../assets/demo-logos/${file}`, import.meta.url))); } catch { return null; }
+}
 const passwordPattern = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 export function seedDemoData(db: Database, credentials: SeedCredentials): 'created' | 'already-present' {
@@ -24,8 +31,9 @@ export function seedDemoData(db: Database, credentials: SeedCredentials): 'creat
 
   const now = new Date().toISOString();
   const restaurantRows = [
-    { id: DEMO_IDS[0]!, slug: 'zeduc-space', name: 'ZeDuc@Space', primary: '#cfbd97', secondary: '#000000' },
-    { id: DEMO_IDS[1]!, slug: 'chez-lea', name: 'Chez Léa', primary: '#cfbd97', secondary: '#000000' },
+    // Chaque restaurant a sa propre charte (couleurs, police, mode) et son logo : la plateforme, elle, garde la sienne.
+    { id: DEMO_IDS[0]!, slug: 'zeduc-space', name: 'ZeDuc@Space', tagline: 'Le goût de la terrasse', primary: '#2f9e5b', secondary: '#0f2a1d', font: 'Trebuchet MS', mode: 'dark', logo: 'zeduc-space.png' },
+    { id: DEMO_IDS[1]!, slug: 'chez-lea', name: 'Chez Léa', tagline: 'Cuisine familiale', primary: '#c4552d', secondary: '#3b1f14', font: 'Georgia', mode: 'light', logo: 'chez-lea.png' },
   ];
   const accounts = [
     { id: 'demo-admin-zeduc', restaurant: DEMO_IDS[0]!, role: 'admin', name: 'Administrateur ZeDuc', email: 'admin@zeduc-space.test', phone: '+243810000001', password: credentials.restaurantAdminPassword },
@@ -36,9 +44,15 @@ export function seedDemoData(db: Database, credentials: SeedCredentials): 'creat
 
   db.transaction(() => {
     for (const restaurant of restaurantRows) {
-      db.run(`INSERT INTO restaurants (id, slug, name, primary_color, secondary_color, font_family, timezone, created_at)
-        VALUES (?, ?, ?, ?, ?, 'Arial', 'Africa/Kinshasa', ?)`,
-      [restaurant.id, restaurant.slug, restaurant.name, restaurant.primary, restaurant.secondary, now]);
+      db.run(`INSERT INTO restaurants (id, slug, name, tagline, primary_color, secondary_color, font_family, default_mode, timezone, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Africa/Kinshasa', ?)`,
+      [restaurant.id, restaurant.slug, restaurant.name, restaurant.tagline, restaurant.primary, restaurant.secondary, restaurant.font, restaurant.mode, now]);
+      const logo = demoLogo(restaurant.logo);
+      if (logo) {
+        const assetId = `ast_${randomUUID()}`;
+        db.run("INSERT INTO assets (id, restaurant_id, kind, mime, data, size, created_at) VALUES (?, ?, 'logo', 'image/png', ?, ?, ?)", [assetId, restaurant.id, logo, logo.length, now]);
+        db.run('UPDATE restaurants SET logo_asset_id = ? WHERE id = ?', [assetId, restaurant.id]);
+      }
       db.run(`INSERT INTO restaurant_settings (restaurant_id, opening_hours, delivery_communes, updated_at)
         VALUES (?, ?, ?, ?)`,
       [restaurant.id, JSON.stringify(Object.fromEntries(
@@ -60,14 +74,24 @@ export function seedDemoData(db: Database, credentials: SeedCredentials): 'creat
       VALUES (?, ?, ?, ?, ?)`,
     ['demo-platform-admin', 'Administrateur de la plateforme', 'plateforme@monmiam.test', hashPassword(credentials.platformAdminPassword), now]);
 
-    const dishes = ['Poulet braisé', 'Riz cantonais', 'Poisson grillé', 'Frites maison', 'Pondu', 'Samosas', 'Jus frais', 'Eau minérale', 'Salade du jour', 'Beignets'];
+    // Menu de démonstration : plats courants de Kinshasa, décrits, aux prix habituels en FC.
+    const dishes: Array<[name: string, description: string, category: string, priceFc: number]> = [
+      ['Riz-haricots', 'Riz blanc, haricots mijotés à l’huile de palme et bananes plantain frites.', 'plat', 3000],
+      ['Pondu et chikwangue', 'Feuilles de manioc pilées et mijotées, servies avec du bâton de manioc.', 'plat', 4000],
+      ['Poulet à la moambe', 'Poulet mijoté dans la sauce de noix de palme, avec du riz.', 'plat', 7000],
+      ['Poisson braisé et makemba', 'Tilapia grillé aux épices, bananes plantain frites et piment.', 'plat', 8000],
+      ['Brochettes de bœuf', 'Quatre brochettes marinées, grillées au charbon, avec des frites.', 'plat', 5000],
+      ['Mikate', 'Beignets de farine moelleux, légèrement sucrés, servis chauds.', 'snack', 1000],
+      ['Jus de gingembre', 'Jus frais de gingembre, citron et sucre de canne, servi bien froid.', 'boisson', 1500],
+      ['Bissap', 'Infusion froide de fleurs d’hibiscus, parfumée à la menthe.', 'boisson', 1500],
+      ['Salade de fruits', 'Ananas, mangue, papaye et banane de saison.', 'dessert', 2500],
+      ['Beignets de banane', 'Beignets de banane mûre saupoudrés de sucre, croustillants dehors.', 'dessert', 2000],
+    ];
     for (const restaurant of restaurantRows) {
-      dishes.forEach((name, index) => {
-        const category = index < 6 ? 'plat' : index < 8 ? 'boisson' : index === 8 ? 'snack' : 'dessert';
+      dishes.forEach(([name, description, category, priceFc], index) => {
         db.run(`INSERT INTO menu_items (id, restaurant_id, name, description, price_fc, category, position, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [`demo-item-${restaurant.id}-${index + 1}-${randomUUID().slice(0, 8)}`, restaurant.id, name, null,
-          (index + 1) * 500, category, index, now, now]);
+        [`demo-item-${restaurant.id}-${index + 1}-${randomUUID().slice(0, 8)}`, restaurant.id, name, description, priceFc, category, index, now, now]);
       });
     }
   });

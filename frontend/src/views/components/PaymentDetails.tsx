@@ -1,4 +1,5 @@
 import type { PaymentOperator } from '../../controllers/payment.ts';
+import { normalizePhone } from '../../models/phone.ts';
 
 /** Africell n'est pas pris en charge par Easypay : il n'est pas proposé. */
 export const PAYMENT_OPERATORS: Array<{ value: PaymentOperator; label: string }> = [
@@ -7,13 +8,7 @@ export const PAYMENT_OPERATORS: Array<{ value: PaymentOperator; label: string }>
   { value: 'airtel_money', label: 'Airtel Money' },
 ];
 
-/** Accepte « 0991429583 », « 991429583 » ou « +243991429583 » et renvoie « +243991429583 ». */
-export function normalizePaymentPhone(value: string): string {
-  const digits = value.replace(/[\s.-]/g, '');
-  if (digits.startsWith('+')) return digits;
-  if (digits.startsWith('243')) return `+${digits}`;
-  return `+243${digits.replace(/^0/, '')}`;
-}
+export const normalizePaymentPhone = normalizePhone;
 
 export const isValidPaymentPhone = (value: string) => /^\+[1-9]\d{7,14}$/.test(normalizePaymentPhone(value));
 

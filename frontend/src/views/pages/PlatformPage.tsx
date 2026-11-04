@@ -4,6 +4,7 @@ import { EMAIL_RE, PHONE_RE, adminApi } from '../../controllers/admin.ts';
 import type { PlatformRestaurant } from '../../controllers/admin.ts';
 import { PASSWORD_RE, PASSWORD_RULE } from '../../controllers/account.ts';
 import { Alert, Badge, Card, Input, Spinner } from '../components/ui.tsx';
+import { RestaurantLogo } from '../components/RestaurantLogo.tsx';
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : 'Une erreur est survenue.');
@@ -53,6 +54,7 @@ export function PlatformPage() {
     <h1>Restaurants de la plateforme</h1>
     <Alert kind={feedback?.kind ?? 'info'}>{feedback?.text}</Alert>
     {restaurants === null ? <Spinner /> : restaurants.map(restaurant => <article key={restaurant.slug} className="card" aria-label={restaurant.name}>
+      <RestaurantLogo name={restaurant.name} logoUrl={restaurant.logoUrl} primary={restaurant.colors?.primary} secondary={restaurant.colors?.secondary} />
       <h3>{restaurant.name} {restaurant.status === 'active' ? <Badge kind="success">Actif</Badge> : <Badge kind="error">Désactivé</Badge>}</h3>
       <p className="muted">{restaurant.slug} · {restaurant.students} étudiant{restaurant.students > 1 ? 's' : ''}</p>
       <p>{restaurant.administrators.length === 0 ? 'Aucun administrateur' : restaurant.administrators.map(a => `${a.name} (${a.email})`).join(', ')}</p>

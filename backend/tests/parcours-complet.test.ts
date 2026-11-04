@@ -58,17 +58,19 @@ describe('[MM-PARCOURS] Parcours complet de bout en bout', () => {
   after(async () => { await server.fermer(); db.close(); });
 
   it('1. l’administrateur personnalise la charte et le profil public la reflète aussitôt', async () => {
+    const before = await call('GET', '/api/restaurants/zeduc-space');
+    const otherBefore = await call('GET', '/api/restaurants/chez-lea');
     const patch = await call('PATCH', '/api/admin/settings', 'admin', {
       brand: { primaryColor: '#112233', fontFamily: 'Georgia', defaultMode: 'dark' },
       loyalty: { validityMonths: 6 },
     });
     assert.equal(patch.status, 200);
     const profile = await call('GET', '/api/restaurants/zeduc-space');
-    assert.deepEqual(profile.body['colors'], { primary: '#112233', secondary: '#000000' });
+    assert.deepEqual(profile.body['colors'], { primary: '#112233', secondary: before.body['colors']['secondary'] }, 'seule la couleur principale change');
     assert.equal(profile.body['fontFamily'], 'Georgia');
     assert.equal(profile.body['defaultMode'], 'dark');
     const other = await call('GET', '/api/restaurants/chez-lea');
-    assert.deepEqual(other.body['colors'], { primary: '#cfbd97', secondary: '#000000' }, 'un autre restaurant garde sa charte');
+    assert.deepEqual(other.body['colors'], otherBefore.body['colors'], 'un autre restaurant garde sa charte');
     // On remet la durée de validité par défaut pour la suite.
     assert.equal((await call('PATCH', '/api/admin/settings', 'admin', { loyalty: { validityMonths: 12 } })).status, 200);
   });

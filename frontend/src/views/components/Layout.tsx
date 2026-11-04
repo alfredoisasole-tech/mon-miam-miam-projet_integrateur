@@ -1,7 +1,8 @@
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, useRestaurant } from '../../controllers/session.tsx';
+import { useCart } from '../../controllers/useCart.ts';
 import { useRestaurantProfile } from '../../controllers/useRestaurantProfile.ts';
 import type { RestaurantBrand } from '../../controllers/useRestaurantProfile.ts';
 import type { User } from '../../models/types.ts';
@@ -14,7 +15,7 @@ import './layout.css';
 const publicLinks = [['/', 'Accueil'], ['/login', 'Connexion'], ['/register', 'Inscription']];
 function linksFor(role: User['role']) {
   switch (role) {
-    case 'student': return [['/menu', 'Menu'], ['/cart', 'Panier'], ['/orders', 'Mes commandes'], ['/loyalty', 'Mes points'], ['/community', 'Communauté'], ['/claims', 'Réclamations']];
+    case 'student': return [['/', 'Restaurants'], ['/menu', 'Menu'], ['/cart', 'Panier'], ['/orders', 'Mes commandes'], ['/loyalty', 'Mes points'], ['/community', 'Communauté'], ['/claims', 'Réclamations']];
     case 'employee': return [['/staff/orders', 'Commandes'], ['/staff/menu', 'Menu'], ['/staff/weekly', 'Statistiques'], ['/staff/claims', 'Réclamations']];
     case 'manager': return [['/staff/orders', 'Commandes'], ['/staff/menu', 'Menu'], ['/staff/overview', 'Statistiques'], ['/staff/claims', 'Réclamations'], ['/staff/accounts', 'Équipe']];
     case 'admin': return [['/staff/orders', 'Commandes'], ['/admin/menu', 'Menu'], ['/staff/overview', 'Statistiques'], ['/staff/claims', 'Réclamations'], ['/staff/accounts', 'Équipe'], ['/admin/promotions', 'Promotions'], ['/admin/settings', 'Paramètres']];
@@ -52,30 +53,54 @@ export interface LayoutViewProps {
   loading?: boolean;
   restaurant?: RestaurantBrand | null;
   onLogout: () => void;
+  /** Page de la plateforme (accueil, compte, pages légales) : charte fixe, jamais celle d'un restaurant. */
+  platformStyle?: boolean;
+  /** Nombre d'articles du panier, affiché sur le lien « Panier » des étudiants. */
+  cartCount?: number;
   children?: ReactNode;
 }
 
+/** Pages de la plateforme : charte fixe. Le reste (menu, panier, commandes, points, personnel…) prend la charte du restaurant. */
+const PLATFORM_PATHS = new Set(['/', '/login', '/register', '/forgot-password', '/profile', '/plateforme']);
+export const isPlatformPage = (pathname: string) => PLATFORM_PATHS.has(pathname) || pathname.startsWith('/legal');
+
+/** Revient en haut de page à chaque changement de page, comme sur un site classique. */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo?.(0, 0); }, [pathname]);
+  return null;
+}
+
 /** Vue partagée, sans appel API ; Layout raccorde la session et le profil public. */
-export function LayoutView({ role, loading = false, restaurant, onLogout, children }: LayoutViewProps) {
+export function LayoutView({ role, loading = false, restaurant, onLogout, cartCount = 0, platformStyle = false, children }: LayoutViewProps) {
   const location = useLocation();
   const navId = useId();
   const toggle = useRef<HTMLButtonElement>(null);
   const [openedAt, setOpenedAt] = useState<string | null>(null);
   const open = openedAt === location.key;
   const platform = role === 'platform_admin';
-  const brand = platform ? 'Mon Miam Miam · Plateforme' : restaurant?.name ?? 'Mon Miam Miam';
-  const mode = !platform && restaurant?.defaultMode && MODES.includes(restaurant.defaultMode) ? restaurant.defaultMode : 'light';
-  const logo = !platform && restaurant?.logoUrl ? restaurant.logoUrl : null;
-  return <div className="app-shell" data-mode={platform ? undefined : mode} style={platform ? undefined : themeFor(restaurant)}>
+  // La plateforme a sa propre charte, fixe : elle ne dépend jamais de celle d'un restaurant.
+  const fixed = platform || platformStyle;
+  const brand = platform ? 'Mon Miam Miam · Plateforme' : fixed ? 'Mon Miam Miam' : restaurant?.name ?? 'Mon Miam Miam';
+  const mode = !fixed && restaurant?.defaultMode && MODES.includes(restaurant.defaultMode) ? restaurant.defaultMode : 'light';
+  const logo = !fixed && restaurant?.logoUrl ? restaurant.logoUrl : null;
+  return <div className="app-shell" data-mode={fixed ? undefined : mode} style={fixed ? undefined : themeFor(restaurant)}>
+    <ScrollToTop />
     <a className="skip-link" href="#main-content">Aller au contenu</a>
     <header className="topbar">
-      <Link to={platform ? '/plateforme' : '/'} className="brand">{logo && <img className="brand-logo" src={assetUrl(logo)} alt={brand} />}{!logo && brand}</Link>
+      <Link to={platform ? '/plateforme' : '/'} className="brand">{logo && <img className="brand-logo" src={assetUrl(logo)} alt={brand} />}{!logo && fixed && <img className="brand-mark" src="/mon-miam-miam.svg" alt="" />}{!logo && brand}</Link>
+      {role === 'student' && cartCount > 0 && <Link to="/cart" className="cart-shortcut" aria-label={`Voir le panier, ${cartCount} ${cartCount > 1 ? 'articles' : 'article'}`}>
+        Panier <span className="nav-badge" aria-hidden="true">{cartCount}</span>
+      </Link>}
       {loading ? <Spinner label="Chargement de la session…" /> : <>
         <button ref={toggle} className="burger" type="button" aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'} aria-expanded={open} aria-controls={navId} onClick={() => setOpenedAt(open ? null : location.key)}>☰</button>
         <nav id={navId} className={`main-nav${open ? ' open' : ''}`} aria-label="Navigation principale" onKeyDown={event => {
           if (event.key === 'Escape') { setOpenedAt(null); toggle.current?.focus(); }
         }}>
-          {linksFor(role).map(([to, label]) => <NavLink key={to} to={to} end={to === '/'} onClick={() => setOpenedAt(null)}>{label}</NavLink>)}
+          {linksFor(role).map(([to, label]) => <NavLink key={to} to={to} end={to === '/'} onClick={() => setOpenedAt(null)}>
+            {label}
+            {to === '/cart' && cartCount > 0 && <span className="nav-badge" aria-label={`${cartCount} ${cartCount > 1 ? 'articles' : 'article'}`}>{cartCount}</span>}
+          </NavLink>)}
           {role && <button type="button" className="logout" onClick={() => { setOpenedAt(null); onLogout(); }}>Déconnexion</button>}
         </nav>
       </>}
@@ -95,9 +120,12 @@ export function LayoutView({ role, loading = false, restaurant, onLogout, childr
 export function Layout({ children }: { children?: ReactNode }) {
   const { user, loading, logout } = useAuth();
   const { slug } = useRestaurant();
-  const { restaurant, error } = useRestaurantProfile(user?.role === 'platform_admin' ? null : slug);
+  // Le personnel voit la charte de son restaurant ; un étudiant, celle du restaurant qu'il consulte.
+  const platformPage = isPlatformPage(useLocation().pathname);
+  const { restaurant, error } = useRestaurantProfile(platformPage || user?.role === 'platform_admin' ? null : (user?.restaurant?.slug ?? slug));
   const navigate = useNavigate();
-  return <LayoutView role={user?.role} loading={loading} restaurant={restaurant} onLogout={() => { logout(); navigate('/', { replace: true }); }}>
+  const { count } = useCart();
+  return <LayoutView role={user?.role} loading={loading} restaurant={restaurant} cartCount={count} platformStyle={platformPage} onLogout={() => { logout(); navigate('/', { replace: true }); }}>
     {error && <Alert kind="info">{error}</Alert>}
     {children ?? <Outlet />}
   </LayoutView>;
