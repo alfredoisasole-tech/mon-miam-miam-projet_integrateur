@@ -16,6 +16,9 @@ import { StaffMenuPage } from './views/pages/StaffMenuPage.tsx';
 import { AdminMenuPage } from './views/pages/AdminMenuPage.tsx';
 import { AdminSettingsPage } from './views/pages/AdminSettingsPage.tsx';
 import { WeeklyStatsPage } from './views/pages/WeeklyStatsPage.tsx';
+import { ForgotPasswordPage } from './views/pages/ForgotPasswordPage.tsx';
+import { ProfilePage } from './views/pages/ProfilePage.tsx';
+import { LegalPage } from './views/pages/LegalPage.tsx';
 
 export function App() {
   return (
@@ -30,6 +33,18 @@ export function App() {
                 <Route path="/menu" element={<MenuPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/legal/mentions" element={<LegalPage page="mentions" />} />
+                <Route path="/legal/confidentialite" element={<LegalPage page="confidentialite" />} />
+                <Route path="/legal/conditions" element={<LegalPage page="conditions" />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <RequireRole allowedRoles={['student', 'employee', 'manager', 'admin']}>
+                      <ProfilePage />
+                    </RequireRole>
+                  }
+                />
                 <Route
                   path="/cart"
                   element={

@@ -9,6 +9,7 @@
 .burger, .logout { background: transparent; color: inherit; border: 1px solid currentColor; }
 .burger { display: none; }
 .shell-content { flex: 1; }
+.footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 1.25rem; margin-bottom: .75rem; }
 .shell-footer { padding: 1.5rem; text-align: center; color: var(--mm-muted); border-top: 1px solid var(--mm-line); }
 .skip-link { position: absolute; transform: translateY(-200%); padding: .75rem; background: var(--mm-surface); color: var(--mm-text); z-index: 10; }
 .skip-link:focus { transform: translateY(0); }
