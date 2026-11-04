@@ -81,6 +81,9 @@ export function LayoutView({ role, loading = false, restaurant, onLogout, cartCo
     <a className="skip-link" href="#main-content">Aller au contenu</a>
     <header className="topbar">
       <Link to={platform ? '/plateforme' : '/'} className="brand">{logo && <img className="brand-logo" src={assetUrl(logo)} alt={brand} />}{!logo && brand}</Link>
+      {role === 'student' && cartCount > 0 && <Link to="/cart" className="cart-shortcut" aria-label={`Voir le panier, ${cartCount} ${cartCount > 1 ? 'articles' : 'article'}`}>
+        Panier <span className="nav-badge" aria-hidden="true">{cartCount}</span>
+      </Link>}
       {loading ? <Spinner label="Chargement de la session…" /> : <>
         <button ref={toggle} className="burger" type="button" aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'} aria-expanded={open} aria-controls={navId} onClick={() => setOpenedAt(open ? null : location.key)}>☰</button>
         <nav id={navId} className={`main-nav${open ? ' open' : ''}`} aria-label="Navigation principale" onKeyDown={event => {
