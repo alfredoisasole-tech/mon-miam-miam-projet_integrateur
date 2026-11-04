@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { adminApi } from '../../controllers/admin.ts';
+import { MAX_LOGO_BYTES, settingsApi } from '../../controllers/settings.ts';
 import type { AdminPromotion } from '../../controllers/admin.ts';
 import { Alert, Badge, Card, Input, Select, Spinner } from '../components/ui.tsx';
 
@@ -15,6 +16,7 @@ export function AdminPromotionsPage() {
   const [description, setDescription] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
+  const [posterId, setPosterId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -27,6 +29,13 @@ export function AdminPromotionsPage() {
   async function run(action: () => Promise<unknown>) {
     setError(null);
     try { await action(); setConfirming(null); load(); } catch (e) { setError(messageOf(e)); setConfirming(null); }
+  }
+  async function onPoster(file: File | undefined) {
+    if (!file) return;
+    if (file.size > MAX_LOGO_BYTES) { setError('L’affiche dépasse 512 Ko.'); return; }
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { setError('L’affiche doit être une image PNG, JPEG ou WebP.'); return; }
+    setError(null);
+    try { setPosterId((await settingsApi.uploadAsset('poster', file)).id); } catch (e) { setError(messageOf(e)); }
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -41,8 +50,9 @@ export function AdminPromotionsPage() {
       await adminApi.createPromotion({
         type, title: title.trim(), ...(description.trim() ? { description: description.trim() } : {}),
         startDate: `${start}T00:00:00.000Z`, endDate: `${end}T23:59:59.000Z`,
+        ...(posterId ? { imageAssetId: posterId } : {}),
       });
-      setTitle(''); setDescription(''); setStart(''); setEnd('');
+      setTitle(''); setDescription(''); setStart(''); setEnd(''); setPosterId(null);
     });
   }
 
@@ -56,6 +66,8 @@ export function AdminPromotionsPage() {
         </Select>
         <Input label="Titre" value={title} error={errors.title} onChange={e => setTitle(e.target.value)} />
         <Input label="Description" value={description} onChange={e => setDescription(e.target.value)} />
+        <Input label="Affiche" type="file" accept="image/png,image/jpeg,image/webp" hint="PNG, JPEG ou WebP, 512 Ko au plus" onChange={e => void onPoster(e.target.files?.[0])} />
+        {posterId && <p className="muted">Une affiche est jointe.</p>}
         <Input label="Début" type="date" value={start} error={errors.start} onChange={e => setStart(e.target.value)} />
         <Input label="Fin" type="date" value={end} error={errors.end} onChange={e => setEnd(e.target.value)} />
         <button type="submit" className="btn btn-primary">Créer</button>

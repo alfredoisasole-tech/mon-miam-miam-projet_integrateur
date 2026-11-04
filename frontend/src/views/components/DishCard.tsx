@@ -11,6 +11,7 @@ interface DishCardProps {
 export const DishCard: React.FC<DishCardProps> = ({ dish, isStudent, onAdd }) => {
   return (
     <div className="dish-card" data-testid={`dish-${dish.id}`}>
+      {dish.imageUrl && <img className="dish-photo" src={dish.imageUrl} alt={dish.name} loading="lazy" />}
       <h3>{dish.name}</h3>
       {dish.description && <p>{dish.description}</p>}
       <p className="price">{formatPrice(dish.priceFc)}</p>

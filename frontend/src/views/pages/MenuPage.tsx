@@ -3,12 +3,15 @@ import { useAuth, useRestaurant } from '../../controllers/session.tsx';
 import { useCart } from '../../controllers/useCart.ts';
 import { useMenu, type MenuDish } from '../../controllers/useMenu.ts';
 import { DishCard } from '../components/DishCard';
+import { PromoCard } from '../components/PromoCard';
+import { usePromotions } from '../../controllers/promotions.ts';
 
 export const MenuPage: React.FC = () => {
   const { slug } = useRestaurant();
   const { user } = useAuth();
   const { data: menu, isLoading, error } = useMenu(slug);
   const cart = useCart();
+  const { data: promotions } = usePromotions(slug);
 
   const addDish = (dish: MenuDish) => {
     cart.addProduct({
@@ -29,6 +32,14 @@ export const MenuPage: React.FC = () => {
   const isStudent = user?.role === 'student';
   return (
     <div className="menu-page">
+      {promotions.length > 0 && (
+        <section aria-labelledby="promotions-heading">
+          <h3 id="promotions-heading">Promotions et événements</h3>
+          <div className="promo-grid">
+            {promotions.map((promotion) => <PromoCard key={promotion.id} promotion={promotion} />)}
+          </div>
+        </section>
+      )}
       <h2>Notre Menu</h2>
       {menu.dailyItems.length > 0 && (
         <section aria-labelledby="daily-menu-heading">
