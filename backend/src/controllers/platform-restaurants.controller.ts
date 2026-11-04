@@ -15,6 +15,27 @@ function platformAdmin(res: Response, next: (error?: unknown) => void): Authenti
 }
 
 export function registerPlatformRestaurantRoutes(app: Express, db: Database, authenticate: RequestHandler): void {
+  app.get('/api/platform/restaurants', authenticate, (_req, res, next) => {
+    if (!platformAdmin(res, next)) return;
+    try {
+      const restaurants = db.all<{ id: string; slug: string; name: string; status: string; created_at: string; students: number }>(
+        `SELECT r.id, r.slug, r.name, r.status, r.created_at,
+          (SELECT COUNT(*) FROM memberships m JOIN users u ON u.id = m.user_id
+            WHERE m.restaurant_id = r.id AND u.role = 'student' AND u.status <> 'deleted') AS students
+         FROM restaurants r ORDER BY r.created_at ASC, r.slug ASC`,
+      );
+      const admins = db.all<{ restaurant_id: string; name: string; email: string }>(
+        "SELECT restaurant_id, name, email FROM users WHERE role = 'admin' AND status <> 'deleted' ORDER BY created_at ASC, name ASC",
+      );
+      res.status(200).json({
+        items: restaurants.map((row) => ({
+          slug: row.slug, name: row.name, status: row.status, createdAt: row.created_at, students: Number(row.students),
+          administrators: admins.filter((admin) => admin.restaurant_id === row.id).map((admin) => ({ name: admin.name, email: admin.email })),
+        })),
+      });
+    } catch (error) { next(error); }
+  });
+
   app.post('/api/platform/restaurants', authenticate, (req, res, next) => {
     if (!platformAdmin(res, next)) return;
     try {
