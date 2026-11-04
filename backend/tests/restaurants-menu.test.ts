@@ -45,7 +45,7 @@ describe('API publique restaurants et menu (APP-19)', () => {
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), {
       items: [{ slug: 'alpha', name: 'Alpha', slogan: 'Cuisine alpha', logoUrl: null,
-        colors: { primary: '#111111', secondary: '#eeeeee' }, isOpenNow: true }],
+        colors: { primary: '#111111', secondary: '#eeeeee' }, fontFamily: 'Arial', defaultMode: 'light', isOpenNow: true }],
       total: 2, page: 1, pageSize: 1,
     });
   });

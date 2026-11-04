@@ -40,6 +40,8 @@
         "primary": "#cfbd97",
         "secondary": "#000000"
       },
+      "fontFamily": "Poppins",
+      "defaultMode": "light",
       "isOpenNow": true
     },
     {
@@ -51,6 +53,8 @@
         "primary": "#cfbd97",
         "secondary": "#000000"
       },
+      "fontFamily": "Poppins",
+      "defaultMode": "light",
       "isOpenNow": false
     }
   ],
@@ -65,6 +69,7 @@
 - Seuls les restaurants **actifs** (`status = 'active'`) sont renvoyés.
 - Triés par **nom** (ordre alphabétique, insensible à la casse).
 - `isOpenNow` est calculé à partir des heures d'ouverture du restaurant et de l'heure actuelle (UTC+1, Kinshasa).
+- `colors`, `fontFamily`, `defaultMode` (`light`, `dark` ou `system`) et `logoUrl` forment la **charte graphique du restaurant** : le site les applique à toutes ses pages. Ils se modifient par l'administrateur, sans redéploiement : voir [parametres.md](parametres.md).
 
 **Erreurs** : aucune (liste vide si aucun restaurant actif → `items: []`).
 
@@ -88,6 +93,8 @@
     "primary": "#cfbd97",
     "secondary": "#000000"
   },
+      "fontFamily": "Poppins",
+      "defaultMode": "light",
   "isOpenNow": true,
   "openingHours": {
     "mon": [{ "open": "10:00", "close": "22:00" }],
