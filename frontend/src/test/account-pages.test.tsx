@@ -90,6 +90,11 @@ describe('Mon profil', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Une commande est en cours.');
     expect(logout).not.toHaveBeenCalled();
   });
+  it('explique le changement obligatoire du mot de passe temporaire', () => {
+    vi.mocked(session.useAuth).mockReturnValue({ user: { id: 'u2', name: 'Chef', role: 'employee', mustChangePassword: true }, loading: false, login, logout });
+    render(<MemoryRouter><ProfilePage /></MemoryRouter>);
+    expect(screen.getByText(/mot de passe est temporaire/i)).toBeInTheDocument();
+  });
   it('masque la suppression pour le personnel', () => {
     vi.mocked(session.useAuth).mockReturnValue({ user: { id: 'u2', name: 'Chef', role: 'manager' }, loading: false, login, logout });
     render(<MemoryRouter><ProfilePage /></MemoryRouter>);
