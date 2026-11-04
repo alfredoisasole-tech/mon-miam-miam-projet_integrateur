@@ -44,6 +44,11 @@ export const migrations: Migration[] = [
     ALTER TABLE payments ADD COLUMN provider_reference TEXT;
     CREATE UNIQUE INDEX idx_payments_provider_reference ON payments (provider_reference) WHERE provider_reference IS NOT NULL;
   ` },
+  // URL externe de l'image d'un plat (CDN public ou URL absolue).
+  // Utilisée quand aucun asset binaire n'est stocké en base (image_asset_id IS NULL).
+  { id: '006_menu_item_image_url', sql: `
+    ALTER TABLE menu_items ADD COLUMN image_url TEXT;
+  ` },
 ];
 
 export function migrate(db: Database): void {

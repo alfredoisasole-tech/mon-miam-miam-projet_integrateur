@@ -72,30 +72,54 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Carte de mise en avant du plat phare */}
+        {/* Carte de mise en avant du plat phare — image réelle Poulet DG */}
         <div
           style={{
-            background: 'var(--mm-surface-subtle)',
-            border: '1.5px solid var(--mm-line)',
             borderRadius: 'var(--mm-radius)',
-            padding: '2rem',
+            overflow: 'hidden',
+            border: '1px solid var(--mm-line)',
             position: 'relative',
+            minHeight: '260px',
+            background: '#1a1a1a',
           }}
         >
-          <div className="eyebrow" style={{ color: 'var(--mm-accent)', marginBottom: '0.5rem' }}>
-            À la table du campus
-          </div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--mm-text)', marginBottom: '0.5rem' }}>
-            Poulet DG & Spécialités
-          </div>
-          <p style={{ color: 'var(--mm-muted)', fontSize: '0.95rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>
-            Généreux, coloré, incontournable. Cuisiné chaque jour sur place avec des produits frais du marché.
-          </p>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--mm-line)', paddingTop: '1rem' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--mm-muted)', fontWeight: 500 }}>
-              Menus et promotions consultables sans compte
-            </span>
-            <span style={{ fontSize: '1.25rem' }}>🍛</span>
+          <img
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJ9H7oTB2Rr_DjZEIUJ90YNw8aKRxIJk_WecN62Pn7rXxBU3DAEziXvW0du-YgUCeeCL"
+            alt="Poulet DG — plat phare du campus"
+            loading="lazy"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: 0.75,
+            }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              padding: '1.75rem',
+              background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 60%)',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-end',
+              minHeight: '260px',
+            }}
+          >
+            <div
+              className="eyebrow"
+              style={{ color: 'var(--mm-brand, #cfbd97)', marginBottom: '0.4rem' }}
+            >
+              À la table du campus
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#fff', marginBottom: '0.4rem' }}>
+              Poulet DG &amp; Spécialités
+            </div>
+            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.5, margin: 0 }}>
+              Généreux, coloré, incontournable. Cuisiné chaque jour sur place avec des produits frais du marché.
+            </p>
           </div>
         </div>
       </header>

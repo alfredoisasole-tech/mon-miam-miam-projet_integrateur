@@ -94,7 +94,9 @@ export function restaurantsMenuService(db: Database, options: { now?: () => Date
         priceFc: item.price_fc,
         isDaily: item.is_daily === 1,
         isAvailable: item.is_available === 1,
-        imageUrl: item.image_asset_id ? `/api/restaurants/${encodeURIComponent(restaurant.slug)}/assets/${encodeURIComponent(item.image_asset_id)}` : null,
+        imageUrl: item.image_asset_id
+          ? `/api/restaurants/${encodeURIComponent(restaurant.slug)}/assets/${encodeURIComponent(item.image_asset_id)}`
+          : (item.image_url ?? null),
         category: item.category,
       }));
       const dailyItems = items.filter((item) => item.isDaily);

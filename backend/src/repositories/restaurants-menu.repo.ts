@@ -29,6 +29,7 @@ export interface MenuItemRow {
   is_available: number;
   is_daily: number;
   image_asset_id: string | null;
+  image_url: string | null;
 }
 
 export function restaurantsMenuRepository(db: Database) {
@@ -67,7 +68,7 @@ export function restaurantsMenuRepository(db: Database) {
 
     listAvailableMenu(restaurantId: string): MenuItemRow[] {
       return db.all<MenuItemRow>(`
-        SELECT id, name, description, price_fc, category, is_available, is_daily, image_asset_id
+        SELECT id, name, description, price_fc, category, is_available, is_daily, image_asset_id, image_url
         FROM menu_items
         WHERE restaurant_id = ? AND is_available = 1 AND deleted_at IS NULL
         ORDER BY is_daily DESC, position, name COLLATE NOCASE

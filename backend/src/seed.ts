@@ -60,14 +60,40 @@ export function seedDemoData(db: Database, credentials: SeedCredentials): 'creat
       VALUES (?, ?, ?, ?, ?)`,
     ['demo-platform-admin', 'Administrateur de la plateforme', 'plateforme@monmiam.test', hashPassword(credentials.platformAdminPassword), now]);
 
-    const dishes = ['Poulet braisé', 'Riz cantonais', 'Poisson grillé', 'Frites maison', 'Pondu', 'Samosas', 'Jus frais', 'Eau minérale', 'Salade du jour', 'Beignets'];
+    // Images publiques référencées dans les maquettes Stitch (CDN Google aida-public)
+    const DISH_URLS: Record<string, string> = {
+      'Poulet DG':              'https://lh3.googleusercontent.com/aida-public/AB6AXuBJ9H7oTB2Rr_DjZEIUJ90YNw8aKRxIJk_WecN62Pn7rXxBU3DAEziXvW0du-YgUCeeCL',
+      'Ndolé aux crevettes':    'https://lh3.googleusercontent.com/aida-public/AB6AXuBhXXdjY1WR1gfDOgyQ_z0sRMTW-SSyobiWWWkTVHH5-oHAPkUSSSYkDL0MdNaaRCWswK',
+      'Riz sauté au bœuf':      'https://lh3.googleusercontent.com/aida-public/AB6AXuAZL3W1lM3Z32oqzaRS-7umCqr4fI2ngkPXbBHSt8crpRxcT0omFuqG3wBAo7a_rppK-l',
+      'Poisson braisé':         'https://lh3.googleusercontent.com/aida-public/AB6AXuBhXXdjY1WR1gfDOgyQ_z0sRMTW-SSyobiWWWkTVHH5-oHAPkUSSSYkDL0MdNaaRCWswK',
+      'Pondu':                  'https://lh3.googleusercontent.com/aida-public/AB6AXuBhXXdjY1WR1gfDOgyQ_z0sRMTW-SSyobiWWWkTVHH5-oHAPkUSSSYkDL0MdNaaRCWswK',
+      'Brochettes bœuf':        'https://lh3.googleusercontent.com/aida-public/AB6AXuAH0DbJ5k0D4qRy3CufbvLocjMRSAhR57wGUP5RLmGNSmgx4FqZ1Cceo-9WkplC3rK9fJM',
+      'Alloco':                 'https://lh3.googleusercontent.com/aida-public/AB6AXuCbcxXQUuj1mBRc4IZ56NdmkrAPcbhJyGskbTCOX-TVKixiVdyO2qfyy0jeazpRmt8Jck',
+      'Jus de bissap':          'https://lh3.googleusercontent.com/aida-public/AB6AXuB6z1Dz_feEuEWDUaqhrX852kIBaTBTHfBT4fN0OggYHefADxVc8FsHvJQkLu56a3l9eh',
+      'Eau minérale 50 cl':     'https://lh3.googleusercontent.com/aida-public/AB6AXuB6z1Dz_feEuEWDUaqhrX852kIBaTBTHfBT4fN0OggYHefADxVc8FsHvJQkLu56a3l9eh',
+      'Beignets maison':        'https://lh3.googleusercontent.com/aida-public/AB6AXuCbcxXQUuj1mBRc4IZ56NdmkrAPcbhJyGskbTCOX-TVKixiVdyO2qfyy0jeazpRmt8Jck',
+    };
+
+    const dishes = [
+      { name: 'Poulet DG',           desc: 'Poulet mijoté aux légumes frais, servi avec alloco et riz blanc.',   category: 'plat',    price: 4500, daily: true  },
+      { name: 'Ndolé aux crevettes', desc: 'Feuilles de ndolé mijotées, crevettes et pâte de pistache.',         category: 'plat',    price: 5000, daily: false },
+      { name: 'Riz sauté au bœuf',   desc: 'Riz cantonais sauté avec légumes croquants et lamelles de bœuf.',    category: 'plat',    price: 4000, daily: false },
+      { name: 'Poisson braisé',      desc: 'Poisson frais grillé au charbon, marinade citron-piment.',            category: 'plat',    price: 4500, daily: false },
+      { name: 'Pondu',               desc: 'Feuilles de manioc pilées, arachides et huile de palme.',             category: 'plat',    price: 3000, daily: false },
+      { name: 'Brochettes bœuf',     desc: 'Brochettes de bœuf grillées, sauce piment maison.',                  category: 'snack',   price: 2500, daily: false },
+      { name: 'Alloco',              desc: 'Bananes plantain mûres frites, piment et oignons.',                   category: 'snack',   price: 1500, daily: false },
+      { name: 'Jus de bissap',       desc: "Infusion d'hibiscus glacée, sucrée à la canne.",                     category: 'boisson', price: 1000, daily: false },
+      { name: 'Eau minérale 50 cl',  desc: 'Eau fraîche en bouteille 50 cl.',                                     category: 'boisson', price:  500, daily: false },
+      { name: 'Beignets maison',     desc: 'Beignets dorés à la farine de manioc, servis chauds.',               category: 'dessert', price: 1000, daily: false },
+    ];
+
     for (const restaurant of restaurantRows) {
-      dishes.forEach((name, index) => {
-        const category = index < 6 ? 'plat' : index < 8 ? 'boisson' : index === 8 ? 'snack' : 'dessert';
-        db.run(`INSERT INTO menu_items (id, restaurant_id, name, description, price_fc, category, position, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [`demo-item-${restaurant.id}-${index + 1}-${randomUUID().slice(0, 8)}`, restaurant.id, name, null,
-          (index + 1) * 500, category, index, now, now]);
+      dishes.forEach((dish, index) => {
+        const imageUrl = DISH_URLS[dish.name] ?? null;
+        db.run(`INSERT INTO menu_items (id, restaurant_id, name, description, price_fc, category, is_daily, image_url, position, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [`demo-item-${restaurant.id}-${index + 1}-${randomUUID().slice(0, 8)}`, restaurant.id,
+          dish.name, dish.desc, dish.price, dish.category, dish.daily ? 1 : 0, imageUrl, index, now, now]);
       });
     }
   });

@@ -57,7 +57,13 @@ async function requete<T>(chemin: string, options: Options = {}): Promise<T> {
   try {
     donnees = await reponse.json();
   } catch {
-    throw new ApiError(reponse.status, "INVALID_JSON", "Réponse invalide du serveur.");
+    throw new ApiError(
+      reponse.status,
+      "INVALID_JSON",
+      reponse.status === 502 || reponse.status === 503
+        ? "Le serveur backend n'est pas démarré ou inaccessible. Lancez `cd backend && npm run dev`."
+        : "Réponse invalide du serveur.",
+    );
   }
 
   if (!reponse.ok) {
