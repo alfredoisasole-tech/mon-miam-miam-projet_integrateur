@@ -17,6 +17,9 @@ describe('APP-84 — statistiques isolées avec authentification réelle', () =>
   let server: Serveur;
   const tokens: Record<string, string> = {};
 
+  /** Prix du premier plat du menu de démonstration : les ventes attendues en dépendent. */
+  let unit = 0;
+
   before(async () => {
     db = new Database(':memory:');
     migrate(db);
@@ -24,6 +27,7 @@ describe('APP-84 — statistiques isolées avec authentification réelle', () =>
       restaurantAdminPassword: PASSWORD, employeePassword: PASSWORD,
       studentPassword: PASSWORD, platformAdminPassword: PASSWORD,
     });
+    unit = db.get<{ price_fc: number }>("SELECT price_fc FROM menu_items WHERE restaurant_id = 'demo-restaurant-zeduc' ORDER BY position LIMIT 1")!.price_fc;
     db.run(`INSERT INTO users (id, restaurant_id, role, name, email, phone, password_hash, created_at)
       VALUES ('stats-manager', 'demo-restaurant-zeduc', 'manager', 'Gérant test',
         'stats-manager@example.test', '+243810000005', ?, ?)`, [hashPassword(PASSWORD), NOW.toISOString()]);
@@ -69,25 +73,25 @@ describe('APP-84 — statistiques isolées avec authentification réelle', () =>
         assert.equal(response.status, 200);
         const stats = await response.json() as StatsOverview;
         assert.equal(stats.period, period);
-        assert.equal(stats.salesFc, 2500);
-        assert.equal(stats.averageOrderFc, 1250);
+        assert.equal(stats.salesFc, 5 * unit);
+        assert.equal(stats.averageOrderFc, (5 * unit) / 2);
         assert.equal(stats.orders.total, 2);
         assert.equal(stats.orders.completed, 2);
         assert.equal(stats.topItems[0]?.quantity, 5);
       }
       const response = await get('overview?period=day', tokens.other);
       assert.equal(response.status, 200);
-      assert.equal((await response.json() as StatsOverview).salesFc, 9000);
+      assert.equal((await response.json() as StatsOverview).salesFc, 18 * unit);
     });
   }
 
   it('ignore les tentatives de choisir un autre restaurant dans les paramètres', async () => {
     const response = await get('overview?period=day&restaurant=chez-lea&restaurantId=demo-restaurant-lea&slug=chez-lea', tokens.manager);
     assert.equal(response.status, 200);
-    assert.equal((await response.json() as StatsOverview).salesFc, 2500);
+    assert.equal((await response.json() as StatsOverview).salesFc, 5 * unit);
     const weekly = await get('weekly?restaurantId=demo-restaurant-lea', tokens.employee);
     assert.equal(weekly.status, 200);
-    assert.equal((await weekly.json() as WeeklyStats).totalSalesFc, 2500);
+    assert.equal((await weekly.json() as WeeklyStats).totalSalesFc, 5 * unit);
   });
 
   for (const [role, status] of [['visiteur', 401], ['invalide', 401], ['student', 403], ['platform', 403]] as const) {
@@ -108,7 +112,7 @@ describe('APP-84 — statistiques isolées avec authentification réelle', () =>
     const response = await get('weekly', tokens.employee);
     assert.equal(response.status, 200);
     const weekly = await response.json() as WeeklyStats;
-    assert.equal(weekly.totalSalesFc, 2500);
+    assert.equal(weekly.totalSalesFc, 5 * unit);
     assert.equal(weekly.days.length, 7);
     assert.equal(weekly.ordersCompleted, 2);
   });
@@ -138,9 +142,9 @@ describe('APP-84 — statistiques isolées avec authentification réelle', () =>
     try {
       const response = await get('overview?period=day', tokens.admin);
       assert.equal(response.status, 200);
-      assert.equal((await response.json() as StatsOverview).salesFc, 3500);
+      assert.equal((await response.json() as StatsOverview).salesFc, 5 * unit + 1000);
       const other = await get('overview?period=day', tokens.other);
-      assert.equal((await other.json() as StatsOverview).salesFc, 9000);
+      assert.equal((await other.json() as StatsOverview).salesFc, 18 * unit);
     } finally {
       db.run("UPDATE orders SET total_fc = total_fc - 1000, subtotal_fc = subtotal_fc - 1000 WHERE id = 'stats-a1'");
     }
