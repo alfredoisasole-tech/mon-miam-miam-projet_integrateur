@@ -129,7 +129,6 @@ export interface OrdersRepository {
   findStudent(userId: string): Promise<StudentProfile | null>;
   findRestaurantById(restaurantId: string): Promise<Restaurant | null>;
   findRestaurantBySlug(slug: string): Promise<Restaurant | null>;
-  hasRestaurantMembership(userId: string, restaurantId: string): Promise<boolean>;
   findMenuItemsByIds(ids: string[], restaurantId: string): Promise<MenuItem[]>;
   getAvailablePoints(userId: string, restaurantId: string, at: string): Promise<number>;
   getLoyaltyRemainderFc(userId: string, restaurantId: string): Promise<number>;

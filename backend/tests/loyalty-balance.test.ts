@@ -132,10 +132,10 @@ describe('Fidélité : consultation du solde', () => {
     assert.equal(await code(reponse), 'FORBIDDEN');
   });
 
-  it('refuse un étudiant qui n’est pas inscrit au restaurant', async () => {
+  it('affiche 0 point à un étudiant qui n’a pas encore commandé dans ce restaurant, sans créer d’adhésion', async () => {
     const reponse = await lire('beta', 'etudiant-2');
-    assert.equal(reponse.status, 403);
-    assert.equal(await code(reponse), 'FORBIDDEN');
+    assert.equal(reponse.status, 200);
+    assert.equal((await reponse.json() as { availablePoints: number }).availablePoints, 0);
   });
 
   it('répond 404 pour un restaurant inconnu', async () => {
