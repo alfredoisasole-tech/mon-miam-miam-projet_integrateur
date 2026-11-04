@@ -18,6 +18,7 @@ export interface UpdateDishPayload {
   category?: 'plat' | 'boisson' | 'dessert' | 'snack';
   isDaily?: boolean;
   isAvailable?: boolean;
+  imageAssetId?: string | null;
 }
 
 export interface StaffUpdatePayload {

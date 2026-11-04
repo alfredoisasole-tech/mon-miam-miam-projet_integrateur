@@ -9,6 +9,8 @@ export interface MenuDish {
   isDaily: boolean;
   isAvailable: boolean;
   imageUrl: string | null;
+  /** Fournie par la liste du personnel ; absente du menu public, déjà groupé par catégorie. */
+  category?: string;
 }
 
 export interface RestaurantMenu {
