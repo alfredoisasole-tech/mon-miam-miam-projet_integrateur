@@ -74,14 +74,24 @@ export function seedDemoData(db: Database, credentials: SeedCredentials): 'creat
       VALUES (?, ?, ?, ?, ?)`,
     ['demo-platform-admin', 'Administrateur de la plateforme', 'plateforme@monmiam.test', hashPassword(credentials.platformAdminPassword), now]);
 
-    const dishes = ['Poulet braisé', 'Riz cantonais', 'Poisson grillé', 'Frites maison', 'Pondu', 'Samosas', 'Jus frais', 'Eau minérale', 'Salade du jour', 'Beignets'];
+    // Menu de démonstration : plats courants de Kinshasa, décrits, aux prix habituels en FC.
+    const dishes: Array<[name: string, description: string, category: string, priceFc: number]> = [
+      ['Riz-haricots', 'Riz blanc, haricots mijotés à l’huile de palme et bananes plantain frites.', 'plat', 3000],
+      ['Pondu et chikwangue', 'Feuilles de manioc pilées et mijotées, servies avec du bâton de manioc.', 'plat', 4000],
+      ['Poulet à la moambe', 'Poulet mijoté dans la sauce de noix de palme, avec du riz.', 'plat', 7000],
+      ['Poisson braisé et makemba', 'Tilapia grillé aux épices, bananes plantain frites et piment.', 'plat', 8000],
+      ['Brochettes de bœuf', 'Quatre brochettes marinées, grillées au charbon, avec des frites.', 'plat', 5000],
+      ['Mikate', 'Beignets de farine moelleux, légèrement sucrés, servis chauds.', 'snack', 1000],
+      ['Jus de gingembre', 'Jus frais de gingembre, citron et sucre de canne, servi bien froid.', 'boisson', 1500],
+      ['Bissap', 'Infusion froide de fleurs d’hibiscus, parfumée à la menthe.', 'boisson', 1500],
+      ['Salade de fruits', 'Ananas, mangue, papaye et banane de saison.', 'dessert', 2500],
+      ['Beignets de banane', 'Beignets de banane mûre saupoudrés de sucre, croustillants dehors.', 'dessert', 2000],
+    ];
     for (const restaurant of restaurantRows) {
-      dishes.forEach((name, index) => {
-        const category = index < 6 ? 'plat' : index < 8 ? 'boisson' : index === 8 ? 'snack' : 'dessert';
+      dishes.forEach(([name, description, category, priceFc], index) => {
         db.run(`INSERT INTO menu_items (id, restaurant_id, name, description, price_fc, category, position, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [`demo-item-${restaurant.id}-${index + 1}-${randomUUID().slice(0, 8)}`, restaurant.id, name, null,
-          (index + 1) * 500, category, index, now, now]);
+        [`demo-item-${restaurant.id}-${index + 1}-${randomUUID().slice(0, 8)}`, restaurant.id, name, description, priceFc, category, index, now, now]);
       });
     }
   });
